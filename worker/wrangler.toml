@@ -7,7 +7,7 @@ compatibility_date = "2026-01-01"
 # GitHub Pages URL with your own (https://<your-username>.github.io). The
 # localhost entries let you test against a locally served copy of the tracker.
 [vars]
-ALLOWED_ORIGINS = "https://USERNAME.github.io,http://localhost:8731,http://127.0.0.1:8731"
+ALLOWED_ORIGINS = "https://alisoltani7596.github.io,http://localhost:8731,http://127.0.0.1:8731"
 
 # ANTHROPIC_API_KEY is NOT stored here — it is a secret set with:
 #   wrangler secret put ANTHROPIC_API_KEY
@@ -21,4 +21,4 @@ ALLOWED_ORIGINS = "https://USERNAME.github.io,http://localhost:8731,http://127.0
 #   wrangler kv key put --binding TODAY_KV today "$(cat today.json)"
 [[kv_namespaces]]
 binding = "TODAY_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "eb6d2cc50def4921bb6d3916c51993ed"
