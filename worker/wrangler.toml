@@ -1,0 +1,14 @@
+name = "daily-tracker-coach"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# ─── CORS allowlist ───────────────────────────────────────────────────────────
+# Comma-separated list of origins allowed to call this Worker. Replace the
+# GitHub Pages URL with your own (https://<your-username>.github.io). The
+# localhost entries let you test against a locally served copy of the tracker.
+[vars]
+ALLOWED_ORIGINS = "https://USERNAME.github.io,http://localhost:8731,http://127.0.0.1:8731"
+
+# ANTHROPIC_API_KEY is NOT stored here — it is a secret set with:
+#   wrangler secret put ANTHROPIC_API_KEY
+# For local `wrangler dev`, put it in worker/.dev.vars (gitignored).

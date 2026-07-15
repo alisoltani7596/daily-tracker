@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Cloudflare Worker secrets — NEVER commit these
+worker/.dev.vars
+.dev.vars
+
+# Node / wrangler
+node_modules/
+worker/node_modules/
+worker/.wrangler/
+.wrangler/
+*.log

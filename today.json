@@ -1,0 +1,26 @@
+{
+  "updated": "2026-07-15T15:12:00-07:00",
+  "schedule": [
+    { "day": "Today · Wed 15", "items": [ {"t":"4:00 PM","n":"Lunch","next":true}, {"t":"11:00 PM","n":"Meditation"} ] },
+    { "day": "Thu 16", "items": [ {"t":"8:30 AM","n":"Meditation"}, {"t":"9:30 AM","n":"Breakfast"}, {"t":"11:30 AM","n":"Call Family"}, {"t":"4:00 PM","n":"Lunch"} ] }
+  ],
+  "deadlines": [
+    { "d":"09", "m":"Aug", "n":"WACV 2027 decisions released", "days":25 },
+    { "d":"28", "m":"Aug", "n":"WACV raindrop generation submission", "days":44 }
+  ],
+  "tasks": [
+    { "n":"Submit MarineVision @ ECCV 2026 final PDF", "done":false, "hi":true },
+    { "n":"Trim ECCV paper to page limit", "done":false },
+    { "n":"Address Alexandra's comments on the draft", "done":false },
+    { "n":"WACV 2027 submission", "done":true },
+    { "n":"Start task-aware anonymization framework", "done":false }
+  ],
+  "tasksUrl": "https://docs.google.com/document/d/1868UEXc3xWmmdqN4cOKYZxuRYcN4O-ow01KWAb-kx4c/edit",
+  "files": [
+    { "ic":"📊", "n":"ArchipelagoAlliance_Presentation_2026-07-09", "sub":"Slides · Melissa Cote", "when":"Jul 9", "url":"https://docs.google.com/presentation/d/1Mqw4vGhVZTYaIf8dJ_KZOfUITNbhOsYmVJdKjrVBZYc/edit" },
+    { "ic":"📊", "n":"archipelago_plan", "sub":"Slides · you", "when":"Jul 9", "url":"https://docs.google.com/presentation/d/19vYZKzVyMFlC7oCcxJZ3PYmkHtuQ8NL_Ft34wmdNy2g/edit" },
+    { "ic":"🗜️", "n":"fishnet.zip", "sub":"Archive · 5.0 GB", "when":"Jul 9", "url":"https://drive.google.com/file/d/1mqLoap9QIVGYaPJ7T_KSBfLxJOg2yFY3/view" },
+    { "ic":"📁", "n":"DiscardActionDataset", "sub":"Folder · code & checkpoints", "when":"2025", "url":"https://drive.google.com/drive/folders/1ayfQlYrjiMrNtVMsnawBwzxEPmEb-3du" }
+  ],
+  "inbox": null
+}

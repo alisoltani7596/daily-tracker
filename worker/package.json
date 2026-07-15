@@ -1,0 +1,13 @@
+{
+  "name": "daily-tracker-coach",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker proxying the Daily Tracker AI coach to the Anthropic Messages API",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3"
+  }
+}
