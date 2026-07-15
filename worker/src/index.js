@@ -62,10 +62,30 @@ export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
     const allowOrigin = resolveAllowedOrigin(origin, env);
+    const url = new URL(request.url);
 
     // Preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
+    }
+
+    // GET /today — serve the personal dashboard JSON from KV, CORS-locked to the
+    // Pages origin so it is not publicly readable (unlike a file on Pages). The
+    // morning refresh task writes it with:
+    //   wrangler kv key put --binding TODAY_KV today "$(cat today.json)"
+    if (request.method === "GET" && url.pathname === "/today") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) {
+        return json({ error: "today store not configured" }, 500, corsHeaders(allowOrigin));
+      }
+      const body = await env.TODAY_KV.get("today");
+      if (body == null) {
+        return json({ error: "not found" }, 404, corsHeaders(allowOrigin));
+      }
+      return new Response(body, {
+        status: 200,
+        headers: { "content-type": "application/json", "cache-control": "no-store", ...corsHeaders(allowOrigin) },
+      });
     }
 
     if (request.method !== "POST") {
@@ -145,7 +165,7 @@ function resolveAllowedOrigin(origin, env) {
 
 function corsHeaders(allowOrigin) {
   const h = {
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",

@@ -2731,15 +2731,25 @@ function renderToday(data){
 (function(){
   var settled = false;
   function boot(d){ try{ renderToday(d); }catch(e){ console.warn('today render failed', e); } }
-  fetch('./today.json?t=' + Date.now(), {cache:'no-store'})
-    .then(function(r){ if(!r.ok) throw new Error('no today.json'); return r.json(); })
-    .then(function(d){ settled = true; try{ localStorage.setItem('today_cache_v1', JSON.stringify(d)); }catch(e){} boot(d); })
+  function cacheAndBoot(d){ settled = true; try{ localStorage.setItem('today_cache_v1', JSON.stringify(d)); }catch(e){} boot(d); }
+  function fallback(){ if(settled) return; var cached=null; try{ cached=JSON.parse(localStorage.getItem('today_cache_v1')); }catch(e){} boot(cached || TODAY_FALLBACK); }
+
+  // 1) Prefer the CORS-locked Worker /today (KV-backed, not publicly readable).
+  var base = (typeof COACH_WORKER_URL === 'string' && COACH_WORKER_URL.indexOf('YOUR-SUBDOMAIN') === -1)
+    ? COACH_WORKER_URL.replace(/\/+$/, '') : null;
+  var primary = base
+    ? fetch(base + '/today', {cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    : Promise.reject();
+
+  primary
+    // 2) Transition fallback: the committed Pages copy (Google links stripped).
+    //    Remove ./today.json from the repo once KV is serving /today.
     .catch(function(){
-      if(settled) return;
-      var cached = null;
-      try{ cached = JSON.parse(localStorage.getItem('today_cache_v1')); }catch(e){}
-      boot(cached || TODAY_FALLBACK);
-    });
+      return fetch('./today.json?t=' + Date.now(), {cache:'no-store'})
+        .then(function(r){ if(!r.ok) throw 0; return r.json(); });
+    })
+    .then(cacheAndBoot)
+    .catch(fallback); // 3) last cached copy → baked-in snapshot
 })();
 </script>
 

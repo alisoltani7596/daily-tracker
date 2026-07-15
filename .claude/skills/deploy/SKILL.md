@@ -44,8 +44,13 @@ cd worker
 npx wrangler deploy
 ```
 - First-time only, ensure the user has run `npx wrangler login` and
-  `npx wrangler secret put ANTHROPIC_API_KEY`, and that `ALLOWED_ORIGINS` in
-  `wrangler.toml` includes their GitHub Pages origin.
+  `npx wrangler secret put ANTHROPIC_API_KEY`, that `ALLOWED_ORIGINS` in
+  `wrangler.toml` includes their GitHub Pages origin, and that the KV namespace
+  exists with its real id pasted into `wrangler.toml` (deploy fails on the
+  `REPLACE_WITH_KV_NAMESPACE_ID` placeholder):
+  `npx wrangler kv namespace create TODAY_KV` → paste the printed id.
+  The Today data is written to KV (not the repo) via:
+  `npx wrangler kv key put --binding TODAY_KV today "$(cat ../today.json)"`.
 - `wrangler deploy` prints the Worker URL. If it changed, remind the user to update
   `COACH_WORKER_URL` at the top of the coach module in `index.html` (then redeploy
   the static site).

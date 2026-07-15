@@ -12,3 +12,13 @@ ALLOWED_ORIGINS = "https://USERNAME.github.io,http://localhost:8731,http://127.0
 # ANTHROPIC_API_KEY is NOT stored here — it is a secret set with:
 #   wrangler secret put ANTHROPIC_API_KEY
 # For local `wrangler dev`, put it in worker/.dev.vars (gitignored).
+
+# ─── KV: personal "Today" dashboard data ──────────────────────────────────────
+# Serves GET /today (CORS-locked to your Pages origin) instead of a public file.
+# One-time setup:
+#   wrangler kv namespace create TODAY_KV      # prints the id → paste it below
+# The morning refresh task writes the data with:
+#   wrangler kv key put --binding TODAY_KV today "$(cat today.json)"
+[[kv_namespaces]]
+binding = "TODAY_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
