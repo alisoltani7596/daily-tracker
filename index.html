@@ -31,8 +31,8 @@
   --shadow:0 12px 30px rgba(0,0,0,.28);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{font-size:16px;}
-body{background:var(--bg);color:var(--white);font-family:var(--sans);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+html{font-size:16px;overflow-x:hidden;}  /* viewport-level clip: body-only overflow-x:hidden doesn't stop sideways scroll */
+body{background:var(--bg);color:var(--white);font-family:var(--sans);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;max-width:100%;}
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.5;}
 /* subtle top glow anchoring the dark-green identity */
 body::after{content:'';position:fixed;top:0;left:0;right:0;height:340px;background:radial-gradient(120% 340px at 50% -60px,rgba(87,196,138,.10),transparent 70%);pointer-events:none;z-index:0;}
@@ -265,7 +265,7 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 .coach-scrim{position:fixed;inset:0;background:rgba(8,12,9,.55);opacity:0;pointer-events:none;transition:opacity .25s;z-index:190;}
 .coach-scrim.open{opacity:1;pointer-events:auto;}
 
-.coach-drawer{position:fixed;top:0;right:0;height:100%;width:400px;max-width:100%;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.22,.61,.36,1);z-index:200;box-shadow:-14px 0 40px rgba(0,0,0,.35);}
+.coach-drawer{position:fixed;top:0;right:0;height:100%;width:400px;max-width:100%;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.22,.61,.36,1);z-index:200;box-shadow:-14px 0 40px rgba(0,0,0,.35);will-change:transform;}
 .coach-drawer.open{transform:translateX(0);}
 
 .coach-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0;}
@@ -303,7 +303,7 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 
 /* coach session history (read-only overlay over the chat body) */
 .coach-history{position:absolute;left:0;right:0;top:0;bottom:0;background:var(--surface);overflow-y:auto;z-index:5;display:flex;flex-direction:column;}
-.coach-drawer{position:fixed;}
+.coach-history[hidden]{display:none;}  /* class display:flex was overriding the UA [hidden] rule */
 .coach-hist-head{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface2);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
 .coach-hist-back{background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--sub);font-family:var(--mono);font-size:11px;padding:5px 10px;cursor:pointer;text-transform:none;letter-spacing:0;transition:all .15s;}
 .coach-hist-back:hover{border-color:var(--accent);color:var(--accent);}
@@ -396,6 +396,9 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 button.tchk{cursor:pointer;background:transparent;padding:0;}
 button.tchk.done{color:#fff;}
 .task-row .task-name{cursor:text;}
+.dl-name{cursor:text;}
+.dl-date{cursor:pointer;border-radius:4px;}
+.dl-date:hover{background:rgba(87,196,138,.12);}
 .task-star,.task-del{flex:none;background:transparent;border:none;cursor:pointer;font-size:12px;line-height:1;padding:4px 5px;border-radius:6px;opacity:.4;transition:opacity .12s,color .12s,background .12s;}
 .task-star{font-family:var(--mono);font-weight:700;color:var(--muted);}
 .task-star.on{color:var(--amber);opacity:1;}
@@ -2845,15 +2848,21 @@ function renderToday(data){
   if(!sc) sc = '<div class="tc-empty">No upcoming events</div>';
   cards.push(tCard('📅','Schedule','Calendar',sc,'Your routine plus any one-off meetings from Google Calendar.',true));
 
-  // Deadlines
+  // Deadlines (editable, same overrides treatment as tasks)
   var dl = '';
   (data.deadlines||[]).forEach(function(d){
-    var b = (d.days<=14)?'soon':'ok';
-    var lbl = (d.days===0)?'today':(d.days+'d');
-    dl += '<div class="trow"><div class="tdate"><div class="d">'+tEsc(d.d)+'</div><div class="m">'+tEsc(d.m)+'</div></div><div class="tn">'+tEsc(d.n)+'</div><span class="tbadge '+b+'">'+lbl+'</span></div>';
+    var k = tEsc(d.key||d.n);
+    var b = (d.days!=null && d.days<=14)?'soon':'ok';
+    var lbl = (d.days!=null)?((d.days===0)?'today':(d.days+'d')):'set';
+    dl += '<div class="trow dl-row" data-key="'+k+'">'+
+      '<div class="tdate'+(d.added?' dl-date':'')+'"'+(d.added?' onclick="todayDlEditDate(\''+k+'\')" title="Edit date"':'')+'><div class="d">'+tEsc(d.d)+'</div><div class="m">'+tEsc(d.m)+'</div></div>'+
+      '<div class="tn dl-name" onclick="todayDlRename(\''+k+'\')">'+tEsc(d.n)+'</div>'+
+      '<span class="tbadge '+b+'">'+lbl+'</span>'+
+      '<button class="task-del" title="Delete" onclick="todayDlDelete(\''+k+'\')">✕</button>'+
+    '</div>';
   });
-  if(!dl) dl = '<div class="tc-empty">No deadlines yet.<br>Add an all-day event titled “Deadline: …”.</div>';
-  cards.push(tCard('🎯','Deadlines','Calendar',dl,'Reads all-day calendar events titled “Deadline: …”.',false));
+  dl += '<button class="task-add" onclick="todayDlAdd()">＋ Add deadline</button>';
+  cards.push(tCard('🎯','Deadlines','editable',dl,'Tap a deadline to rename, its date to change it, ✕ to remove. Edits survive the morning refresh.',false));
 
   // Tasks
   var tk = '';
@@ -2915,17 +2924,22 @@ function renderToday(data){
   // 1) Prefer the CORS-locked Worker /today (KV-backed, not publicly readable).
   var base = (typeof COACH_WORKER_URL === 'string' && COACH_WORKER_URL.indexOf('YOUR-SUBDOMAIN') === -1)
     ? COACH_WORKER_URL.replace(/\/+$/, '') : null;
+  function fetchPages(){ return fetch('./today.json?t=' + Date.now(), {cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }); }
   var primary = base
-    ? fetch(base + '/today', {cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    ? fetch(base + '/today', {cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(data){
+        // Worker may have overrides but no generated base yet (KV `today` unseeded).
+        // Pull the Pages copy for the base and keep the server overrides on top.
+        if(data && data.generated == null){
+          return fetchPages().then(function(fb){ return {generated:fb, overrides:(data && data.overrides) || null}; });
+        }
+        return data;
+      })
     : Promise.reject();
 
   primary
     // 2) Transition fallback: the committed Pages copy (Google links stripped).
     //    Remove ./today.json from the repo once KV is serving /today.
-    .catch(function(){
-      return fetch('./today.json?t=' + Date.now(), {cache:'no-store'})
-        .then(function(r){ if(!r.ok) throw 0; return r.json(); });
-    })
+    .catch(fetchPages)
     .then(cacheAndBoot)
     .catch(fallback);
 })();
@@ -2945,6 +2959,8 @@ function todayNormalizeOverrides(o){
   o = (o && typeof o==='object') ? o : {};
   if(!o.taskState || typeof o.taskState!=='object') o.taskState = {};
   if(!Array.isArray(o.added)) o.added = [];
+  if(!o.deadlineState || typeof o.deadlineState!=='object') o.deadlineState = {};
+  if(!Array.isArray(o.deadlinesAdded)) o.deadlinesAdded = [];
   return o;
 }
 
@@ -2981,10 +2997,26 @@ function todayMergeTasks(){
   return out;
 }
 
+function todayMergeDeadlines(){
+  var gen = (window.__todayGenerated && window.__todayGenerated.deadlines) || [];
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  var out = [];
+  gen.forEach(function(d){
+    var p = ov.deadlineState[d.n] || {};
+    if(p.hidden) return;
+    out.push({ key:d.n, added:false, d:d.d, m:d.m, days:d.days, n:(p.text!=null?p.text:d.n) });
+  });
+  ov.deadlinesAdded.forEach(function(a,i){
+    out.push({ key:'da'+i, added:true, idx:i, d:a.d||'—', m:a.m||'', days:null, n:a.n||'' });
+  });
+  return out;
+}
+
 function todayMerged(){
   var g = window.__todayGenerated || {};
   var m = {}; for(var k in g){ m[k]=g[k]; }
   m.tasks = todayMergeTasks();
+  m.deadlines = todayMergeDeadlines();
   return m;
 }
 
@@ -3064,6 +3096,55 @@ function todayEditTask(key){
   input.addEventListener('blur', function(){ commit(true); });
   nameEl.replaceWith(input);
   input.focus(); input.select();
+}
+
+// ─── deadlines: same edit/add/delete treatment ───────────────────────────────
+function todayDlPatch(key, fn){
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  if(/^da\d+$/.test(key)){ var i=+key.slice(2); if(ov.deadlinesAdded[i]) fn(ov.deadlinesAdded[i], true); }
+  else { if(!ov.deadlineState[key]) ov.deadlineState[key] = {}; fn(ov.deadlineState[key], false); }
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+}
+function todayDlDelete(key){
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  if(/^da\d+$/.test(key)){ ov.deadlinesAdded.splice(+key.slice(2),1); }
+  else { if(!ov.deadlineState[key]) ov.deadlineState[key]={}; ov.deadlineState[key].hidden=true; }
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+}
+function todayDlAdd(){
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  ov.deadlinesAdded.push({ d:'—', m:'', n:'New deadline' });
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+  setTimeout(function(){ todayDlRename('da'+(ov.deadlinesAdded.length-1)); }, 30);
+}
+function todayDlRename(key){
+  var row = document.querySelector('.dl-row[data-key="'+key+'"]');
+  if(!row) return;
+  var nameEl = row.querySelector('.dl-name');
+  if(!nameEl || row.querySelector('.task-input')) return;
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  var current='';
+  if(/^da\d+$/.test(key)){ current=(ov.deadlinesAdded[+key.slice(2)]||{}).n||''; }
+  else { var p=ov.deadlineState[key]||{}; var gen=(window.__todayGenerated.deadlines||[]).find(function(x){return x.n===key;})||{}; current=(p.text!=null?p.text:gen.n)||''; }
+  var input=document.createElement('input'); input.className='task-input'; input.value=current;
+  function commit(save){ var val=input.value.trim(); if(save&&val){ todayDlPatch(key,function(o,isAdded){ if(isAdded){o.n=val;}else{o.text=val;} }); } else { todayRerender(); } }
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault();commit(true);} else if(e.key==='Escape'){commit(false);} });
+  input.addEventListener('blur',function(){ commit(true); });
+  nameEl.replaceWith(input); input.focus(); input.select();
+}
+function todayDlEditDate(key){
+  // added deadlines only: edit the "DD Mon" date inline
+  if(!/^da\d+$/.test(key)) return;
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  var a = ov.deadlinesAdded[+key.slice(2)]; if(!a) return;
+  var row = document.querySelector('.dl-row[data-key="'+key+'"]'); if(!row) return;
+  var dateEl = row.querySelector('.tdate'); if(!dateEl || row.querySelector('.dl-date-input')) return;
+  var input=document.createElement('input'); input.className='task-input dl-date-input'; input.style.width='70px';
+  input.value=((a.d&&a.d!=='—')?a.d:'')+(a.m?(' '+a.m):''); input.placeholder='09 Aug';
+  function commit(save){ if(save){ var parts=input.value.trim().split(/\s+/); todayDlPatch(key,function(o){ o.d=parts[0]||'—'; o.m=parts[1]||''; }); } else { todayRerender(); } }
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault();commit(true);} else if(e.key==='Escape'){commit(false);} });
+  input.addEventListener('blur',function(){ commit(true); });
+  dateEl.replaceWith(input); input.focus(); input.select();
 }
 
 // ─── persistence: local mirror + debounced Worker POST ────────────────────────
