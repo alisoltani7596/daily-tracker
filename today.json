@@ -1,6 +1,5 @@
 {
   "updated": "2026-07-15T15:12:00-07:00",
-  "_note": "Links are intentionally stripped from this committed/Pages copy — Pages serves it publicly. Full links live only in the KV copy served via the CORS-locked Worker GET /today. See CLAUDE.md → today.json content rules.",
   "schedule": [
     { "day": "Today · Wed 15", "items": [ {"t":"4:00 PM","n":"Lunch","next":true}, {"t":"11:00 PM","n":"Meditation"} ] },
     { "day": "Thu 16", "items": [ {"t":"8:30 AM","n":"Meditation"}, {"t":"9:30 AM","n":"Breakfast"}, {"t":"11:30 AM","n":"Call Family"}, {"t":"4:00 PM","n":"Lunch"} ] }
@@ -23,5 +22,6 @@
     { "ic":"🗜️", "n":"fishnet.zip", "sub":"Archive · 5.0 GB", "when":"Jul 9", "url":"#" },
     { "ic":"📁", "n":"DiscardActionDataset", "sub":"Folder · code & checkpoints", "when":"2025", "url":"#" }
   ],
-  "inbox": null
+  "inbox": null,
+  "slack": null
 }

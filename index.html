@@ -2405,6 +2405,16 @@ function coachBuildContext(){
         s += '  open_tasks:\n';
         openTasks.forEach(t=>{ s += '    - '+t.n+(t.hi?' [high priority]':'')+'\n'; });
       }
+      const slackItems = (td.slack||[]);
+      if(slackItems.length){
+        s += '  slack_action_items:\n';
+        slackItems.forEach(m=>{ s += '    - ['+(m.kind||'mention')+'] '+(m.who||'')+': '+(m.text||'')+'\n'; });
+      }
+      const email = (td.inbox||[]);
+      if(email.length){
+        s += '  email_asks:\n';
+        email.forEach(m=>{ s += '    - '+(m.from||'')+': '+(m.subject||'')+'\n'; });
+      }
       s += '\n';
     }
   }catch(e){ /* Today data not loaded yet — coach still works without it */ }
@@ -2651,14 +2661,15 @@ const TODAY_FALLBACK = {
     { n:"WACV 2027 submission", done:true },
     { n:"Start task-aware anonymization framework", done:false }
   ],
-  tasksUrl: "https://docs.google.com/document/d/1868UEXc3xWmmdqN4cOKYZxuRYcN4O-ow01KWAb-kx4c/edit",
+  tasksUrl: "#",
   files: [
-    { ic:"📊", n:"ArchipelagoAlliance_Presentation_2026-07-09", sub:"Slides · Melissa Cote", when:"Jul 9", url:"https://docs.google.com/presentation/d/1Mqw4vGhVZTYaIf8dJ_KZOfUITNbhOsYmVJdKjrVBZYc/edit" },
-    { ic:"📊", n:"archipelago_plan", sub:"Slides · you", when:"Jul 9", url:"https://docs.google.com/presentation/d/19vYZKzVyMFlC7oCcxJZ3PYmkHtuQ8NL_Ft34wmdNy2g/edit" },
-    { ic:"🗜️", n:"fishnet.zip", sub:"Archive · 5.0 GB", when:"Jul 9", url:"https://drive.google.com/file/d/1mqLoap9QIVGYaPJ7T_KSBfLxJOg2yFY3/view" },
-    { ic:"📁", n:"DiscardActionDataset", sub:"Folder · code & checkpoints", when:"2025", url:"https://drive.google.com/drive/folders/1ayfQlYrjiMrNtVMsnawBwzxEPmEb-3du" }
+    { ic:"📊", n:"ArchipelagoAlliance_Presentation_2026-07-09", sub:"Slides · Melissa Cote", when:"Jul 9", url:"#" },
+    { ic:"📊", n:"archipelago_plan", sub:"Slides · you", when:"Jul 9", url:"#" },
+    { ic:"🗜️", n:"fishnet.zip", sub:"Archive · 5.0 GB", when:"Jul 9", url:"#" },
+    { ic:"📁", n:"DiscardActionDataset", sub:"Folder · code & checkpoints", when:"2025", url:"#" }
   ],
-  inbox: null
+  inbox: null,
+  slack: null
 };
 
 function tEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -2700,6 +2711,16 @@ function renderToday(data){
   });
   if(!tk) tk = '<div class="tc-empty">No tasks</div>';
   cards.push(tCard('✅','Tasks','Drive doc',tk,'Edit in your <a href="'+tEsc(data.tasksUrl||'#')+'" target="_blank" rel="noopener">Tasks doc</a> — <code>[ ]</code>/<code>[x]</code>, end with <code>!</code> for high.',false));
+
+  // Slack — mentions, DMs, things assigned to you
+  var sk = '';
+  (data.slack||[]).forEach(function(m){
+    var label = (m.kind==='dm')?'DM':(m.kind==='assigned')?'ASK':'@';
+    var kc = (m.kind==='assigned')?'soon':'ok';
+    sk += '<a class="trow" href="'+tEsc(m.url||'#')+'" target="_blank" rel="noopener"><span class="tbadge '+kc+'" style="min-width:32px;text-align:center;">'+label+'</span><div class="tn">'+tEsc(m.who||'')+(m.text?'<small>'+tEsc(m.text)+'</small>':'')+'</div><div class="tt" style="min-width:auto;">'+tEsc(m.where||'')+'</div></a>';
+  });
+  if(!(data.slack && data.slack.length)) sk = '<div class="tc-empty">All clear — no mentions, DMs, or asks.</div>';
+  cards.push(tCard('💬','Slack','Slack',sk,'Mentions, DMs, and messages assigning you things.',true));
 
   // Recent files
   var fl = '';
@@ -2749,7 +2770,7 @@ function renderToday(data){
         .then(function(r){ if(!r.ok) throw 0; return r.json(); });
     })
     .then(cacheAndBoot)
-    .catch(fallback); // 3) last cached copy → baked-in snapshot
+    .catch(fallback);
 })();
 </script>
 
