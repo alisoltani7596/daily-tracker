@@ -69,23 +69,64 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
     }
 
-    // GET /today — serve the personal dashboard JSON from KV, CORS-locked to the
-    // Pages origin so it is not publicly readable (unlike a file on Pages). The
-    // morning refresh task writes it with:
+    // GET /today — serve the generated dashboard JSON PLUS the user's manual
+    // overrides, both from KV, CORS-locked to the Pages origin. The frontend
+    // merges them so manual edits survive the morning regeneration. The refresh
+    // task writes only the generated copy:
     //   wrangler kv key put --binding TODAY_KV today "$(cat today.json)"
     if (request.method === "GET" && url.pathname === "/today") {
       if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
       if (!env.TODAY_KV) {
         return json({ error: "today store not configured" }, 500, corsHeaders(allowOrigin));
       }
-      const body = await env.TODAY_KV.get("today");
-      if (body == null) {
+      const [genStr, ovrStr] = await Promise.all([
+        env.TODAY_KV.get("today"),
+        env.TODAY_KV.get("today_overrides"),
+      ]);
+      if (genStr == null && ovrStr == null) {
         return json({ error: "not found" }, 404, corsHeaders(allowOrigin));
       }
-      return new Response(body, {
+      const payload = {
+        generated: genStr ? safeParse(genStr) : null,
+        overrides: ovrStr ? safeParse(ovrStr) : null,
+      };
+      return new Response(JSON.stringify(payload), {
         status: 200,
         headers: { "content-type": "application/json", "cache-control": "no-store", ...corsHeaders(allowOrigin) },
       });
+    }
+
+    // POST /today-overrides — persist the user's manual Today edits to KV.
+    // CORS alone is not enough for a write route (the Origin header is spoofable
+    // outside a browser), so this also requires the shared EDIT_TOKEN secret in
+    // the x-edit-token header. Set it with: wrangler secret put EDIT_TOKEN
+    if (request.method === "POST" && url.pathname === "/today-overrides") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) {
+        return json({ error: "today store not configured" }, 500, corsHeaders(allowOrigin));
+      }
+      if (!env.EDIT_TOKEN) {
+        return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      }
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) {
+        return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      }
+      let overrides;
+      try {
+        overrides = await request.json();
+      } catch {
+        return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin));
+      }
+      if (overrides === null || typeof overrides !== "object" || Array.isArray(overrides)) {
+        return json({ error: "overrides must be an object" }, 400, corsHeaders(allowOrigin));
+      }
+      const serialized = JSON.stringify(overrides);
+      if (serialized.length > 100000) {
+        return json({ error: "overrides too large" }, 413, corsHeaders(allowOrigin));
+      }
+      await env.TODAY_KV.put("today_overrides", serialized);
+      return json({ ok: true }, 200, corsHeaders(allowOrigin));
     }
 
     if (request.method !== "POST") {
@@ -166,7 +207,7 @@ function resolveAllowedOrigin(origin, env) {
 function corsHeaders(allowOrigin) {
   const h = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-Edit-Token",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
@@ -179,4 +220,16 @@ function json(obj, status, extraHeaders) {
     status,
     headers: { "content-type": "application/json", ...extraHeaders },
   });
+}
+
+function safeParse(str) {
+  try { return JSON.parse(str); } catch { return null; }
+}
+
+// Constant-time string comparison so the edit token can't be guessed via timing.
+function timingSafeEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }

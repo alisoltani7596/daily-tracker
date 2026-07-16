@@ -20,16 +20,34 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#111a13;--surface:#172019;--surface2:#1c2a1e;--border:#2a3f2d;
-  --accent:#4caf7d;--accent2:#2d7a50;--amber:#d4a040;--purple:#8b85d4;
-  --blue:#5aacdc;--white:#dff0e4;--sub:#7aaa88;--muted:#4a6650;
+  --bg:#0f1712;--surface:#161f18;--surface2:#1c2a1e;--border:#294029;--border-soft:rgba(42,63,45,.55);
+  --accent:#57c48a;--accent2:#2d7a50;--amber:#d4a040;--purple:#8b85d4;
+  --blue:#5aacdc;--white:#e4f2e8;--sub:#84b592;--muted:#4a6650;
   --serif:'DM Serif Display',Georgia,serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  /* one shape scale (consistency lock) */
+  --r:12px;--r-sm:8px;--r-pill:999px;
+  /* motion */
+  --ease:cubic-bezier(.16,1,.3,1);--dur:.2s;
+  --shadow:0 12px 30px rgba(0,0,0,.28);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:16px;}
-body{background:var(--bg);color:var(--white);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+body{background:var(--bg);color:var(--white);font-family:var(--sans);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.5;}
-.page{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:0 24px 50px;}
+/* subtle top glow anchoring the dark-green identity */
+body::after{content:'';position:fixed;top:0;left:0;right:0;height:340px;background:radial-gradient(120% 340px at 50% -60px,rgba(87,196,138,.10),transparent 70%);pointer-events:none;z-index:0;}
+.page{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direction:column;}
+/* mobile-first reorg: Today first, then the day (tabs → progress → habits/workout), Plans last.
+   Everything not explicitly ordered is day content (order 3), sitting between the
+   day-tabs and the collapsed Plans, keeping its natural DOM order. */
+.page>*{order:3;}
+.page>header{order:0;}
+.page>#today-section{order:1;}
+.page>.day-tabs{order:2;}
+.page>.plans-section{order:5;}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
+}
 
 header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 16px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;gap:10px;}
 .logo h1{font-family:var(--serif);font-size:1.9rem;font-weight:400;color:var(--white);}
@@ -170,9 +188,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:18p
 footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;}
 
 /* ─── PLANS SECTION ──────────────────────────────────────────────────────── */
-.plans-section{margin:28px 0 10px;}
+.plans-section{margin:26px 0 10px;border-top:1px solid var(--border-soft);padding-top:18px;}
 .plans-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
-.plans-title{font-family:var(--serif);font-size:1.4rem;font-weight:400;color:var(--white);}
+.plans-title{font-family:var(--serif);font-size:1.4rem;font-weight:400;color:var(--white);background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0;}
+.plans-chevron{font-family:var(--sans);font-size:.8rem;color:var(--sub);transition:transform var(--dur) var(--ease);}
+.plans-section:not(.collapsed) .plans-chevron{transform:rotate(90deg);}
+.plans-section.collapsed .plans-board,.plans-section.collapsed .plans-tabs{display:none;}
+.plans-section.collapsed{margin-bottom:4px;}
 .plans-tabs{display:flex;gap:5px;}
 .ptab{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;}
 .ptab:hover{border-color:var(--accent2);color:var(--sub);}
@@ -279,6 +301,26 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 .coach-empty{margin:auto;text-align:center;color:var(--muted);font-size:13px;line-height:1.6;padding:20px;}
 .coach-empty strong{color:var(--sub);font-family:var(--serif);font-size:1.05rem;font-weight:400;display:block;margin-bottom:6px;}
 
+/* coach session history (read-only overlay over the chat body) */
+.coach-history{position:absolute;left:0;right:0;top:0;bottom:0;background:var(--surface);overflow-y:auto;z-index:5;display:flex;flex-direction:column;}
+.coach-drawer{position:fixed;}
+.coach-hist-head{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface2);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.coach-hist-back{background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--sub);font-family:var(--mono);font-size:11px;padding:5px 10px;cursor:pointer;text-transform:none;letter-spacing:0;transition:all .15s;}
+.coach-hist-back:hover{border-color:var(--accent);color:var(--accent);}
+.coach-hist-list{display:flex;flex-direction:column;}
+.coach-hist-item{text-align:left;background:transparent;border:none;border-bottom:1px solid var(--border);padding:13px 15px;cursor:pointer;transition:background .12s;}
+.coach-hist-item:hover{background:var(--surface2);}
+.coach-hist-date{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.05em;}
+.coach-hist-summary{font-size:14px;color:var(--white);margin:3px 0;line-height:1.35;}
+.coach-hist-meta{font-family:var(--mono);font-size:10px;color:var(--sub);}
+.coach-hist-commits{padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;gap:6px;}
+.coach-hist-commit{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--white);line-height:1.35;}
+.coach-hist-commit .chm{font-family:var(--mono);flex-shrink:0;}
+.coach-hist-commit em{color:var(--muted);font-style:normal;font-family:var(--mono);font-size:11px;}
+.coach-hist-commit.done{color:var(--muted);}.coach-hist-commit.done .chm{color:var(--accent);}
+.coach-hist-commit.missed .chm{color:var(--amber);}
+.coach-hist-transcript{flex:1;padding:16px 14px;display:flex;flex-direction:column;gap:12px;}
+
 .coach-typing{align-self:flex-start;display:flex;gap:4px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:4px;}
 .coach-typing span{width:7px;height:7px;border-radius:50%;background:var(--sub);opacity:.5;animation:coachBounce 1.2s infinite ease-in-out;}
 .coach-typing span:nth-child(2){animation-delay:.15s;}
@@ -293,10 +335,25 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 .coach-send:hover{background:var(--accent);}
 .coach-send:disabled{opacity:.5;cursor:not-allowed;}
 
+/* day panel: 3-col on desktop → stack on tablet/phone, habits+workout before links */
+@media (max-width:900px){
+  .day-panel.visible{grid-template-columns:1fr;}
+  .day-left{order:1;}
+  .day-middle{order:2;}
+  .day-right{order:3;}
+}
 @media (max-width:640px){
   .coach-drawer{width:100%;border-left:none;}
   .coach-toggle span{display:none;}
   .coach-toggle{padding:8px;}
+  .page{padding:0 14px 72px;}
+  header{padding:14px 0 12px;}
+  .logo h1{font-size:1.5rem;}
+  .hstats{gap:16px;}
+  .today-section{padding:14px 14px 4px;}
+  /* coach reachable from anywhere on phone: floating action button */
+  .coach-toggle{position:fixed;right:16px;bottom:16px;z-index:150;border-radius:var(--r-pill);background:var(--accent2);border-color:var(--accent);color:#fff;box-shadow:var(--shadow);width:52px;height:52px;justify-content:center;padding:0;}
+  .coach-toggle svg{width:22px;height:22px;}
 }
 
 /* ── TODAY (merged live dashboard) ─────────────────────────────────────────── */
@@ -335,6 +392,21 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 .tchk{width:15px;height:15px;border-radius:4px;border:2px solid var(--sub);flex:none;display:grid;place-items:center;font-size:9px;color:var(--bg);}
 .tchk.done{background:var(--accent);border-color:var(--accent);}
 .thi{font-family:var(--mono);font-size:8.5px;color:var(--amber);border:1px solid rgba(212,160,64,.3);border-radius:20px;padding:0 5px;margin-left:5px;}
+/* editable task rows */
+button.tchk{cursor:pointer;background:transparent;padding:0;}
+button.tchk.done{color:#fff;}
+.task-row .task-name{cursor:text;}
+.task-star,.task-del{flex:none;background:transparent;border:none;cursor:pointer;font-size:12px;line-height:1;padding:4px 5px;border-radius:6px;opacity:.4;transition:opacity .12s,color .12s,background .12s;}
+.task-star{font-family:var(--mono);font-weight:700;color:var(--muted);}
+.task-star.on{color:var(--amber);opacity:1;}
+.task-del{color:var(--muted);}
+.task-row:hover .task-star,.task-row:hover .task-del{opacity:.75;}
+.task-star:hover{color:var(--amber);opacity:1;background:rgba(212,160,64,.12);}
+.task-del:hover{color:#e88;opacity:1;background:rgba(200,90,90,.14);}
+.task-add{width:100%;text-align:left;background:transparent;border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-family:var(--sans);font-size:12px;padding:7px 9px;margin-top:6px;cursor:pointer;transition:all .15s;}
+.task-add:hover{border-color:var(--accent2);color:var(--accent);}
+.task-input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--accent2);border-radius:6px;color:var(--white);font-family:var(--sans);font-size:12.5px;padding:4px 7px;outline:none;}
+@media(pointer:coarse){.task-star,.task-del{opacity:.7;}}
 .tc-ic-fic{width:26px;height:26px;border-radius:7px;background:var(--surface2);display:grid;place-items:center;font-size:13px;flex:none;}
 .tc-empty{padding:14px 10px;text-align:center;font-size:11.5px;color:var(--sub);line-height:1.5;}
 .tc-empty .big{font-size:22px;margin-bottom:4px;}
@@ -375,9 +447,9 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 </div>
 
 <!-- PLANS SECTION -->
-<div class="plans-section">
+<div class="plans-section collapsed" id="plans-section">
   <div class="plans-header">
-    <div class="plans-title">My Plans</div>
+    <button class="plans-title" onclick="togglePlans()" aria-expanded="false"><span class="plans-chevron">▸</span>My Plans</button>
     <div class="plans-tabs">
       <button class="ptab active" data-pview="all" onclick="switchPView(this)">All</button>
       <button class="ptab" data-pview="daily" onclick="switchPView(this)">Daily</button>
@@ -2291,6 +2363,21 @@ document.getElementById('pf-title').addEventListener('keydown', function(e){ if(
 
 renderPlans();
 
+// Plans is collapsed by default (rarely touched); remember the user's choice.
+function togglePlans(){
+  const sec = document.getElementById('plans-section');
+  const collapsed = sec.classList.toggle('collapsed');
+  sec.querySelector('.plans-title').setAttribute('aria-expanded', String(!collapsed));
+  lsSet('plans_collapsed_v1', collapsed);
+}
+(function(){
+  const sec = document.getElementById('plans-section');
+  if(sec && lsGet('plans_collapsed_v1', true) === false){
+    sec.classList.remove('collapsed');
+    sec.querySelector('.plans-title').setAttribute('aria-expanded','true');
+  }
+})();
+
 </script>
 
 <!-- ─── AI COACH DRAWER ──────────────────────────────────────────────────────── -->
@@ -2302,12 +2389,14 @@ renderPlans();
       <div class="coach-head-sub">accountability · ICF</div>
     </div>
     <div class="coach-head-actions">
+      <button class="coach-newbtn" onclick="coachShowHistory()" title="Past sessions">History</button>
       <button class="coach-newbtn" onclick="coachNewSession()" title="Archive this conversation and start fresh">New session</button>
       <button class="coach-close" onclick="coachClose()" aria-label="Close">×</button>
     </div>
   </div>
   <div id="coach-commitments" class="coach-commitments"></div>
   <div id="coach-body" class="coach-body"></div>
+  <div id="coach-history" class="coach-history" hidden></div>
   <div class="coach-foot">
     <textarea id="coach-input" class="coach-input" rows="1" placeholder="Talk to your coach…  (Enter to send)"></textarea>
     <button id="coach-send" class="coach-send" onclick="coachSend()" aria-label="Send">
@@ -2337,6 +2426,7 @@ function coachOpen(){
   document.getElementById('coach-drawer').classList.add('open');
   document.getElementById('coach-scrim').classList.add('open');
   document.getElementById('coach-drawer').setAttribute('aria-hidden','false');
+  coachHideHistory();
   coachRenderCommitments();
   coachRenderMessages();
   setTimeout(()=>document.getElementById('coach-input').focus(), 300);
@@ -2609,9 +2699,10 @@ function coachNewSession(){
     archive.push({
       date: new Date().toISOString().slice(0,10),
       summary: firstUser.slice(0,160),
-      commitments: madeThisSession.map(c=>({what:c.what, by:c.by}))
+      messages: chat.messages.map(m=>({role:m.role, content:m.content})),
+      commitments: madeThisSession.map(c=>({what:c.what, by:c.by, measure:c.measure, status:c.status}))
     });
-    lsSet(COACH_ARCHIVE_KEY, archive.slice(-20));
+    lsSet(COACH_ARCHIVE_KEY, archive.slice(-30));
     // Resolved commitments have now been reviewed → archive them; open ones carry over.
     const commits = lsGet(COACH_COMMIT_KEY, []).map(c=>
       (c.status==='done'||c.status==='missed') ? {...c, status:'archived'} : c);
@@ -2620,6 +2711,66 @@ function coachNewSession(){
   lsSet(COACH_CHAT_KEY, {messages:[]});
   coachRenderMessages();
   coachRenderCommitments();
+}
+
+// ─── session history (read-only) ──────────────────────────────────────────────
+function coachShowHistory(){
+  const el = document.getElementById('coach-history');
+  el.hidden = false;
+  coachRenderHistoryList();
+}
+function coachHideHistory(){
+  document.getElementById('coach-history').hidden = true;
+}
+function coachRenderHistoryList(){
+  const el = document.getElementById('coach-history');
+  const archive = lsGet(COACH_ARCHIVE_KEY, []).slice().reverse(); // newest first
+  let html = '<div class="coach-hist-head"><span>Past sessions</span>'+
+    '<button class="coach-hist-back" onclick="coachHideHistory()">Back to chat</button></div>';
+  if(!archive.length){
+    html += '<div class="coach-empty" style="margin-top:30px;">No past sessions yet. '+
+      'Tap “New session” to archive the current conversation.</div>';
+    el.innerHTML = html; return;
+  }
+  html += '<div class="coach-hist-list">';
+  archive.forEach((s, i)=>{
+    const origIdx = archive.length - 1 - i; // index into non-reversed array
+    const nMsg = (s.messages||[]).length;
+    const nCommit = (s.commitments||[]).length;
+    html += '<button class="coach-hist-item" onclick="coachViewSession('+origIdx+')">'+
+      '<div class="coach-hist-date">'+coachEsc(s.date||'')+'</div>'+
+      '<div class="coach-hist-summary">'+coachEsc(s.summary||'(no summary)')+'</div>'+
+      '<div class="coach-hist-meta">'+nMsg+' messages · '+nCommit+' commitment'+(nCommit===1?'':'s')+'</div>'+
+    '</button>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+function coachViewSession(origIdx){
+  const el = document.getElementById('coach-history');
+  const s = lsGet(COACH_ARCHIVE_KEY, [])[origIdx];
+  if(!s){ coachRenderHistoryList(); return; }
+  let html = '<div class="coach-hist-head"><span>'+coachEsc(s.date||'Session')+'</span>'+
+    '<button class="coach-hist-back" onclick="coachRenderHistoryList()">All sessions</button></div>';
+  const commits = s.commitments || [];
+  if(commits.length){
+    html += '<div class="coach-hist-commits">';
+    commits.forEach(c=>{
+      const st = c.status==='done'?'done':c.status==='missed'?'missed':'open';
+      const mark = st==='done'?'✓':st==='missed'?'✕':'○';
+      html += '<div class="coach-hist-commit '+st+'"><span class="chm">'+mark+'</span>'+
+        '<span>'+coachEsc(c.what||'')+(c.by?' <em>by '+coachEsc(c.by)+'</em>':'')+'</span></div>';
+    });
+    html += '</div>';
+  }
+  html += '<div class="coach-hist-transcript">';
+  (s.messages||[]).forEach(m=>{
+    html += '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>';
+  });
+  if(!(s.messages||[]).length) html += '<div class="coach-empty">Transcript not stored for this session.</div>';
+  html += '</div>';
+  el.innerHTML = html;
+  el.scrollTop = 0;
 }
 
 // ─── input UX: Enter to send, Shift+Enter newline, auto-grow ──────────────────
@@ -2707,10 +2858,16 @@ function renderToday(data){
   // Tasks
   var tk = '';
   (data.tasks||[]).forEach(function(t){
-    tk += '<div class="trow'+(t.done?' done':'')+'"><div class="tchk'+(t.done?' done':'')+'">'+(t.done?'✓':'')+'</div><div class="tn">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</div></div>';
+    var k = tEsc(t.key||t.n);
+    tk += '<div class="trow task-row'+(t.done?' done':'')+'" data-key="'+k+'">'+
+      '<button class="tchk'+(t.done?' done':'')+'" title="Toggle done" onclick="todayToggleTask(\''+k+'\')">'+(t.done?'✓':'')+'</button>'+
+      '<div class="tn task-name" onclick="todayEditTask(\''+k+'\')">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</div>'+
+      '<button class="task-star'+(t.hi?' on':'')+'" title="High priority" onclick="todayToggleHi(\''+k+'\')">!</button>'+
+      '<button class="task-del" title="Delete" onclick="todayDeleteTask(\''+k+'\')">✕</button>'+
+    '</div>';
   });
-  if(!tk) tk = '<div class="tc-empty">No tasks</div>';
-  cards.push(tCard('✅','Tasks','Drive doc',tk,'Edit in your <a href="'+tEsc(data.tasksUrl||'#')+'" target="_blank" rel="noopener">Tasks doc</a> — <code>[ ]</code>/<code>[x]</code>, end with <code>!</code> for high.',false));
+  tk += '<button class="task-add" onclick="todayAddTask()">＋ Add task</button>';
+  cards.push(tCard('✅','Tasks','editable',tk,'Tap a task to rename, ✓ to check off, ! for high priority. Your edits are saved and survive the morning refresh.',false));
 
   // Slack — mentions, DMs, things assigned to you
   var sk = '';
@@ -2751,7 +2908,7 @@ function renderToday(data){
 }
 (function(){
   var settled = false;
-  function boot(d){ try{ renderToday(d); }catch(e){ console.warn('today render failed', e); } }
+  function boot(d){ try{ todayApply(d); }catch(e){ console.warn('today render failed', e); } }
   function cacheAndBoot(d){ settled = true; try{ localStorage.setItem('today_cache_v1', JSON.stringify(d)); }catch(e){} boot(d); }
   function fallback(){ if(settled) return; var cached=null; try{ cached=JSON.parse(localStorage.getItem('today_cache_v1')); }catch(e){} boot(cached || TODAY_FALLBACK); }
 
@@ -2772,6 +2929,172 @@ function renderToday(data){
     .then(cacheAndBoot)
     .catch(fallback);
 })();
+
+/* ═══ EDITABLE TODAY ══════════════════════════════════════════════════════════
+ * Generated data comes from the Worker (KV); the user's manual edits live in a
+ * separate `overrides` object, merged on top so edits survive the 7 AM refresh.
+ * Overrides are mirrored to localStorage (offline-safe) and POSTed to the Worker
+ * (/today-overrides), gated by a shared EDIT_TOKEN the app prompts for once.
+ */
+var TODAY_OVERRIDES_KEY = 'today_overrides_v1';
+var TODAY_EDIT_TOKEN_KEY = 'today_edit_token';
+window.__todayGenerated = null;
+window.__todayOverrides = null;
+
+function todayNormalizeOverrides(o){
+  o = (o && typeof o==='object') ? o : {};
+  if(!o.taskState || typeof o.taskState!=='object') o.taskState = {};
+  if(!Array.isArray(o.added)) o.added = [];
+  return o;
+}
+
+function todayApply(raw){
+  var generated, overrides;
+  if(raw && typeof raw==='object' && ('generated' in raw || 'overrides' in raw)){
+    generated = raw.generated || null;
+    overrides = raw.overrides || null;
+  } else {
+    generated = raw || null;   // plain today.json (Pages fallback) or cached
+    overrides = null;
+  }
+  // Prefer server overrides; fall back to the local mirror (offline / no server).
+  if(!overrides){ try{ overrides = JSON.parse(localStorage.getItem(TODAY_OVERRIDES_KEY)); }catch(e){} }
+  window.__todayGenerated = generated || {};
+  window.__todayOverrides = todayNormalizeOverrides(overrides);
+  try{ localStorage.setItem(TODAY_OVERRIDES_KEY, JSON.stringify(window.__todayOverrides)); }catch(e){}
+  renderToday(todayMerged());
+}
+
+function todayMergeTasks(){
+  var gen = (window.__todayGenerated && window.__todayGenerated.tasks) || [];
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  var out = [];
+  gen.forEach(function(t){
+    var p = ov.taskState[t.n] || {};
+    if(p.hidden) return;
+    out.push({ key:t.n, added:false,
+      n:(p.text!=null?p.text:t.n), hi:(p.hi!=null?!!p.hi:!!t.hi), done:(p.done!=null?!!p.done:!!t.done) });
+  });
+  ov.added.forEach(function(a,i){
+    out.push({ key:'a'+i, added:true, idx:i, n:a.n||'', hi:!!a.hi, done:!!a.done });
+  });
+  return out;
+}
+
+function todayMerged(){
+  var g = window.__todayGenerated || {};
+  var m = {}; for(var k in g){ m[k]=g[k]; }
+  m.tasks = todayMergeTasks();
+  return m;
+}
+
+function todayRerender(){ renderToday(todayMerged()); }
+
+// mutate a generated task's override patch, or an added task directly, by key
+function todayPatch(key, fn){
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  if(key.charAt(0)==='a' && /^a\d+$/.test(key)){
+    var i = +key.slice(1);
+    if(ov.added[i]) fn(ov.added[i], true);
+  } else {
+    if(!ov.taskState[key]) ov.taskState[key] = {};
+    fn(ov.taskState[key], false);
+  }
+  window.__todayOverrides = ov;
+  todaySave();
+  todayRerender();
+}
+
+function todayToggleTask(key){
+  todayPatch(key, function(o, isAdded){
+    if(isAdded){ o.done = !o.done; }
+    else {
+      // current effective done for this generated task
+      var gen = (window.__todayGenerated.tasks||[]).find(function(t){return t.n===key;}) || {};
+      var cur = (o.done!=null)? o.done : !!gen.done;
+      o.done = !cur;
+    }
+  });
+}
+function todayToggleHi(key){
+  todayPatch(key, function(o, isAdded){
+    if(isAdded){ o.hi = !o.hi; }
+    else {
+      var gen = (window.__todayGenerated.tasks||[]).find(function(t){return t.n===key;}) || {};
+      var cur = (o.hi!=null)? o.hi : !!gen.hi;
+      o.hi = !cur;
+    }
+  });
+}
+function todayDeleteTask(key){
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  if(key.charAt(0)==='a' && /^a\d+$/.test(key)){
+    ov.added.splice(+key.slice(1), 1);
+  } else {
+    if(!ov.taskState[key]) ov.taskState[key] = {};
+    ov.taskState[key].hidden = true;
+  }
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+}
+function todayAddTask(){
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  ov.added.push({ n:'New task', hi:false, done:false });
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+  // open the new task for editing
+  setTimeout(function(){ todayEditTask('a'+(ov.added.length-1)); }, 30);
+}
+function todayEditTask(key){
+  var row = document.querySelector('.task-row[data-key="'+key+'"]');
+  if(!row) return;
+  var nameEl = row.querySelector('.task-name');
+  if(!nameEl || row.querySelector('.task-input')) return;
+  var current = '';
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  if(key.charAt(0)==='a' && /^a\d+$/.test(key)){ current = (ov.added[+key.slice(1)]||{}).n||''; }
+  else { var p=ov.taskState[key]||{}; var gen=(window.__todayGenerated.tasks||[]).find(function(t){return t.n===key;})||{}; current=(p.text!=null?p.text:gen.n)||''; }
+  var input = document.createElement('input');
+  input.className = 'task-input'; input.value = current;
+  function commit(save){
+    var val = input.value.trim();
+    if(save && val){
+      todayPatch(key, function(o, isAdded){ if(isAdded){ o.n=val; } else { o.text=val; } });
+    } else { todayRerender(); }
+  }
+  input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); commit(true); } else if(e.key==='Escape'){ commit(false); } });
+  input.addEventListener('blur', function(){ commit(true); });
+  nameEl.replaceWith(input);
+  input.focus(); input.select();
+}
+
+// ─── persistence: local mirror + debounced Worker POST ────────────────────────
+var _todaySaveTimer = null;
+function todaySave(){
+  try{ localStorage.setItem(TODAY_OVERRIDES_KEY, JSON.stringify(window.__todayOverrides)); }catch(e){}
+  var base = (typeof COACH_WORKER_URL==='string' && COACH_WORKER_URL.indexOf('YOUR-SUBDOMAIN')===-1)
+    ? COACH_WORKER_URL.replace(/\/+$/,'') : null;
+  if(!base) return; // no worker configured: local-only
+  clearTimeout(_todaySaveTimer);
+  _todaySaveTimer = setTimeout(function(){ todayPushOverrides(base); }, 600);
+}
+function todayEditToken(){
+  var t = null; try{ t = localStorage.getItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}
+  if(!t){
+    t = window.prompt('Enter your Today edit token (set once; stored on this device):');
+    if(t){ try{ localStorage.setItem(TODAY_EDIT_TOKEN_KEY, t); }catch(e){} }
+  }
+  return t;
+}
+function todayPushOverrides(base){
+  var token = todayEditToken();
+  if(!token) return; // user dismissed; edits stay local
+  fetch(base + '/today-overrides', {
+    method:'POST',
+    headers:{'content-type':'application/json','x-edit-token':token},
+    body: JSON.stringify(window.__todayOverrides)
+  }).then(function(r){
+    if(r.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}; alert('Today edit token rejected — you will be asked again on the next edit.'); }
+  }).catch(function(){ /* offline: local mirror already saved */ });
+}
 </script>
 
 <!-- ─── SERVICE WORKER REGISTRATION ─────────────────────────────────────────── -->

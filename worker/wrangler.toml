@@ -9,9 +9,10 @@ compatibility_date = "2026-01-01"
 [vars]
 ALLOWED_ORIGINS = "https://alisoltani7596.github.io,http://localhost:8731,http://127.0.0.1:8731"
 
-# ANTHROPIC_API_KEY is NOT stored here — it is a secret set with:
-#   wrangler secret put ANTHROPIC_API_KEY
-# For local `wrangler dev`, put it in worker/.dev.vars (gitignored).
+# Secrets are NOT stored here. Set them with `wrangler secret put <NAME>`
+# (or worker/.dev.vars, gitignored, for local `wrangler dev`):
+#   ANTHROPIC_API_KEY   — coach proxy to the Anthropic API
+#   EDIT_TOKEN          — shared token gating POST /today-overrides (Today edits)
 
 # ─── KV: personal "Today" dashboard data ──────────────────────────────────────
 # Serves GET /today (CORS-locked to your Pages origin) instead of a public file.
