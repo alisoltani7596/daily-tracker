@@ -45,6 +45,62 @@ body::after{content:'';position:fixed;top:0;left:0;right:0;height:340px;backgrou
 .page>#today-section{order:1;}
 .page>.day-tabs{order:2;}
 .page>.plans-section{order:5;}
+/* ═══ NATIVE APP SHELL ════════════════════════════════════════════════════════ */
+:root{ --tabbar-h:66px; --safe-b:env(safe-area-inset-bottom,0px); }
+.page{ padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 28px); }
+
+/* app bar: header becomes a sticky top bar shown on every screen */
+header{position:sticky;top:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);margin-bottom:14px;}
+
+/* screens: show only the active tab's content (screens, not sections) */
+body[data-tab="today"]   :is(.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="tracker"] #today-section{display:none!important;}
+body[data-tab="coach"]   :is(#today-section,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+/* coach is a focused full-screen chat — hide the app bar behind it */
+body[data-tab="coach"] header{display:none!important;}
+
+/* screen entrance transition on tab change */
+@keyframes screenIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+body.tabswitch .page>:not(header){animation:screenIn .28s var(--ease);}
+body.tabswitch .coach-body,body.tabswitch .coach-commitments{animation:screenIn .28s var(--ease);}
+
+/* bottom tab bar — floating dock */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:150;display:flex;height:calc(var(--tabbar-h) + var(--safe-b));padding-bottom:var(--safe-b);background:color-mix(in srgb, var(--surface) 90%, transparent);backdrop-filter:saturate(150%) blur(18px);-webkit-backdrop-filter:saturate(150%) blur(18px);border-top:1px solid var(--border);}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:transparent;border:none;color:var(--muted);font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.02em;cursor:pointer;position:relative;min-height:var(--tabbar-h);transition:color var(--dur) var(--ease),transform .1s var(--ease);-webkit-tap-highlight-color:transparent;}
+.tab-btn svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur) var(--ease);}
+.tab-btn.active{color:var(--accent);}
+.tab-btn.active svg{transform:translateY(-1px) scale(1.06);}
+.tab-btn.active::before{content:'';position:absolute;top:8px;width:26px;height:3px;border-radius:3px;background:var(--accent);box-shadow:0 0 12px rgba(87,196,138,.6);}
+.tab-btn:active{transform:scale(.93);}
+.tab-badge{position:absolute;top:9px;left:calc(50% + 9px);min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--accent);color:#04120a;font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+/* coach becomes a full screen instead of a slide-in drawer.
+   #coach-drawer (id) beats the original .coach-drawer rule that comes later. */
+.coach-scrim{display:none!important;}
+#coach-drawer{position:fixed;top:0;bottom:calc(var(--tabbar-h) + var(--safe-b));left:0;right:0;width:100%;max-width:100%;height:auto;transform:none!important;border-left:none!important;box-shadow:none!important;display:none;z-index:120;flex-direction:column;}
+body[data-tab="coach"] #coach-drawer{display:flex;}
+.coach-close{display:none;}
+
+/* app-scale touch targets on touch devices */
+@media (pointer:coarse){
+  .task-row,.dl-row,.trow{min-height:44px;}
+  .tchk,button.tchk{width:22px;height:22px;}
+  .task-star,.task-del{padding:8px;font-size:14px;}
+  .day-tab{padding:10px 16px;font-size:13px;}
+  .check-item{padding:14px;}
+}
+
+/* desktop: tab bar as a centered floating segmented control */
+@media (min-width:900px){
+  .tabbar{left:50%;transform:translateX(-50%);right:auto;bottom:20px;width:auto;height:auto;padding:5px;gap:4px;border:1px solid var(--border);border-radius:var(--r-pill);box-shadow:var(--shadow);}
+  .tab-btn{flex:0 0 auto;flex-direction:row;gap:8px;min-height:42px;padding:0 20px;border-radius:var(--r-pill);font-size:13px;}
+  .tab-btn svg{width:18px;height:18px;}
+  .tab-btn.active{background:var(--surface2);}
+  .tab-btn.active::before{display:none;}
+  .tab-badge{position:static;margin-left:2px;}
+  #coach-drawer{top:0;bottom:0;max-width:900px;margin:0 auto;padding-bottom:96px;}
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
 }
@@ -375,6 +431,9 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 .tc-tag.setup{color:var(--purple);background:rgba(139,133,212,.12);border-color:rgba(139,133,212,.25);}
 .tc-body{padding:6px 8px 8px;flex:1;}
 .trow{display:flex;align-items:center;gap:9px;padding:6px 7px;border-radius:8px;text-decoration:none;color:inherit;}
+.trow-disabled{cursor:default;opacity:.5;}
+.trow-disabled .tn{color:var(--sub);}
+.trow-disabled:hover{background:transparent;}
 .trow+.trow{border-top:1px solid rgba(42,63,45,.5);}
 .trow:hover{background:var(--surface2);}
 .trow .tt{font-family:var(--mono);font-size:11px;color:var(--sub);min-width:58px;font-weight:500;}
@@ -433,10 +492,6 @@ button.tchk.done{color:#fff;}
       <div><div class="hstat-val" id="hdr-done">4/17</div><div class="hstat-lbl">done today</div></div>
       <div><div class="hstat-val" id="hdr-pct">24%</div><div class="hstat-lbl">complete</div></div>
     </div>
-    <button id="coach-toggle" class="coach-toggle" onclick="coachOpen()" title="Talk to your coach">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <span>Coach</span>
-    </button>
   </div>
 </header>
 
@@ -2408,6 +2463,43 @@ function togglePlans(){
   </div>
 </aside>
 
+<!-- ─── BOTTOM TAB BAR (native app navigation) ───────────────────────────────── -->
+<nav class="tabbar" id="tabbar" role="tablist" aria-label="Primary">
+  <button class="tab-btn active" data-tab="today" role="tab" onclick="setTab('today')" aria-label="Today">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Today</span>
+  </button>
+  <button class="tab-btn" data-tab="tracker" role="tab" onclick="setTab('tracker')" aria-label="Tracker">
+    <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span>Tracker</span>
+  </button>
+  <button class="tab-btn" data-tab="coach" role="tab" onclick="setTab('coach')" aria-label="Coach">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span>Coach</span>
+  </button>
+</nav>
+
+<script>
+/* ═══ TAB NAVIGATION ══════════════════════════════════════════════════════════ */
+function setTab(name){
+  document.body.setAttribute('data-tab', name);
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===name); });
+  if(name === 'coach' && typeof coachEnterTab === 'function') coachEnterTab();
+  document.body.classList.remove('tabswitch'); void document.body.offsetWidth; document.body.classList.add('tabswitch');
+  setTimeout(function(){ document.body.classList.remove('tabswitch'); }, 320);
+  window.scrollTo(0, 0);
+  try{ localStorage.setItem('active_tab_v1', name); }catch(e){}
+}
+(function(){
+  var start = 'today';
+  try{ var s = localStorage.getItem('active_tab_v1'); if(s==='today'||s==='tracker'||s==='coach') start = s; }catch(e){}
+  document.body.setAttribute('data-tab', start);
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===start); });
+  // if restoring to the coach tab, render its content once all scripts have loaded
+  setTimeout(function(){ if(document.body.getAttribute('data-tab')==='coach' && typeof coachEnterTab==='function') coachEnterTab(); }, 0);
+})();
+</script>
+
 <script>
 /* ═══ AI COACH ═══════════════════════════════════════════════════════════════
  * Set COACH_WORKER_URL to your deployed Cloudflare Worker URL (see deploy notes).
@@ -2425,20 +2517,17 @@ const COACH_DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Sat
 function coachTodayIdx(){ return [6,0,1,2,3,4,5][new Date().getDay()]; }
 
 // ─── open / close ─────────────────────────────────────────────────────────────
-function coachOpen(){
-  document.getElementById('coach-drawer').classList.add('open');
-  document.getElementById('coach-scrim').classList.add('open');
+// Coach is now a first-class tab (not a slide-in drawer). setTab('coach') calls
+// coachEnterTab() to (re)render its content; visibility is driven by body[data-tab].
+function coachEnterTab(){
   document.getElementById('coach-drawer').setAttribute('aria-hidden','false');
   coachHideHistory();
   coachRenderCommitments();
   coachRenderMessages();
-  setTimeout(()=>document.getElementById('coach-input').focus(), 300);
 }
-function coachClose(){
-  document.getElementById('coach-drawer').classList.remove('open');
-  document.getElementById('coach-scrim').classList.remove('open');
-  document.getElementById('coach-drawer').setAttribute('aria-hidden','true');
-}
+// Back-compat shims for any remaining callers.
+function coachOpen(){ setTab('coach'); }
+function coachClose(){ setTab('today'); }
 
 // ─── context injection ────────────────────────────────────────────────────────
 function coachTrackerState(){
@@ -2787,7 +2876,7 @@ function coachViewSession(origIdx){
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
   document.addEventListener('keydown', function(e){
-    if(e.key==='Escape' && document.getElementById('coach-drawer').classList.contains('open')) coachClose();
+    if(e.key==='Escape' && document.body.getAttribute('data-tab')==='coach') setTab('today');
   });
 })();
 </script>
@@ -2827,6 +2916,12 @@ const TODAY_FALLBACK = {
 };
 
 function tEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+// Render a row as a real link, or a visibly-disabled non-link when the url is a
+// stripped placeholder ("#") or missing — so placeholders don't navigate the app.
+function tLink(url, inner){
+  if(!url || url==='#'){ return '<div class="trow trow-disabled" aria-disabled="true" title="No link yet">'+inner+'</div>'; }
+  return '<a class="trow" href="'+tEsc(url)+'" target="_blank" rel="noopener">'+inner+'</a>';
+}
 function tCard(ic,title,tag,body,foot,wide){
   return '<div class="tcard'+(wide?' wide':'')+'"><div class="tcard-head"><div class="tc-ttl"><span class="tc-ic">'+ic+'</span>'+title+'</div><span class="tc-tag">● '+tag+'</span></div><div class="tc-body">'+body+'</div>'+(foot?'<div class="tc-foot">'+foot+'</div>':'')+'</div>';
 }
@@ -2855,13 +2950,13 @@ function renderToday(data){
     var b = (d.days!=null && d.days<=14)?'soon':'ok';
     var lbl = (d.days!=null)?((d.days===0)?'today':(d.days+'d')):'set';
     dl += '<div class="trow dl-row" data-key="'+k+'">'+
-      '<div class="tdate'+(d.added?' dl-date':'')+'"'+(d.added?' onclick="todayDlEditDate(\''+k+'\')" title="Edit date"':'')+'><div class="d">'+tEsc(d.d)+'</div><div class="m">'+tEsc(d.m)+'</div></div>'+
-      '<div class="tn dl-name" onclick="todayDlRename(\''+k+'\')">'+tEsc(d.n)+'</div>'+
+      '<div class="tdate'+(d.added?' dl-date':'')+'"'+(d.added?' data-act="dl-date" title="Edit date"':'')+'><div class="d">'+tEsc(d.d)+'</div><div class="m">'+tEsc(d.m)+'</div></div>'+
+      '<div class="tn dl-name" data-act="dl-rename">'+tEsc(d.n)+'</div>'+
       '<span class="tbadge '+b+'">'+lbl+'</span>'+
-      '<button class="task-del" title="Delete" onclick="todayDlDelete(\''+k+'\')">✕</button>'+
+      '<button class="task-del" title="Delete" data-act="dl-del">✕</button>'+
     '</div>';
   });
-  dl += '<button class="task-add" onclick="todayDlAdd()">＋ Add deadline</button>';
+  dl += '<button class="task-add" data-act="dl-add">＋ Add deadline</button>';
   cards.push(tCard('🎯','Deadlines','editable',dl,'Tap a deadline to rename, its date to change it, ✕ to remove. Edits survive the morning refresh.',false));
 
   // Tasks
@@ -2869,13 +2964,13 @@ function renderToday(data){
   (data.tasks||[]).forEach(function(t){
     var k = tEsc(t.key||t.n);
     tk += '<div class="trow task-row'+(t.done?' done':'')+'" data-key="'+k+'">'+
-      '<button class="tchk'+(t.done?' done':'')+'" title="Toggle done" onclick="todayToggleTask(\''+k+'\')">'+(t.done?'✓':'')+'</button>'+
-      '<div class="tn task-name" onclick="todayEditTask(\''+k+'\')">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</div>'+
-      '<button class="task-star'+(t.hi?' on':'')+'" title="High priority" onclick="todayToggleHi(\''+k+'\')">!</button>'+
-      '<button class="task-del" title="Delete" onclick="todayDeleteTask(\''+k+'\')">✕</button>'+
+      '<button class="tchk'+(t.done?' done':'')+'" title="Toggle done" data-act="task-toggle">'+(t.done?'✓':'')+'</button>'+
+      '<div class="tn task-name" data-act="task-edit">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</div>'+
+      '<button class="task-star'+(t.hi?' on':'')+'" title="High priority" data-act="task-hi">!</button>'+
+      '<button class="task-del" title="Delete" data-act="task-del">✕</button>'+
     '</div>';
   });
-  tk += '<button class="task-add" onclick="todayAddTask()">＋ Add task</button>';
+  tk += '<button class="task-add" data-act="task-add">＋ Add task</button>';
   cards.push(tCard('✅','Tasks','editable',tk,'Tap a task to rename, ✓ to check off, ! for high priority. Your edits are saved and survive the morning refresh.',false));
 
   // Slack — mentions, DMs, things assigned to you
@@ -2883,7 +2978,7 @@ function renderToday(data){
   (data.slack||[]).forEach(function(m){
     var label = (m.kind==='dm')?'DM':(m.kind==='assigned')?'ASK':'@';
     var kc = (m.kind==='assigned')?'soon':'ok';
-    sk += '<a class="trow" href="'+tEsc(m.url||'#')+'" target="_blank" rel="noopener"><span class="tbadge '+kc+'" style="min-width:32px;text-align:center;">'+label+'</span><div class="tn">'+tEsc(m.who||'')+(m.text?'<small>'+tEsc(m.text)+'</small>':'')+'</div><div class="tt" style="min-width:auto;">'+tEsc(m.where||'')+'</div></a>';
+    sk += tLink(m.url, '<span class="tbadge '+kc+'" style="min-width:32px;text-align:center;">'+label+'</span><div class="tn">'+tEsc(m.who||'')+(m.text?'<small>'+tEsc(m.text)+'</small>':'')+'</div><div class="tt" style="min-width:auto;">'+tEsc(m.where||'')+'</div>');
   });
   if(!(data.slack && data.slack.length)) sk = '<div class="tc-empty">All clear — no mentions, DMs, or asks.</div>';
   cards.push(tCard('💬','Slack','Slack',sk,'Mentions, DMs, and messages assigning you things.',true));
@@ -2891,7 +2986,7 @@ function renderToday(data){
   // Recent files
   var fl = '';
   (data.files||[]).forEach(function(f){
-    fl += '<a class="trow" href="'+tEsc(f.url)+'" target="_blank" rel="noopener"><div class="tc-ic-fic">'+(f.ic||'📄')+'</div><div class="tn">'+tEsc(f.n)+'<small>'+tEsc(f.sub||'')+'</small></div><div class="tt" style="min-width:auto;">'+tEsc(f.when||'')+'</div></a>';
+    fl += tLink(f.url, '<div class="tc-ic-fic">'+(f.ic||'📄')+'</div><div class="tn">'+tEsc(f.n)+'<small>'+tEsc(f.sub||'')+'</small></div><div class="tt" style="min-width:auto;">'+tEsc(f.when||'')+'</div>');
   });
   if(!fl) fl = '<div class="tc-empty">No recent files</div>';
   cards.push(tCard('📄','Recent Files','Drive',fl,'Most recently touched items in your Google Drive.',true));
@@ -2900,7 +2995,7 @@ function renderToday(data){
   if(data.inbox && data.inbox.length){
     var ib = '';
     data.inbox.forEach(function(m){
-      ib += '<a class="trow" href="'+tEsc(m.url||'#')+'" target="_blank" rel="noopener"><div class="tn">'+tEsc(m.from)+'<small>'+tEsc(m.subject)+'</small></div><div class="tt" style="min-width:auto;">'+tEsc(m.when||'')+'</div></a>';
+      ib += tLink(m.url, '<div class="tn">'+tEsc(m.from)+'<small>'+tEsc(m.subject)+'</small></div><div class="tt" style="min-width:auto;">'+tEsc(m.when||'')+'</div>');
     });
     cards.push(tCard('✉️','Inbox','Gmail',ib,'Recent unread &amp; important threads.',true));
   } else {
@@ -3075,8 +3170,8 @@ function todayAddTask(){
   // open the new task for editing
   setTimeout(function(){ todayEditTask('a'+(ov.added.length-1)); }, 30);
 }
-function todayEditTask(key){
-  var row = document.querySelector('.task-row[data-key="'+key+'"]');
+function todayEditTask(key, row){
+  row = row || document.querySelector('.task-row[data-key="'+CSS.escape(key)+'"]');
   if(!row) return;
   var nameEl = row.querySelector('.task-name');
   if(!nameEl || row.querySelector('.task-input')) return;
@@ -3117,8 +3212,8 @@ function todayDlAdd(){
   window.__todayOverrides = ov; todaySave(); todayRerender();
   setTimeout(function(){ todayDlRename('da'+(ov.deadlinesAdded.length-1)); }, 30);
 }
-function todayDlRename(key){
-  var row = document.querySelector('.dl-row[data-key="'+key+'"]');
+function todayDlRename(key, row){
+  row = row || document.querySelector('.dl-row[data-key="'+CSS.escape(key)+'"]');
   if(!row) return;
   var nameEl = row.querySelector('.dl-name');
   if(!nameEl || row.querySelector('.task-input')) return;
@@ -3132,12 +3227,12 @@ function todayDlRename(key){
   input.addEventListener('blur',function(){ commit(true); });
   nameEl.replaceWith(input); input.focus(); input.select();
 }
-function todayDlEditDate(key){
+function todayDlEditDate(key, row){
   // added deadlines only: edit the "DD Mon" date inline
   if(!/^da\d+$/.test(key)) return;
   var ov = todayNormalizeOverrides(window.__todayOverrides);
   var a = ov.deadlinesAdded[+key.slice(2)]; if(!a) return;
-  var row = document.querySelector('.dl-row[data-key="'+key+'"]'); if(!row) return;
+  row = row || document.querySelector('.dl-row[data-key="'+CSS.escape(key)+'"]'); if(!row) return;
   var dateEl = row.querySelector('.tdate'); if(!dateEl || row.querySelector('.dl-date-input')) return;
   var input=document.createElement('input'); input.className='task-input dl-date-input'; input.style.width='70px';
   input.value=((a.d&&a.d!=='—')?a.d:'')+(a.m?(' '+a.m):''); input.placeholder='09 Aug';
@@ -3176,6 +3271,30 @@ function todayPushOverrides(base){
     if(r.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}; alert('Today edit token rejected — you will be asked again on the next edit.'); }
   }).catch(function(){ /* offline: local mirror already saved */ });
 }
+
+// ─── delegated actions for editable Today (robust to any key, incl. apostrophes) ─
+(function(){
+  var grid = document.getElementById('today-grid');
+  if(!grid) return;
+  grid.addEventListener('click', function(e){
+    var actEl = e.target.closest('[data-act]');
+    if(!actEl || !grid.contains(actEl)) return;
+    var act = actEl.getAttribute('data-act');
+    var row = actEl.closest('[data-key]');
+    var key = row ? row.getAttribute('data-key') : null;  // raw, browser-decoded — safe for any character
+    switch(act){
+      case 'task-toggle': todayToggleTask(key); break;
+      case 'task-hi':     todayToggleHi(key); break;
+      case 'task-del':    todayDeleteTask(key); break;
+      case 'task-edit':   todayEditTask(key, row); break;
+      case 'task-add':    todayAddTask(); break;
+      case 'dl-rename':   todayDlRename(key, row); break;
+      case 'dl-del':      todayDlDelete(key); break;
+      case 'dl-date':     todayDlEditDate(key, row); break;
+      case 'dl-add':      todayDlAdd(); break;
+    }
+  });
+})();
 </script>
 
 <!-- ─── SERVICE WORKER REGISTRATION ─────────────────────────────────────────── -->
