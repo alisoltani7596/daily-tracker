@@ -12,7 +12,8 @@ ALLOWED_ORIGINS = "https://alisoltani7596.github.io,http://localhost:8731,http:/
 # Secrets are NOT stored here. Set them with `wrangler secret put <NAME>`
 # (or worker/.dev.vars, gitignored, for local `wrangler dev`):
 #   ANTHROPIC_API_KEY   — coach proxy to the Anthropic API
-#   EDIT_TOKEN          — shared token gating POST /today-overrides (Today edits)
+#   EDIT_TOKEN          — shared token gating POST /today-overrides (in-app Today edits)
+#   REFRESH_TOKEN       — shared token gating POST /today-refresh (Cowork scheduled data push)
 
 # ─── KV: personal "Today" dashboard data ──────────────────────────────────────
 # Serves GET /today (CORS-locked to your Pages origin) instead of a public file.

@@ -129,6 +129,39 @@ export default {
       return json({ ok: true }, 200, corsHeaders(allowOrigin));
     }
 
+    // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
+    // Today data into the TODAY_KV `today` key. This is a server-to-server call
+    // (curl, no browser Origin), so it is gated purely by the REFRESH_TOKEN secret
+    // (separate from EDIT_TOKEN) in the x-refresh-token header, NOT by CORS origin.
+    //   Set it with: wrangler secret put REFRESH_TOKEN
+    if (request.method === "POST" && url.pathname === "/today-refresh") {
+      if (!env.TODAY_KV) {
+        return json({ error: "today store not configured" }, 500, corsHeaders(allowOrigin));
+      }
+      if (!env.REFRESH_TOKEN) {
+        return json({ error: "refresh not configured (missing REFRESH_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      }
+      const token = request.headers.get("x-refresh-token") || "";
+      if (!timingSafeEqual(token, env.REFRESH_TOKEN)) {
+        return json({ error: "invalid refresh token" }, 403, corsHeaders(allowOrigin));
+      }
+      let data;
+      try {
+        data = await request.json();
+      } catch {
+        return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin));
+      }
+      if (!isValidTodayShape(data)) {
+        return json({ error: "body is not a valid Today payload (need schedule, deadlines, tasks arrays)" }, 400, corsHeaders(allowOrigin));
+      }
+      const serialized = JSON.stringify(data);
+      if (serialized.length > 200000) {
+        return json({ error: "today payload too large" }, 413, corsHeaders(allowOrigin));
+      }
+      await env.TODAY_KV.put("today", serialized);
+      return json({ ok: true, bytes: serialized.length }, 200, corsHeaders(allowOrigin));
+    }
+
     if (request.method !== "POST") {
       return json({ error: "Method not allowed" }, 405, corsHeaders(allowOrigin));
     }
@@ -207,7 +240,7 @@ function resolveAllowedOrigin(origin, env) {
 function corsHeaders(allowOrigin) {
   const h = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Edit-Token",
+    "Access-Control-Allow-Headers": "Content-Type, X-Edit-Token, X-Refresh-Token",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
@@ -224,6 +257,20 @@ function json(obj, status, extraHeaders) {
 
 function safeParse(str) {
   try { return JSON.parse(str); } catch { return null; }
+}
+
+// Validate the top-level shape of a Today payload before writing it to KV, so a
+// broken scheduled run can't blank the dashboard. Requires the core arrays; the
+// optional ones (files/inbox/slack) must be arrays or null when present.
+function isValidTodayShape(o) {
+  if (!o || typeof o !== "object" || Array.isArray(o)) return false;
+  for (const f of ["schedule", "deadlines", "tasks"]) {
+    if (!Array.isArray(o[f])) return false;
+  }
+  for (const f of ["files", "inbox", "slack"]) {
+    if (o[f] != null && !Array.isArray(o[f])) return false;
+  }
+  return true;
 }
 
 // Constant-time string comparison so the edit token can't be guessed via timing.
