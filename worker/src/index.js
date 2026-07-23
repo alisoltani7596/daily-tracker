@@ -129,6 +129,58 @@ export default {
       return json({ ok: true }, 200, corsHeaders(allowOrigin));
     }
 
+    // POST /task-add — append a single task to the user's Today overrides (the
+    // added-tasks list), exactly as the in-app "Add task" flow does. Same
+    // permission class as in-app edits (EDIT_TOKEN in x-edit-token), so trusted
+    // automation can add tasks via curl. Body: {"n": "task name", "hi": bool?}.
+    // Dedupes by name against generated + override tasks: an existing name is a
+    // no-op that returns {ok:true,dup:true}.
+    if (request.method === "POST" && url.pathname === "/task-add") {
+      if (!env.TODAY_KV) {
+        return json({ error: "today store not configured" }, 500, corsHeaders(allowOrigin));
+      }
+      if (!env.EDIT_TOKEN) {
+        return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      }
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) {
+        return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      }
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin));
+      }
+      const name = (payload && typeof payload.n === "string") ? payload.n.trim() : "";
+      if (!name) {
+        return json({ error: "`n` (non-empty task name) is required" }, 400, corsHeaders(allowOrigin));
+      }
+      const hi = !!(payload && payload.hi);
+
+      const [genStr, ovrStr] = await Promise.all([
+        env.TODAY_KV.get("today"),
+        env.TODAY_KV.get("today_overrides"),
+      ]);
+      const generated = safeParse(genStr) || {};
+      const overrides = safeParse(ovrStr) || {};
+      if (!Array.isArray(overrides.added)) overrides.added = [];
+      if (!overrides.taskState || typeof overrides.taskState !== "object") overrides.taskState = {};
+
+      // Dedupe by name: generated task names, added task names, and renamed text.
+      const existing = new Set();
+      (generated.tasks || []).forEach((t) => { if (t && typeof t.n === "string") existing.add(t.n); });
+      overrides.added.forEach((a) => { if (a && typeof a.n === "string") existing.add(a.n); });
+      Object.values(overrides.taskState).forEach((p) => { if (p && typeof p.text === "string") existing.add(p.text); });
+      if (existing.has(name)) {
+        return json({ ok: true, dup: true }, 200, corsHeaders(allowOrigin));
+      }
+
+      overrides.added.push({ n: name.slice(0, 300), hi, done: false });
+      await env.TODAY_KV.put("today_overrides", JSON.stringify(overrides));
+      return json({ ok: true }, 200, corsHeaders(allowOrigin));
+    }
+
     // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
     // Today data into the TODAY_KV `today` key. This is a server-to-server call
     // (curl, no browser Origin), so it is gated purely by the REFRESH_TOKEN secret
