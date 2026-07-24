@@ -24,3 +24,8 @@ ALLOWED_ORIGINS = "https://alisoltani7596.github.io,http://localhost:8731,http:/
 [[kv_namespaces]]
 binding = "TODAY_KV"
 id = "eb6d2cc50def4921bb6d3916c51993ed"
+
+# ─── Workers AI: text-to-speech for the coach/planner replies + wake briefing ──
+# Powers POST /tts (Deepgram Aura). No id/secret needed — the binding is enough.
+[ai]
+binding = "AI"

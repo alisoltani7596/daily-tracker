@@ -3693,6 +3693,95 @@ var voiceChosen = null, voicesReady = false;
 var TTS_OK = ('speechSynthesis' in window) && (typeof SpeechSynthesisUtterance !== 'undefined');
 function voiceSavedUri(){ try{ return localStorage.getItem(VOICE_URI_KEY) || ''; }catch(e){ return ''; } }
 
+/* ═══ Cloud TTS (Workers AI · Deepgram Aura) with native fallback ══════════════
+ * Preferred path: POST text to the Worker /tts route, get MPEG audio, play it in
+ * an <audio> element. Long text is chunked by sentence groups so the first chunk
+ * plays while the rest synthesize. Any failure (offline, /tts error, blocked
+ * autoplay) hands off to the native speechSynthesis path. Saved-voice values are
+ * "cloud:<speaker>" for an Aura voice or a raw voiceURI for a device voice. */
+var AURA_SPEAKERS = ['angus','asteria','arcas','orion','orpheus','athena','luna','zeus','perseus','helios','hera','stella'];
+var voiceAudio = null, voiceCloudSeq = 0, voicePendingUrls = [];
+function voiceTrackUrl(u){ voicePendingUrls.push(u); return u; }
+function voiceRevokeAll(){ voicePendingUrls.forEach(function(u){ try{ URL.revokeObjectURL(u); }catch(e){} }); voicePendingUrls = []; }
+function voiceStopCloud(){
+  voiceCloudSeq++;                                  // invalidate any in-flight playback
+  if(voiceAudio){ try{ voiceAudio.pause(); }catch(e){} voiceAudio.onended = null; voiceAudio.onerror = null; voiceAudio = null; }
+  voiceRevokeAll();
+}
+// The Aura speaker to use: the saved "cloud:<speaker>" pick, else the model default.
+function voiceCloudSpeaker(){
+  var s = voiceSavedUri();
+  return (s.indexOf('cloud:') === 0) ? s.slice(6) : null;
+}
+// Use cloud when a Worker is configured, we're online, and the user hasn't picked
+// a specific device voice (Auto and "cloud:*" both resolve to cloud).
+function voiceUseCloud(){
+  if(!coachWorkerBase()) return false;
+  try{ if('onLine' in navigator && navigator.onLine === false) return false; }catch(e){}
+  var s = voiceSavedUri();
+  if(s && s.indexOf('cloud:') !== 0) return false;  // an explicit device voice
+  return true;
+}
+// Split text into sentence-group chunks (~maxLen chars) so playback starts fast.
+function voiceChunkText(text, maxLen){
+  maxLen = maxLen || 320;
+  var sentences = String(text).match(/[^.!?]+[.!?]*/g) || [String(text)];
+  var chunks = [], cur = '';
+  sentences.forEach(function(s){
+    s = s.trim(); if(!s) return;
+    if(cur && (cur.length + 1 + s.length) > maxLen){ chunks.push(cur); cur = s; }
+    else { cur = cur ? (cur + ' ' + s) : s; }
+  });
+  if(cur) chunks.push(cur);
+  return chunks.length ? chunks : [String(text)];
+}
+// Fetch + queue-play cloud audio chunk by chunk (prefetching the next while the
+// current plays). Fires opts.onstart on first audio; opts.onend when finished;
+// opts.onfail if the first chunk can't be fetched; opts.onplayfail if autoplay is
+// blocked — the caller maps the last two to the native fallback.
+function voiceSpeakCloud(text, opts){
+  opts = opts || {};
+  var base = coachWorkerBase();
+  if(!base) return false;
+  var speaker = voiceCloudSpeaker();
+  var chunks = voiceChunkText(text, 320);
+  var myseq = ++voiceCloudSeq;
+  var started = false, cache = {};
+  function fetchChunk(i){
+    if(i < 0 || i >= chunks.length) return Promise.resolve(null);
+    if(cache[i]) return cache[i];
+    var payload = { text: chunks[i] };
+    if(speaker) payload.speaker = speaker;
+    cache[i] = fetch(base + '/tts', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) })
+      .then(function(r){ if(!r.ok) throw new Error('tts ' + r.status); return r.blob(); })
+      .then(function(b){ if(!b || !b.size) throw new Error('empty audio'); return voiceTrackUrl(URL.createObjectURL(b)); });
+    return cache[i];
+  }
+  function playFrom(i){
+    if(myseq !== voiceCloudSeq) return;              // superseded / stopped
+    if(i >= chunks.length){ if(opts.onend) opts.onend(); return; }
+    fetchChunk(i).then(function(url){
+      if(myseq !== voiceCloudSeq || !url) return;
+      fetchChunk(i + 1);                             // warm the next chunk
+      var a = new Audio(url);
+      voiceAudio = a;
+      a.onended = function(){ if(myseq === voiceCloudSeq) playFrom(i + 1); };
+      a.onerror = function(){ if(myseq !== voiceCloudSeq) return; if(!started){ if(opts.onplayfail) opts.onplayfail(); } else { playFrom(i + 1); } };
+      var pr = a.play();
+      if(pr && pr.then){
+        pr.then(function(){ if(myseq === voiceCloudSeq && !started){ started = true; if(opts.onstart) opts.onstart(); } })
+          .catch(function(){ if(myseq !== voiceCloudSeq) return; if(!started){ if(opts.onplayfail) opts.onplayfail(); } else { playFrom(i + 1); } });
+      } else if(!started){ started = true; if(opts.onstart) opts.onstart(); }
+    }).catch(function(){
+      if(myseq !== voiceCloudSeq) return;
+      if(i === 0 && !started){ if(opts.onfail) opts.onfail(); }   // first chunk failed → whole-text native fallback
+      else { if(opts.onend) opts.onend(); }                        // mid-stream failure → end gracefully
+    });
+  }
+  playFrom(0);
+  return true;
+}
+
 // Prefer a natural-sounding installed voice (Siri on Safari, Google on Chrome,
 // enhanced/neural elsewhere) over the robotic platform default.
 function voicePick(vs){
@@ -3740,23 +3829,44 @@ function voiceDeviceLangs(){
   langs.forEach(function(l){ if(l){ pre[String(l).toLowerCase().split(/[-_]/)[0]] = 1; } });
   return Object.keys(pre);
 }
-// Populate the picker with voices for the device's language(s) (all voices if
-// none match), plus an "Auto" option, reflecting the current effective voice.
+// Populate the picker: cloud Aura voices (when a Worker is configured) as the
+// primary group, plus a "Device voices" fallback group scoped to the device's
+// language(s). An "Auto" option leads (cloud default, or best device voice).
 function voicePopulateSelect(vs){
   var sel = document.getElementById('coach-voice-select');
   if(!sel) return;
+  vs = vs || [];
+  var saved = voiceSavedUri();
+  var valid = {};                                   // track which values actually exist
+  var html = '<option value="">Auto — best available</option>';
+  valid[''] = 1;
+
+  if(coachWorkerBase()){
+    html += '<optgroup label="Cloud voices · Aura">';
+    AURA_SPEAKERS.forEach(function(sp){
+      var val = 'cloud:' + sp;
+      valid[val] = 1;
+      var name = sp.charAt(0).toUpperCase() + sp.slice(1);
+      html += '<option value="' + val + '"' + (saved===val?' selected':'') + '>' + name + '</option>';
+    });
+    html += '</optgroup>';
+  }
+
   var langs = voiceDeviceLangs();
   var inLang = vs.filter(function(v){ var p = String(v.lang||'').toLowerCase().split(/[-_]/)[0]; return langs.indexOf(p) !== -1; });
-  var pool = inLang.length ? inLang : vs;
-  pool = pool.slice().sort(function(a,b){ return (a.lang===b.lang) ? (a.name>b.name?1:-1) : (a.lang>b.lang?1:-1); });
-  var saved = voiceSavedUri();
-  var html = '<option value="">Auto — best available</option>';
-  pool.forEach(function(v){
-    var label = (v.name||'voice') + ' · ' + (v.lang||'') + (v.localService ? '' : ' (network)');
-    html += '<option value="' + coachEsc(v.voiceURI) + '"' + (saved && saved===v.voiceURI ? ' selected' : '') + '>' + coachEsc(label) + '</option>';
-  });
+  var pool = (inLang.length ? inLang : vs).slice().sort(function(a,b){ return (a.lang===b.lang) ? (a.name>b.name?1:-1) : (a.lang>b.lang?1:-1); });
+  if(pool.length){
+    html += '<optgroup label="Device voices">';
+    pool.forEach(function(v){
+      valid[v.voiceURI] = 1;
+      var label = (v.name||'voice') + ' · ' + (v.lang||'') + (v.localService ? '' : ' (network)');
+      html += '<option value="' + coachEsc(v.voiceURI) + '"' + (saved===v.voiceURI?' selected':'') + '>' + coachEsc(label) + '</option>';
+    });
+    html += '</optgroup>';
+  }
+
   sel.innerHTML = html;
-  sel.value = (saved && pool.some(function(v){ return v.voiceURI===saved; })) ? saved : '';
+  sel.value = valid[saved] ? saved : '';            // fall back to Auto if the saved voice isn't available
 }
 // User changed the dropdown: persist (or clear for Auto), re-resolve, and audition.
 function voiceSelectChange(){
@@ -3769,18 +3879,37 @@ function voiceSelectChange(){
   if(TTS_OK) voiceChosen = voiceResolveChosen(window.speechSynthesis.getVoices());
   voicePreview();
 }
-// Speak one sample sentence with the currently selected (effective) voice.
+// Speak one sample sentence with the currently selected (effective) voice/path.
 function voicePreview(){
-  if(!TTS_OK){ if(typeof voiceMicHint==='function') voiceMicHint('This browser has no speech engine to preview.'); return; }
+  if(!voiceUseCloud() && !TTS_OK){ if(typeof voiceMicHint==='function') voiceMicHint('This browser has no speech engine to preview.'); return; }
   voiceSpeak('Good morning. This is how your briefing and replies will sound.');
 }
 
-function voiceStop(){ if(TTS_OK){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
+// Stop both the cloud audio queue and any native utterance.
+function voiceStop(){
+  voiceStopCloud();
+  if(TTS_OK){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+}
 
+// Router: prefer cloud TTS; fall back to native on failure or blocked autoplay.
 function voiceSpeak(text, opts){
   opts = opts || {};
-  if(!TTS_OK || !text){ if(opts.onerror) opts.onerror(); return false; }
+  if(!text){ if(opts.onerror) opts.onerror(); return false; }
   voiceStop();
+  if(voiceUseCloud()){
+    var handedOff = false;
+    var toNative = function(){ if(handedOff) return; handedOff = true; voiceStopCloud(); voiceSpeakNative(text, opts); };
+    var ok = voiceSpeakCloud(text, { onstart: opts.onstart, onend: opts.onend, onfail: toNative, onplayfail: toNative });
+    if(ok) return true;
+  }
+  return voiceSpeakNative(text, opts);
+}
+
+// Native Web Speech path (offline / device-voice / cloud fallback).
+function voiceSpeakNative(text, opts){
+  opts = opts || {};
+  if(!TTS_OK || !text){ if(opts.onerror) opts.onerror(); return false; }
+  try{ window.speechSynthesis.cancel(); }catch(e){}
   if(!voicesReady) voiceLoadVoices();
   var u = new SpeechSynthesisUtterance(text);
   if(voiceChosen){ u.voice = voiceChosen; u.lang = voiceChosen.lang || 'en-US'; } else { u.lang = 'en-US'; }
@@ -3912,7 +4041,9 @@ function wakeSpeakBriefing(d){
   // Attempt to speak on load; iOS/Safari usually block until a gesture, so if it
   // hasn't begun shortly, reveal the big tap-to-start button.
   voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:function(){ if(!started) showButton('▶ Good ' + tod); } });
-  setTimeout(function(){ if(!started && !ended) showButton('▶ Good ' + tod); }, 900);
+  // Cloud synthesis adds a beat before audio starts; if nothing has begun by then,
+  // assume a gesture is required (iOS/Safari) and reveal the tap-to-start button.
+  setTimeout(function(){ if(!started && !ended) showButton('▶ Good ' + tod); }, 1600);
 }
 
 function wakeDismiss(){
@@ -4002,12 +4133,13 @@ function voiceMaybeSpeakReply(rawText){
 /* ═══ wiring ══════════════════════════════════════════════════════════════════ */
 (function(){
   voiceReflectTTS();
-  // Reveal the voice picker only where a speech engine exists; ensure it's filled
-  // (voices may already be loaded, else voiceschanged will populate it).
-  if(TTS_OK){
+  // Reveal the voice picker where cloud TTS (a Worker) or a device speech engine
+  // exists; fill it now (device voices may load later via voiceschanged).
+  if(TTS_OK || coachWorkerBase()){
     var row = document.getElementById('coach-voice-row');
     if(row) row.hidden = false;
-    voiceLoadVoices();
+    if(TTS_OK) voiceLoadVoices();
+    voicePopulateSelect(TTS_OK ? window.speechSynthesis.getVoices() : []);
   }
   // Typing should silence a spoken reply immediately.
   var input = document.getElementById('coach-input');

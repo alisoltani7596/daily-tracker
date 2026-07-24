@@ -15,6 +15,17 @@ const MAX_TOKENS = 1024;
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 
+// ─── Text-to-speech (Workers AI) ──────────────────────────────────────────────
+// Deepgram Aura is the highest-quality English TTS in the Workers AI catalogue
+// and offers multiple natural speakers; MeloTTS (@cf/myshell-ai/melotts) is the
+// single-voice fallback if Aura is ever withdrawn. Aura streams MPEG audio.
+const TTS_MODEL = "@cf/deepgram/aura-1";
+const TTS_MAX_CHARS = 1200; // per request; the frontend chunks long text by sentence groups
+const AURA_SPEAKERS = new Set([
+  "angus", "asteria", "arcas", "orion", "orpheus", "athena",
+  "luna", "zeus", "perseus", "helios", "hera", "stella",
+]);
+
 // ─── System prompt (verbatim coaching instructions) ──────────────────────────
 const SYSTEM_PROMPT = `# Project Instructions: Personal Coach
 ## Role
@@ -254,6 +265,51 @@ export default {
       }
       await env.TODAY_KV.put("today", serialized);
       return json({ ok: true, bytes: serialized.length }, 200, corsHeaders(allowOrigin));
+    }
+
+    // POST /tts — synthesize speech with Workers AI (Deepgram Aura). CORS-locked
+    // to the same origins as the chat routes. Body: {"text": "...", "speaker"?}.
+    // Returns the audio bytes (audio/mpeg) for playback in an <audio> element.
+    if (request.method === "POST" && url.pathname === "/tts") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.AI) return json({ error: "TTS not configured (missing AI binding)" }, 500, corsHeaders(allowOrigin));
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "Invalid JSON body" }, 400, corsHeaders(allowOrigin));
+      }
+      const text = (body && typeof body.text === "string") ? body.text.trim() : "";
+      if (!text) return json({ error: "`text` (non-empty string) is required" }, 400, corsHeaders(allowOrigin));
+      if (text.length > TTS_MAX_CHARS) {
+        return json({ error: "text too long", max: TTS_MAX_CHARS }, 413, corsHeaders(allowOrigin));
+      }
+      const input = { text };
+      if (body && typeof body.speaker === "string" && AURA_SPEAKERS.has(body.speaker)) {
+        input.speaker = body.speaker;
+      }
+      let out;
+      try {
+        out = await env.AI.run(TTS_MODEL, input, { returnRawResponse: true });
+      } catch (err) {
+        return json({ error: "TTS synthesis failed", detail: String((err && err.message) || err) }, 502, corsHeaders(allowOrigin));
+      }
+      // env.AI.run may honour returnRawResponse (a Response) or return a raw
+      // ReadableStream of audio bytes — handle both so we always stream audio.
+      if (out && typeof out === "object" && "body" in out && "headers" in out && typeof out.headers.get === "function") {
+        if (out.ok === false) {
+          const detail = await out.text().catch(() => "");
+          return json({ error: "TTS upstream error", status: out.status, detail: String(detail).slice(0, 300) }, 502, corsHeaders(allowOrigin));
+        }
+        const h = new Headers(corsHeaders(allowOrigin));
+        h.set("content-type", out.headers.get("content-type") || "audio/mpeg");
+        h.set("cache-control", "no-store");
+        return new Response(out.body, { status: 200, headers: h });
+      }
+      return new Response(out, {
+        status: 200,
+        headers: { "content-type": "audio/mpeg", "cache-control": "no-store", ...corsHeaders(allowOrigin) },
+      });
     }
 
     // POST /plan — planner chat. Mirrors the coach chat exactly (same model,
