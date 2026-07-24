@@ -3784,7 +3784,7 @@ function voiceSpeak(text, opts){
   if(!voicesReady) voiceLoadVoices();
   var u = new SpeechSynthesisUtterance(text);
   if(voiceChosen){ u.voice = voiceChosen; u.lang = voiceChosen.lang || 'en-US'; } else { u.lang = 'en-US'; }
-  u.rate = 1.0; u.pitch = 1.0;
+  u.rate = 0.9; u.pitch = 1.0;   // slightly slower than default — the 1.0 rate reads too fast
   if(opts.onstart) u.onstart = opts.onstart;
   if(opts.onend)   u.onend   = opts.onend;
   u.onerror = function(e){ if(opts.onerror) opts.onerror(e); };
