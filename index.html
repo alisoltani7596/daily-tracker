@@ -428,6 +428,13 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 @keyframes micPulse{0%{box-shadow:0 0 0 0 rgba(212,160,64,.5);}70%{box-shadow:0 0 0 8px rgba(212,160,64,0);}100%{box-shadow:0 0 0 0 rgba(212,160,64,0);}}
 .coach-voice-hint{flex-shrink:0;margin:0 12px;padding:8px 11px;background:rgba(212,160,64,.1);border:1px solid rgba(212,160,64,.3);border-radius:9px;color:var(--amber);font-size:12px;line-height:1.45;}
 .coach-voice-hint[hidden]{display:none;}
+.coach-voice-row{display:flex;align-items:center;gap:7px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;}
+.coach-voice-row[hidden]{display:none;}
+.coach-voice-row .cvr-ic{color:var(--muted);flex-shrink:0;}
+.coach-voice-select{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:var(--sans);font-size:12px;padding:5px 7px;outline:none;cursor:pointer;}
+.coach-voice-select:focus{border-color:var(--accent2);}
+.coach-voice-preview{flex-shrink:0;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--sub);font-family:var(--mono);font-size:11px;padding:5px 9px;cursor:pointer;transition:all .15s;}
+.coach-voice-preview:hover{border-color:var(--accent);color:var(--accent);}
 
 /* ─── Wake briefing overlay ──────────────────────────────────────────────────── */
 .wake-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:32px;
@@ -2538,6 +2545,11 @@ function togglePlans(){
     <button class="coach-seg-btn active" data-mode="coach" role="tab" onclick="coachSetMode('coach')">Coach</button>
     <button class="coach-seg-btn" data-mode="planner" role="tab" onclick="coachSetMode('planner')">Planner</button>
   </div>
+  <div id="coach-voice-row" class="coach-voice-row" hidden>
+    <svg class="cvr-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+    <select id="coach-voice-select" class="coach-voice-select" onchange="voiceSelectChange()" aria-label="Briefing and reply voice"></select>
+    <button class="coach-voice-preview" onclick="voicePreview()" aria-label="Preview voice" title="Preview this voice">▶ Preview</button>
+  </div>
   <div id="coach-commitments" class="coach-commitments"></div>
   <div id="coach-body" class="coach-body"></div>
   <div id="coach-history" class="coach-history" hidden></div>
@@ -3676,8 +3688,10 @@ function todayPushOverrides(base){
 <script>
 /* ═══ shared speech helpers ═══════════════════════════════════════════════════ */
 var VOICE_TTS_KEY = 'voice_tts_v1';           // '1' | '0' — read replies aloud
+var VOICE_URI_KEY = 'voice_uri_v1';           // chosen SpeechSynthesis voiceURI (per device)
 var voiceChosen = null, voicesReady = false;
 var TTS_OK = ('speechSynthesis' in window) && (typeof SpeechSynthesisUtterance !== 'undefined');
+function voiceSavedUri(){ try{ return localStorage.getItem(VOICE_URI_KEY) || ''; }catch(e){ return ''; } }
 
 // Prefer a natural-sounding installed voice (Siri on Safari, Google on Chrome,
 // enhanced/neural elsewhere) over the robotic platform default.
@@ -3696,15 +3710,69 @@ function voicePick(vs){
       || pool.find(function(v){ return !novelty.test(v.name || ''); })
       || pool[0] || null;
 }
+// The effective voice: the user's saved pick when it's installed on this device,
+// otherwise the natural auto-pick. (Installed voices differ per device, so the
+// saved voiceURI may not resolve — we fall back cleanly.)
+function voiceResolveChosen(vs){
+  var saved = voiceSavedUri();
+  if(saved){
+    var m = vs.find(function(v){ return v.voiceURI === saved; });
+    if(m) return m;
+  }
+  return voicePick(vs);
+}
 function voiceLoadVoices(){
   if(!TTS_OK) return;
   var vs = window.speechSynthesis.getVoices();
-  if(vs && vs.length){ voiceChosen = voicePick(vs); voicesReady = true; }
+  if(vs && vs.length){ voiceChosen = voiceResolveChosen(vs); voicesReady = true; voicePopulateSelect(vs); }
 }
 if(TTS_OK){
   voiceLoadVoices();
   // Voices often populate asynchronously on first load.
   try{ window.speechSynthesis.onvoiceschanged = voiceLoadVoices; }catch(e){}
+}
+
+// Device languages (prefixes like "en", "fr") used to scope the picker list.
+function voiceDeviceLangs(){
+  var langs = [];
+  try{ langs = (navigator.languages && navigator.languages.length) ? navigator.languages.slice() : [navigator.language]; }catch(e){}
+  var pre = {};
+  langs.forEach(function(l){ if(l){ pre[String(l).toLowerCase().split(/[-_]/)[0]] = 1; } });
+  return Object.keys(pre);
+}
+// Populate the picker with voices for the device's language(s) (all voices if
+// none match), plus an "Auto" option, reflecting the current effective voice.
+function voicePopulateSelect(vs){
+  var sel = document.getElementById('coach-voice-select');
+  if(!sel) return;
+  var langs = voiceDeviceLangs();
+  var inLang = vs.filter(function(v){ var p = String(v.lang||'').toLowerCase().split(/[-_]/)[0]; return langs.indexOf(p) !== -1; });
+  var pool = inLang.length ? inLang : vs;
+  pool = pool.slice().sort(function(a,b){ return (a.lang===b.lang) ? (a.name>b.name?1:-1) : (a.lang>b.lang?1:-1); });
+  var saved = voiceSavedUri();
+  var html = '<option value="">Auto — best available</option>';
+  pool.forEach(function(v){
+    var label = (v.name||'voice') + ' · ' + (v.lang||'') + (v.localService ? '' : ' (network)');
+    html += '<option value="' + coachEsc(v.voiceURI) + '"' + (saved && saved===v.voiceURI ? ' selected' : '') + '>' + coachEsc(label) + '</option>';
+  });
+  sel.innerHTML = html;
+  sel.value = (saved && pool.some(function(v){ return v.voiceURI===saved; })) ? saved : '';
+}
+// User changed the dropdown: persist (or clear for Auto), re-resolve, and audition.
+function voiceSelectChange(){
+  var sel = document.getElementById('coach-voice-select');
+  if(!sel) return;
+  try{
+    if(sel.value) localStorage.setItem(VOICE_URI_KEY, sel.value);
+    else localStorage.removeItem(VOICE_URI_KEY);
+  }catch(e){}
+  if(TTS_OK) voiceChosen = voiceResolveChosen(window.speechSynthesis.getVoices());
+  voicePreview();
+}
+// Speak one sample sentence with the currently selected (effective) voice.
+function voicePreview(){
+  if(!TTS_OK){ if(typeof voiceMicHint==='function') voiceMicHint('This browser has no speech engine to preview.'); return; }
+  voiceSpeak('Good morning. This is how your briefing and replies will sound.');
 }
 
 function voiceStop(){ if(TTS_OK){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
@@ -3934,6 +4002,13 @@ function voiceMaybeSpeakReply(rawText){
 /* ═══ wiring ══════════════════════════════════════════════════════════════════ */
 (function(){
   voiceReflectTTS();
+  // Reveal the voice picker only where a speech engine exists; ensure it's filled
+  // (voices may already be loaded, else voiceschanged will populate it).
+  if(TTS_OK){
+    var row = document.getElementById('coach-voice-row');
+    if(row) row.hidden = false;
+    voiceLoadVoices();
+  }
   // Typing should silence a spoken reply immediately.
   var input = document.getElementById('coach-input');
   if(input){
