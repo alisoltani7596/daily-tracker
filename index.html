@@ -3700,18 +3700,39 @@ function voiceSavedUri(){ try{ return localStorage.getItem(VOICE_URI_KEY) || '';
  * autoplay) hands off to the native speechSynthesis path. Saved-voice values are
  * "cloud:<speaker>" for an Aura voice or a raw voiceURI for a device voice. */
 var AURA_SPEAKERS = ['angus','asteria','arcas','orion','orpheus','athena','luna','zeus','perseus','helios','hera','stella'];
+var VOICE_DEFAULT_SPEAKER = 'helios';   // out-of-the-box cloud voice when nothing is saved
 var voiceAudio = null, voiceCloudSeq = 0, voicePendingUrls = [];
 function voiceTrackUrl(u){ voicePendingUrls.push(u); return u; }
 function voiceRevokeAll(){ voicePendingUrls.forEach(function(u){ try{ URL.revokeObjectURL(u); }catch(e){} }); voicePendingUrls = []; }
+
+// Recently-synthesized audio, keyed by speaker+text (LRU, in-memory only). The
+// briefing openers and repeated coach phrases re-hit /tts often; caching the
+// blobs skips the round trip. Blobs persist across stop() (only object URLs are
+// revoked); a fresh object URL is minted from the cached blob on each replay.
+var VOICE_CACHE_MAX = 48;
+var voiceAudioCache = new Map();
+function voiceCacheKey(text, speaker){ return (speaker || VOICE_DEFAULT_SPEAKER) + '|' + text; }
+function voiceCacheGet(k){
+  if(!voiceAudioCache.has(k)) return null;
+  var b = voiceAudioCache.get(k);
+  voiceAudioCache.delete(k); voiceAudioCache.set(k, b);   // bump to most-recent
+  return b;
+}
+function voiceCachePut(k, blob){
+  if(voiceAudioCache.has(k)) voiceAudioCache.delete(k);
+  voiceAudioCache.set(k, blob);
+  while(voiceAudioCache.size > VOICE_CACHE_MAX){ voiceAudioCache.delete(voiceAudioCache.keys().next().value); }
+}
 function voiceStopCloud(){
   voiceCloudSeq++;                                  // invalidate any in-flight playback
   if(voiceAudio){ try{ voiceAudio.pause(); }catch(e){} voiceAudio.onended = null; voiceAudio.onerror = null; voiceAudio = null; }
   voiceRevokeAll();
 }
-// The Aura speaker to use: the saved "cloud:<speaker>" pick, else the model default.
+// The Aura speaker to use: the saved "cloud:<speaker>" pick, else the Helios
+// default — so fresh devices (no saved voice) sound like Helios out of the box.
 function voiceCloudSpeaker(){
   var s = voiceSavedUri();
-  return (s.indexOf('cloud:') === 0) ? s.slice(6) : null;
+  return (s.indexOf('cloud:') === 0) ? s.slice(6) : VOICE_DEFAULT_SPEAKER;
 }
 // Use cloud when a Worker is configured, we're online, and the user hasn't picked
 // a specific device voice (Auto and "cloud:*" both resolve to cloud).
@@ -3750,11 +3771,14 @@ function voiceSpeakCloud(text, opts){
   function fetchChunk(i){
     if(i < 0 || i >= chunks.length) return Promise.resolve(null);
     if(cache[i]) return cache[i];
+    var key = voiceCacheKey(chunks[i], speaker);
+    var hit = voiceCacheGet(key);
+    if(hit){ cache[i] = Promise.resolve(voiceTrackUrl(URL.createObjectURL(hit))); return cache[i]; }
     var payload = { text: chunks[i] };
     if(speaker) payload.speaker = speaker;
     cache[i] = fetch(base + '/tts', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) })
       .then(function(r){ if(!r.ok) throw new Error('tts ' + r.status); return r.blob(); })
-      .then(function(b){ if(!b || !b.size) throw new Error('empty audio'); return voiceTrackUrl(URL.createObjectURL(b)); });
+      .then(function(b){ if(!b || !b.size) throw new Error('empty audio'); voiceCachePut(key, b); return voiceTrackUrl(URL.createObjectURL(b)); });
     return cache[i];
   }
   function playFrom(i){
@@ -3838,7 +3862,10 @@ function voicePopulateSelect(vs){
   vs = vs || [];
   var saved = voiceSavedUri();
   var valid = {};                                   // track which values actually exist
-  var html = '<option value="">Auto — best available</option>';
+  var autoLabel = coachWorkerBase()
+    ? 'Auto — Helios (default)'                      // Auto resolves to the Helios cloud voice
+    : 'Auto — best available';                       // no Worker: falls back to the best device voice
+  var html = '<option value="">' + autoLabel + '</option>';
   valid[''] = 1;
 
   if(coachWorkerBase()){
