@@ -57,6 +57,48 @@ Direct, warm, zero fluff. Talk to me like a coach who respects me enough to be h
 ## Live tracker data
 Each message includes a tracker_state block with my real habit/workout/kcal data for today. Use it. If my checklist is at 20% at 9pm, that's fair game to bring up.`;
 
+// ─── Planner system prompt (four-phase task planning) ────────────────────────
+const PLANNER_MAX_TOKENS = 2048; // room for a full decomposition + schedule + plan block
+const PLANNER_SYSTEM_PROMPT = `# Project Instructions: Task Planner
+## Role
+You are a rigorous planning partner. You turn a vague intention into a concrete, dated, scheduled plan the user can actually execute. You are methodical and you do not skip ahead. You run a strict four-phase workflow and never jump to a later phase before the current one is confirmed.
+
+## Context you are given
+Each message includes a context block with the user's current 3-day schedule (day-groups with timed items) and their upcoming deadlines, injected from their live dashboard, plus today's date. Treat this as ground truth for what time is already spoken for and what external due dates exist. The user tells you their weekly capacity in hours — if they haven't, ask.
+
+## Phase 1 — Interview the task
+Interview before you plan. Establish, a few questions at a time (never a wall of questions):
+- The concrete outcome — what "done" looks like, observable.
+- The hard deadline — and whether it is truly fixed.
+- The audience / stakeholders.
+- What already exists (draft, data, code, notes) vs. what starts from zero.
+- Dependencies and blockers (people, approvals, inputs you are waiting on).
+- Weekly hours the user can realistically give this.
+Press on vague answers — "some", "soon", "a bit" are not answers; ask for specifics. When you have enough, restate the task in EXACTLY three sentences (outcome, deadline, constraints) and ask the user to confirm before proceeding. Do not decompose until they confirm.
+
+## Phase 2 — Decompose
+Break the task into verb-first subtasks, each small enough to finish in 1–2 hours (split anything bigger). For each subtask give: a verb-first name, an explicit done-criterion, and a time estimate. Order them by dependency — nothing depends on a later item. Include the easily-forgotten steps: setup, environment, reviews, buffer/revision passes, submission/upload mechanics, sign-offs. Present the list and iterate until the user approves it. Do not schedule until they approve the breakdown.
+
+## Phase 3 — Schedule
+Propose a specific calendar date for each subtask, between today and the deadline, that:
+- Respects the provided 3-day schedule (don't stack work onto already-busy blocks) and the user's stated weekly capacity (don't exceed their hours).
+- Front-loads risk: the hardest, most uncertain, most dependency-laden subtasks go early.
+- Leaves slack before the deadline — never schedule the final subtask on the due date itself.
+If the work does not fit the time available at the stated capacity, say so plainly and specifically (how many hours short, what would have to give) rather than forcing an unrealistic plan. Iterate until the user approves the dates.
+
+## Phase 4 — Emit the machine-readable plan
+ONLY after the user explicitly approves the schedule, end your message with a single machine-readable block, in exactly this format, placed after your prose:
+<plan>
+[{"n":"verb-first subtask — Parent Tag","date":"YYYY-MM-DD","start":"HH:MM","dur_min":90}]
+</plan>
+Rules for the block:
+- One object per subtask. "n" MUST end with " — Parent Tag" naming the overall task, so subtasks can be grouped later.
+- "date" is required (YYYY-MM-DD). "start" (24-hour HH:MM) and "dur_min" (integer minutes) are OPTIONAL — include them only for subtasks that should become a timed calendar event; omit them for ones that are just a dated to-do.
+- Emit the block ONLY in Phase 4 with an approved schedule. Never emit it during phases 1–3, and never emit an empty or placeholder plan.
+
+## Tone
+Concise and concrete. One phase at a time. Ask, confirm, then proceed. Do not pad with encouragement.`;
+
 // ─── Entry point ──────────────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
@@ -214,71 +256,85 @@ export default {
       return json({ ok: true, bytes: serialized.length }, 200, corsHeaders(allowOrigin));
     }
 
+    // POST /plan — planner chat. Mirrors the coach chat exactly (same model,
+    // prompt caching, CORS), differing only in the system prompt and a larger
+    // token budget for a full decomposition + schedule + <plan> block.
+    if (request.method === "POST" && url.pathname === "/plan") {
+      return handleChat(request, env, allowOrigin, PLANNER_SYSTEM_PROMPT, PLANNER_MAX_TOKENS);
+    }
+
     if (request.method !== "POST") {
       return json({ error: "Method not allowed" }, 405, corsHeaders(allowOrigin));
     }
 
-    // Reject cross-origin callers not on the allowlist.
-    if (!allowOrigin) {
-      return json({ error: "Origin not allowed" }, 403, {});
-    }
-
-    if (!env.ANTHROPIC_API_KEY) {
-      return json({ error: "Server not configured (missing API key)" }, 500, corsHeaders(allowOrigin));
-    }
-
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return json({ error: "Invalid JSON body" }, 400, corsHeaders(allowOrigin));
-    }
-
-    const messages = body.messages;
-    const context = typeof body.context === "string" ? body.context : "";
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return json({ error: "`messages` (non-empty array) is required" }, 400, corsHeaders(allowOrigin));
-    }
-
-    // Static coaching prompt first (cacheable), volatile per-message context after.
-    const system = [
-      { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
-    ];
-    if (context) system.push({ type: "text", text: context });
-
-    let apiResp;
-    try {
-      apiResp = await fetch(ANTHROPIC_URL, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": ANTHROPIC_VERSION,
-        },
-        body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system, messages }),
-      });
-    } catch (err) {
-      return json({ error: "Could not reach the coaching service" }, 502, corsHeaders(allowOrigin));
-    }
-
-    if (!apiResp.ok) {
-      const detail = await apiResp.text().catch(() => "");
-      return json({ error: "Upstream API error", status: apiResp.status, detail }, 502, corsHeaders(allowOrigin));
-    }
-
-    const data = await apiResp.json();
-    const text = (data.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("");
-
-    return json(
-      { text, stop_reason: data.stop_reason, usage: data.usage },
-      200,
-      corsHeaders(allowOrigin)
-    );
+    // Default POST route: the coach chat.
+    return handleChat(request, env, allowOrigin, SYSTEM_PROMPT, MAX_TOKENS);
   },
 };
+
+// ─── Shared chat proxy (coach + planner) ───────────────────────────────────────
+// Proxies a { messages, context } chat turn to the Anthropic Messages API with a
+// given static system prompt (cached) followed by the volatile per-message context.
+async function handleChat(request, env, allowOrigin, systemPrompt, maxTokens) {
+  // Reject cross-origin callers not on the allowlist.
+  if (!allowOrigin) {
+    return json({ error: "Origin not allowed" }, 403, {});
+  }
+  if (!env.ANTHROPIC_API_KEY) {
+    return json({ error: "Server not configured (missing API key)" }, 500, corsHeaders(allowOrigin));
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, 400, corsHeaders(allowOrigin));
+  }
+
+  const messages = body.messages;
+  const context = typeof body.context === "string" ? body.context : "";
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return json({ error: "`messages` (non-empty array) is required" }, 400, corsHeaders(allowOrigin));
+  }
+
+  // Static prompt first (cacheable), volatile per-message context after.
+  const system = [
+    { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+  ];
+  if (context) system.push({ type: "text", text: context });
+
+  let apiResp;
+  try {
+    apiResp = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": ANTHROPIC_VERSION,
+      },
+      body: JSON.stringify({ model: MODEL, max_tokens: maxTokens || MAX_TOKENS, system, messages }),
+    });
+  } catch (err) {
+    return json({ error: "Could not reach the AI service" }, 502, corsHeaders(allowOrigin));
+  }
+
+  if (!apiResp.ok) {
+    const detail = await apiResp.text().catch(() => "");
+    return json({ error: "Upstream API error", status: apiResp.status, detail }, 502, corsHeaders(allowOrigin));
+  }
+
+  const data = await apiResp.json();
+  const text = (data.content || [])
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+
+  return json(
+    { text, stop_reason: data.stop_reason, usage: data.usage },
+    200,
+    corsHeaders(allowOrigin)
+  );
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function resolveAllowedOrigin(origin, env) {

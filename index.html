@@ -391,6 +391,31 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 .coach-send:hover{background:var(--accent);}
 .coach-send:disabled{opacity:.5;cursor:not-allowed;}
 
+/* Coach | Planner segmented control */
+.coach-seg{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;}
+.coach-seg-btn{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--sub);font-family:var(--mono);font-size:12px;letter-spacing:.03em;padding:7px 0;cursor:pointer;transition:all .15s;}
+.coach-seg-btn.active{background:var(--accent2);border-color:var(--accent);color:#fff;}
+.coach-seg-btn:hover:not(.active){border-color:var(--sub);color:var(--white);}
+
+/* Planner plan-approval card (rendered inline after a plan-bearing reply) */
+.plan-card{align-self:stretch;background:var(--bg);border:1px solid var(--accent2);border-radius:14px;overflow:hidden;}
+.plan-card-head{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);padding:9px 13px;border-bottom:1px solid var(--border);background:rgba(76,175,125,.06);}
+.plan-row{display:flex;align-items:center;gap:8px;padding:8px 13px;border-bottom:1px solid var(--border);}
+.plan-row-main{flex:1;min-width:0;}
+.plan-n{font-size:13px;color:var(--white);line-height:1.3;}
+.plan-meta{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:2px;}
+.plan-badge{font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.plan-badge.ok{color:var(--accent);background:rgba(76,175,125,.12);border:1px solid rgba(76,175,125,.25);}
+.plan-badge.dup{color:var(--sub);background:var(--surface2);border:1px solid var(--border);}
+.plan-badge.muted{color:var(--muted);background:transparent;border:1px solid var(--border);}
+.plan-badge.warn{color:var(--amber);background:rgba(212,160,64,.12);border:1px solid rgba(212,160,64,.25);}
+.plan-cal{font-family:var(--mono);font-size:10.5px;color:var(--accent);text-decoration:none;border:1px solid rgba(76,175,125,.3);border-radius:7px;padding:4px 8px;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.plan-cal:hover{background:rgba(76,175,125,.12);}
+.plan-confirm-btn{width:100%;background:var(--accent2);border:none;color:#fff;font-family:var(--sans);font-size:13px;font-weight:600;padding:11px;cursor:pointer;transition:background .15s;}
+.plan-confirm-btn:hover{background:var(--accent);}
+.plan-confirm-btn:disabled{opacity:.6;cursor:default;}
+.plan-confirmed{padding:10px 13px;font-family:var(--mono);font-size:11px;color:var(--accent);text-align:center;line-height:1.5;}
+
 /* day panel: 3-col on desktop → stack on tablet/phone, habits+workout before links */
 @media (max-width:900px){
   .day-panel.visible{grid-template-columns:1fr;}
@@ -2448,10 +2473,14 @@ function togglePlans(){
       <div class="coach-head-sub">accountability · ICF</div>
     </div>
     <div class="coach-head-actions">
-      <button class="coach-newbtn" onclick="coachShowHistory()" title="Past sessions">History</button>
+      <button id="coach-hist-btn" class="coach-newbtn" onclick="coachShowHistory()" title="Past sessions">History</button>
       <button class="coach-newbtn" onclick="coachNewSession()" title="Archive this conversation and start fresh">New session</button>
       <button class="coach-close" onclick="coachClose()" aria-label="Close">×</button>
     </div>
+  </div>
+  <div class="coach-seg" id="coach-seg" role="tablist" aria-label="Coach or Planner">
+    <button class="coach-seg-btn active" data-mode="coach" role="tab" onclick="coachSetMode('coach')">Coach</button>
+    <button class="coach-seg-btn" data-mode="planner" role="tab" onclick="coachSetMode('planner')">Planner</button>
   </div>
   <div id="coach-commitments" class="coach-commitments"></div>
   <div id="coach-body" class="coach-body"></div>
@@ -2512,6 +2541,21 @@ const COACH_CHAT_KEY    = 'coach_chat_v1';       // { messages: [{role, content}
 const COACH_ARCHIVE_KEY = 'coach_archive_v1';    // [{ date, summary, commitments:[...] }]
 const COACH_COMMIT_KEY   = 'coach_commitments_v1'; // [{ id, what, by, measure, status }]
 
+// ─── Planner (second mode inside the Coach tab) ────────────────────────────────
+// Separate conversation state from the coach; own localStorage keys.
+const PLANNER_CHAT_KEY  = 'planner_chat_v1';     // { messages:[{role,content, plan?, confirmed?, results?}] }
+const PLANNER_PLANS_KEY = 'planner_plans_v1';    // { [parentTag]: { created, subtasks:[...] } } — for future progress checks
+const COACH_MODE_KEY    = 'coach_mode_v1';       // 'coach' | 'planner'
+// Subtasks whose date lands inside this many days from today get pushed to the
+// Today list via /task-add; matches the 3-day schedule the planner is given.
+const PLANNER_TASK_WINDOW_DAYS = 3;
+let coachMode = (function(){ try{ return localStorage.getItem(COACH_MODE_KEY)==='planner' ? 'planner' : 'coach'; }catch(e){ return 'coach'; } })();
+
+function coachWorkerBase(){
+  return (typeof COACH_WORKER_URL==='string' && COACH_WORKER_URL.indexOf('YOUR-SUBDOMAIN')===-1)
+    ? COACH_WORKER_URL.replace(/\/+$/,'') : null;
+}
+
 const COACH_DAY_TYPES = ['Lift A','HIIT','Lift B','HIIT','Lift C','HIIT','Rest'];
 const COACH_DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
@@ -2524,11 +2568,34 @@ function coachEnterTab(){
   document.getElementById('coach-drawer').setAttribute('aria-hidden','false');
   coachHideHistory();
   coachRenderCommitments();
-  coachRenderMessages();
+  coachSetMode(coachMode); // applies mode chrome + renders the active conversation
 }
 // Back-compat shims for any remaining callers.
 function coachOpen(){ setTab('coach'); }
 function coachClose(){ setTab('today'); }
+
+// ─── mode switch: Coach | Planner ──────────────────────────────────────────────
+function coachSetMode(mode){
+  coachMode = (mode==='planner') ? 'planner' : 'coach';
+  try{ localStorage.setItem(COACH_MODE_KEY, coachMode); }catch(e){}
+  var isPlanner = coachMode==='planner';
+  document.querySelectorAll('.coach-seg-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-mode')===coachMode);
+  });
+  // Commitments panel + session history are coach-only chrome.
+  var commit = document.getElementById('coach-commitments');
+  if(commit) commit.style.display = isPlanner ? 'none' : '';
+  var histBtn = document.getElementById('coach-hist-btn');
+  if(histBtn) histBtn.style.display = isPlanner ? 'none' : '';
+  var ttl = document.querySelector('.coach-head-title');
+  if(ttl) ttl.textContent = isPlanner ? 'Planner' : 'Coach';
+  var sub = document.querySelector('.coach-head-sub');
+  if(sub) sub.textContent = isPlanner ? 'interview · decompose · schedule' : 'accountability · ICF';
+  var input = document.getElementById('coach-input');
+  if(input) input.placeholder = isPlanner ? 'Describe a task to plan…  (Enter to send)' : 'Talk to your coach…  (Enter to send)';
+  coachHideHistory();
+  coachRenderMessages();
+}
 
 // ─── context injection ────────────────────────────────────────────────────────
 function coachTrackerState(){
@@ -2689,6 +2756,7 @@ function coachEsc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':
 
 function coachRenderMessages(){
   const body = document.getElementById('coach-body');
+  if(coachMode==='planner'){ return plannerRenderMessages(body); }
   const chat = lsGet(COACH_CHAT_KEY, {messages:[]});
   if(!chat.messages.length){
     body.innerHTML = '<div class="coach-empty"><strong>Your coach is listening.</strong>'+
@@ -2699,6 +2767,23 @@ function coachRenderMessages(){
   body.innerHTML = chat.messages.map(m=>
     '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>'
   ).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+function plannerRenderMessages(body){
+  const chat = lsGet(PLANNER_CHAT_KEY, {messages:[]});
+  if(!chat.messages.length){
+    body.innerHTML = '<div class="coach-empty"><strong>Plan a task.</strong>'+
+      'Tell me what you need to get done and by when. I’ll interview it, break it into '+
+      'subtasks, and schedule them around your calendar — then add them to Today and give '+
+      'you one-tap calendar links.</div>';
+    return;
+  }
+  body.innerHTML = chat.messages.map(function(m, i){
+    var html = '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>';
+    if(m.role==='assistant' && m.plan && m.plan.length){ html += plannerPlanCardHtml(m, i); }
+    return html;
+  }).join('');
   body.scrollTop = body.scrollHeight;
 }
 
@@ -2738,14 +2823,17 @@ async function coachSend(){
   const text = input.value.trim();
   if(!text) return;
 
-  if(COACH_WORKER_URL.includes('YOUR-SUBDOMAIN')){
-    coachShowError('Coach not configured yet — set COACH_WORKER_URL to your deployed Worker URL.', null);
+  const base = coachWorkerBase();
+  const isPlanner = coachMode==='planner';
+  if(!base){
+    coachShowError((isPlanner?'Planner':'Coach')+' not configured yet — set COACH_WORKER_URL to your deployed Worker URL.', null);
     return;
   }
 
-  const chat = lsGet(COACH_CHAT_KEY, {messages:[]});
+  const chatKey = isPlanner ? PLANNER_CHAT_KEY : COACH_CHAT_KEY;
+  const chat = lsGet(chatKey, {messages:[]});
   chat.messages.push({role:'user', content:text});
-  lsSet(COACH_CHAT_KEY, chat);
+  lsSet(chatKey, chat);
   input.value = '';
   input.style.height = 'auto';
   coachRenderMessages();
@@ -2755,27 +2843,38 @@ async function coachSend(){
   coachShowTyping();
 
   try{
-    const resp = await fetch(COACH_WORKER_URL, {
+    const endpoint = isPlanner ? base + '/plan' : base;
+    const context  = isPlanner ? plannerBuildContext() : coachBuildContext();
+    // Send only role/content — strip any local-only plan metadata from history.
+    const outMsgs = chat.messages.map(m=>({role:m.role, content:m.content}));
+    const resp = await fetch(endpoint, {
       method:'POST',
       headers:{'content-type':'application/json'},
-      body: JSON.stringify({ messages: chat.messages, context: coachBuildContext() })
+      body: JSON.stringify({ messages: outMsgs, context })
     });
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const data = await resp.json();
     coachHideTyping();
 
-    const parsed = coachParseCommitments(data.text || '');
-    if(parsed.commitments.length) coachAddCommitments(parsed.commitments);
-
-    const chat2 = lsGet(COACH_CHAT_KEY, {messages:[]});
-    chat2.messages.push({role:'assistant', content: parsed.cleanText || '(no reply)'});
-    lsSet(COACH_CHAT_KEY, chat2);
-
-    coachRenderMessages();
-    coachRenderCommitments();
+    const chat2 = lsGet(chatKey, {messages:[]});
+    if(isPlanner){
+      const parsed = plannerParsePlan(data.text || '');
+      const asst = {role:'assistant', content: parsed.cleanText || '(no reply)'};
+      if(parsed.plan && parsed.plan.length) asst.plan = parsed.plan;
+      chat2.messages.push(asst);
+      lsSet(chatKey, chat2);
+      coachRenderMessages();
+    } else {
+      const parsed = coachParseCommitments(data.text || '');
+      if(parsed.commitments.length) coachAddCommitments(parsed.commitments);
+      chat2.messages.push({role:'assistant', content: parsed.cleanText || '(no reply)'});
+      lsSet(chatKey, chat2);
+      coachRenderMessages();
+      coachRenderCommitments();
+    }
   }catch(e){
     coachHideTyping();
-    coachShowError('Couldn’t reach your coach. Check your connection and the Worker URL.', coachSend);
+    coachShowError('Couldn’t reach your '+(isPlanner?'planner':'coach')+'. Check your connection and the Worker URL.', coachSend);
   }finally{
     coachBusy = false;
     document.getElementById('coach-send').disabled = false;
@@ -2784,6 +2883,12 @@ async function coachSend(){
 
 // ─── new session ──────────────────────────────────────────────────────────────
 function coachNewSession(){
+  // Planner has no archive — "New session" just clears the current plan thread.
+  if(coachMode==='planner'){
+    lsSet(PLANNER_CHAT_KEY, {messages:[]});
+    coachRenderMessages();
+    return;
+  }
   const chat = lsGet(COACH_CHAT_KEY, {messages:[]});
   if(chat.messages.length){
     const firstUser = (chat.messages.find(m=>m.role==='user') || {}).content || '(no message)';
@@ -2864,6 +2969,197 @@ function coachViewSession(origIdx){
   html += '</div>';
   el.innerHTML = html;
   el.scrollTop = 0;
+}
+
+/* ═══ PLANNER ═════════════════════════════════════════════════════════════════
+ * Shares the chat components with the coach but talks to the Worker /plan route.
+ * The planner interviews → decomposes → schedules, then emits a <plan> block. We
+ * hide the raw tags, render an approval card, and on confirm push near-term
+ * subtasks to Today (/task-add) and hand back Google Calendar links for the
+ * time-blocked ones. The full plan is stored under its parent tag for later.
+ */
+// Local calendar date (YYYY-MM-DD) — kept consistent with plannerDaysFromToday's
+// local-midnight math so the planner's "today" and the 3-day task window agree.
+function plannerLocalDate(){
+  var d = new Date();
+  function pad(x){ return (x<10?'0':'')+x; }
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+// Inject today's date + the live 3-day schedule and deadlines as ground truth.
+function plannerBuildContext(){
+  var s = 'today_date: ' + plannerLocalDate() + '\n';
+  try{
+    var td = window.__todayData;
+    if(td){
+      if(td.schedule && td.schedule.length){
+        s += 'current_schedule ('+td.schedule.length+' day-group'+(td.schedule.length===1?'':'s')+', time already spoken for):\n';
+        td.schedule.forEach(function(day){
+          s += '  '+day.day+':\n';
+          (day.items||[]).forEach(function(it){ s += '    - '+it.t+' — '+it.n+'\n'; });
+        });
+      } else {
+        s += 'current_schedule: (none provided)\n';
+      }
+      if(td.deadlines && td.deadlines.length){
+        s += 'deadlines:\n';
+        td.deadlines.forEach(function(d){ s += '  - '+d.n+' ('+d.d+' '+d.m+', in '+d.days+' days)\n'; });
+      }
+    }
+  }catch(e){ /* Today data not loaded yet — planner still works, just without calendar context */ }
+  return s;
+}
+
+// Pull the {n,date,start?,dur_min?} array out of a <plan>…</plan> block; return
+// the cleaned prose (tags hidden) alongside it.
+function plannerParsePlan(text){
+  var re = /<plan>\s*([\s\S]*?)\s*<\/plan>/i;
+  var m = String(text||'').match(re);
+  var plan = null;
+  if(m){
+    try{
+      var arr = JSON.parse(m[1]);
+      if(Array.isArray(arr)){
+        plan = arr.filter(function(x){ return x && typeof x.n==='string' && typeof x.date==='string' && /^\d{4}-\d{2}-\d{2}$/.test(x.date); })
+                  .map(function(x){ return {
+                    n: String(x.n).slice(0,300),
+                    date: x.date,
+                    start: (typeof x.start==='string' && /^\d{1,2}:\d{2}$/.test(x.start)) ? x.start : null,
+                    dur_min: (typeof x.dur_min==='number' && x.dur_min>0) ? Math.round(x.dur_min) : null
+                  }; });
+        if(!plan.length) plan = null;
+      }
+    }catch(e){ /* malformed block — ignore, still hide the tags */ }
+  }
+  return { plan: plan, cleanText: String(text||'').replace(re,'').trim() };
+}
+
+// Subtasks are named "verb-first subtask — Parent Tag"; recover the parent tag.
+function plannerParentTag(n){
+  var s = String(n||'');
+  var i = s.lastIndexOf(' — ');
+  var tag = (i>=0 ? s.slice(i+3) : '').trim();
+  return tag || 'Unfiled';
+}
+
+// Persist the full plan under its parent tag(s) for a future "progress" check.
+function plannerStorePlan(plan){
+  var store = lsGet(PLANNER_PLANS_KEY, {});
+  if(!store || typeof store!=='object') store = {};
+  var now = new Date().toISOString();
+  plan.forEach(function(sub){
+    var tag = plannerParentTag(sub.n);
+    if(!store[tag] || typeof store[tag]!=='object') store[tag] = { created: now, subtasks: [] };
+    if(!Array.isArray(store[tag].subtasks)) store[tag].subtasks = [];
+    store[tag].subtasks.push({ n: sub.n, date: sub.date, start: sub.start||null, dur_min: sub.dur_min||null, done:false });
+  });
+  lsSet(PLANNER_PLANS_KEY, store);
+}
+
+// Whole days from local midnight-today to the subtask date (negative = past).
+function plannerDaysFromToday(dateStr){
+  var p = String(dateStr).split('-').map(Number);
+  var d = new Date(p[0], p[1]-1, p[2]); d.setHours(0,0,0,0);
+  var t = new Date(); t.setHours(0,0,0,0);
+  return Math.round((d - t) / 86400000);
+}
+
+// A prefilled Google Calendar event link (floating local time, no timezone) for a
+// time-blocked subtask. dur_min defaults to 60 when only a start time is given.
+function plannerCalUrl(sub){
+  function pad(x){ return (x<10?'0':'')+x; }
+  var p = String(sub.date).split('-').map(Number);
+  var tm = String(sub.start||'09:00').split(':').map(Number);
+  var start = new Date(p[0], p[1]-1, p[2], tm[0]||0, tm[1]||0, 0, 0);
+  var end = new Date(start.getTime() + (sub.dur_min || 60)*60000);
+  function fmt(d){ return ''+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'T'+pad(d.getHours())+pad(d.getMinutes())+'00'; }
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    + '&text=' + encodeURIComponent(sub.n)
+    + '&dates=' + fmt(start) + '/' + fmt(end);
+}
+
+// Approval-card markup for a plan-bearing assistant message (idx = its position
+// in the planner chat, used by the Confirm button).
+function plannerPlanCardHtml(msg, idx){
+  var plan = msg.plan || [];
+  var confirmed = !!msg.confirmed;
+  var results = msg.results || [];
+  var rows = plan.map(function(sub, i){
+    var res = results[i] || {};
+    var meta = coachEsc(sub.date)
+      + (sub.start ? ' · ' + coachEsc(sub.start) + (sub.dur_min ? ' ('+sub.dur_min+'m)' : '') : '');
+    var badge = '';
+    if(confirmed){
+      var ts = res.taskStatus;
+      if(ts==='added')             badge = '<span class="plan-badge ok">added</span>';
+      else if(ts==='dup')          badge = '<span class="plan-badge dup">already listed</span>';
+      else if(ts==='out-of-window')badge = '<span class="plan-badge muted">not in 3-day window</span>';
+      else if(ts==='no-token' || ts==='token-rejected') badge = '<span class="plan-badge warn">no token</span>';
+      else if(ts==='error')        badge = '<span class="plan-badge warn">add failed</span>';
+    }
+    var cal = (confirmed && res.cal)
+      ? '<a class="plan-cal" href="'+coachEsc(res.cal)+'" target="_blank" rel="noopener">＋ Calendar</a>' : '';
+    return '<div class="plan-row"><div class="plan-row-main">'+
+      '<div class="plan-n">'+coachEsc(sub.n)+'</div>'+
+      '<div class="plan-meta">'+meta+'</div></div>'+badge+cal+'</div>';
+  }).join('');
+  var foot = confirmed
+    ? '<div class="plan-confirmed">✓ Plan confirmed — near-term tasks synced to Today, calendar links ready above.</div>'
+    : '<button class="plan-confirm-btn" onclick="plannerConfirm('+idx+')">Confirm plan → add tasks &amp; calendar</button>';
+  return '<div class="plan-card"><div class="plan-card-head">Proposed plan · '+plan.length+' subtask'+(plan.length===1?'':'s')+'</div>'+rows+foot+'</div>';
+}
+
+// On confirm: store the plan, POST each near-term subtask to /task-add (marking
+// added/dup), and build a Google Calendar link for each time-blocked subtask.
+let plannerConfirmBusy = false;
+async function plannerConfirm(idx){
+  if(plannerConfirmBusy) return;
+  var chat = lsGet(PLANNER_CHAT_KEY, {messages:[]});
+  var msg = chat.messages[idx];
+  if(!msg || !msg.plan || !msg.plan.length || msg.confirmed) return;
+
+  plannerConfirmBusy = true;
+  var btn = document.querySelector('.plan-confirm-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Adding…'; }
+
+  plannerStorePlan(msg.plan);
+
+  var base = coachWorkerBase();
+  var token = base ? todayEditToken() : null;
+  var results = [];
+  for(var i=0;i<msg.plan.length;i++){
+    var sub = msg.plan[i];
+    var res = { taskStatus:'skipped', cal: sub.start ? plannerCalUrl(sub) : null };
+    var dd = plannerDaysFromToday(sub.date);
+    if(dd >= 0 && dd < PLANNER_TASK_WINDOW_DAYS){
+      if(base && token){
+        try{
+          var resp = await fetch(base + '/task-add', {
+            method:'POST',
+            headers:{'content-type':'application/json','x-edit-token':token},
+            body: JSON.stringify({ n: sub.n })
+          });
+          if(resp.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){} res.taskStatus='token-rejected'; }
+          else if(resp.ok){ var jd = await resp.json().catch(function(){return {};}); res.taskStatus = jd && jd.dup ? 'dup' : 'added'; }
+          else res.taskStatus='error';
+        }catch(e){ res.taskStatus='error'; }
+      } else {
+        res.taskStatus = 'no-token';
+      }
+    } else {
+      res.taskStatus = 'out-of-window';
+    }
+    results.push(res);
+  }
+
+  // Re-read the thread (todayEditToken's prompt may have taken a while) and commit.
+  chat = lsGet(PLANNER_CHAT_KEY, {messages:[]});
+  if(chat.messages[idx]){
+    chat.messages[idx].confirmed = true;
+    chat.messages[idx].results = results;
+    lsSet(PLANNER_CHAT_KEY, chat);
+  }
+  plannerConfirmBusy = false;
+  coachRenderMessages();
 }
 
 // ─── input UX: Enter to send, Shift+Enter newline, auto-grow ──────────────────
