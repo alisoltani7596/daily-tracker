@@ -469,7 +469,8 @@ button.tchk.done{color:#fff;}
 .task-add:hover{border-color:var(--accent2);color:var(--accent);}
 .task-input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--accent2);border-radius:6px;color:var(--white);font-family:var(--sans);font-size:12.5px;padding:4px 7px;outline:none;}
 @media(pointer:coarse){.task-star,.task-del{opacity:.7;}}
-.tc-ic-fic{width:26px;height:26px;border-radius:7px;background:var(--surface2);display:grid;place-items:center;font-size:13px;flex:none;}
+.sched-toggle{width:100%;text-align:center;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;padding:8px 9px;margin-top:4px;cursor:pointer;border-top:1px solid rgba(42,63,45,.5);transition:color .15s;}
+.sched-toggle:hover{color:var(--accent);}
 .tc-empty{padding:14px 10px;text-align:center;font-size:11.5px;color:var(--sub);line-height:1.5;}
 .tc-empty .big{font-size:22px;margin-bottom:4px;}
 .tc-foot{font-size:10px;color:var(--sub);padding:7px 11px 3px;line-height:1.45;}
@@ -2905,12 +2906,6 @@ const TODAY_FALLBACK = {
     { n:"Start task-aware anonymization framework", done:false }
   ],
   tasksUrl: "#",
-  files: [
-    { ic:"📊", n:"ArchipelagoAlliance_Presentation_2026-07-09", sub:"Slides · Melissa Cote", when:"Jul 9", url:"#" },
-    { ic:"📊", n:"archipelago_plan", sub:"Slides · you", when:"Jul 9", url:"#" },
-    { ic:"🗜️", n:"fishnet.zip", sub:"Archive · 5.0 GB", when:"Jul 9", url:"#" },
-    { ic:"📁", n:"DiscardActionDataset", sub:"Folder · code & checkpoints", when:"2025", url:"#" }
-  ],
   inbox: null,
   slack: null
 };
@@ -2931,9 +2926,13 @@ function renderToday(data){
   if(!grid) return;
   var cards = [];
 
-  // Schedule
+  // Schedule — today-first, with an expand control when more day-groups exist.
+  // Default view shows only the first (today's) group; the choice is persisted.
+  var days = data.schedule || [];
+  var schedExpanded = todayScheduleExpanded();
+  var visibleDays = schedExpanded ? days : days.slice(0, 1);
   var sc = '';
-  (data.schedule||[]).forEach(function(day){
+  visibleDays.forEach(function(day){
     sc += '<div style="padding:2px 4px;"><div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--sub);margin:5px 3px 4px;">'+tEsc(day.day)+'</div>';
     (day.items||[]).forEach(function(it){
       sc += '<div class="trow'+(it.next?' next':'')+'"><div class="tt">'+tEsc(it.t)+'</div><div class="tn">'+tEsc(it.n)+'</div>'+(it.next?'<span class="tpill">Next</span>':'')+'</div>';
@@ -2941,6 +2940,11 @@ function renderToday(data){
     sc += '</div>';
   });
   if(!sc) sc = '<div class="tc-empty">No upcoming events</div>';
+  // Only offer the toggle when there is more than one day-group to reveal.
+  if(days.length > 1){
+    sc += '<button class="sched-toggle" data-act="sched-toggle">'+
+      (schedExpanded ? '▴ Show today only' : '▾ '+days.length+' days')+'</button>';
+  }
   cards.push(tCard('📅','Schedule','Calendar',sc,'Your routine plus any one-off meetings from Google Calendar.',true));
 
   // Deadlines (editable, same overrides treatment as tasks)
@@ -2982,14 +2986,6 @@ function renderToday(data){
   });
   if(!(data.slack && data.slack.length)) sk = '<div class="tc-empty">All clear — no mentions, DMs, or asks.</div>';
   cards.push(tCard('💬','Slack','Slack',sk,'Mentions, DMs, and messages assigning you things.',true));
-
-  // Recent files
-  var fl = '';
-  (data.files||[]).forEach(function(f){
-    fl += tLink(f.url, '<div class="tc-ic-fic">'+(f.ic||'📄')+'</div><div class="tn">'+tEsc(f.n)+'<small>'+tEsc(f.sub||'')+'</small></div><div class="tt" style="min-width:auto;">'+tEsc(f.when||'')+'</div>');
-  });
-  if(!fl) fl = '<div class="tc-empty">No recent files</div>';
-  cards.push(tCard('📄','Recent Files','Drive',fl,'Most recently touched items in your Google Drive.',true));
 
   // Inbox
   if(data.inbox && data.inbox.length){
@@ -3116,6 +3112,17 @@ function todayMerged(){
 }
 
 function todayRerender(){ renderToday(todayMerged()); }
+
+// Schedule expand/collapse — the choice persists across reloads.
+var TODAY_SCHED_EXPANDED_KEY = 'today_sched_expanded_v1';
+function todayScheduleExpanded(){
+  try{ return localStorage.getItem(TODAY_SCHED_EXPANDED_KEY)==='1'; }catch(e){ return false; }
+}
+function todayScheduleToggle(){
+  var next = !todayScheduleExpanded();
+  try{ localStorage.setItem(TODAY_SCHED_EXPANDED_KEY, next?'1':'0'); }catch(e){}
+  todayRerender();
+}
 
 // mutate a generated task's override patch, or an added task directly, by key
 function todayPatch(key, fn){
@@ -3292,6 +3299,7 @@ function todayPushOverrides(base){
       case 'dl-del':      todayDlDelete(key); break;
       case 'dl-date':     todayDlEditDate(key, row); break;
       case 'dl-add':      todayDlAdd(); break;
+      case 'sched-toggle': todayScheduleToggle(); break;
     }
   });
 })();

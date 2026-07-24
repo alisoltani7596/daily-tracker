@@ -16,12 +16,6 @@
     { "n":"Start task-aware anonymization framework", "done":false }
   ],
   "tasksUrl": "#",
-  "files": [
-    { "ic":"📊", "n":"ArchipelagoAlliance_Presentation_2026-07-09", "sub":"Slides · Melissa Cote", "when":"Jul 9", "url":"#" },
-    { "ic":"📊", "n":"archipelago_plan", "sub":"Slides · you", "when":"Jul 9", "url":"#" },
-    { "ic":"🗜️", "n":"fishnet.zip", "sub":"Archive · 5.0 GB", "when":"Jul 9", "url":"#" },
-    { "ic":"📁", "n":"DiscardActionDataset", "sub":"Folder · code & checkpoints", "when":"2025", "url":"#" }
-  ],
   "inbox": null,
   "slack": null
 }
