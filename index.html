@@ -5,7 +5,7 @@
 <title>Daily Tracker</title>
 
 <!-- PWA -->
-<meta name="theme-color" content="#111a13">
+<meta name="theme-color" content="#0a0f0d">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,10 +14,10 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
-<!-- Google Fonts: DM Serif Display, DM Sans, DM Mono -->
+<!-- Google Fonts: JetBrains Mono (style-1) + legacy DM family fallback -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0f1712;--surface:#161f18;--surface2:#1c2a1e;--border:#294029;--border-soft:rgba(42,63,45,.55);
@@ -566,6 +566,8 @@ button.tchk.done{color:#fff;}
 .tc-foot a{color:var(--accent);text-decoration:none;}
 .tc-foot a:hover{text-decoration:underline;}
 </style>
+<!-- style-1 experimental redesign: token overrides + Today HUD (loaded last to win) -->
+<link rel="stylesheet" href="style-1.css">
 </head>
 <body>
 

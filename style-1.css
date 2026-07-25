@@ -1,0 +1,52 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   style-1 — JARVIS-minimal, green. Experimental redesign (branch: style-1).
+   Loaded AFTER the inline <style> in index.html so its :root overrides win and
+   the whole app recolors to the new palette. Sprint 1 redesigns the Today
+   screen only; Tracker/Coach just inherit the palette + mono type.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Design tokens — single source of truth ──────────────────────────────── */
+:root{
+  --bg: #0a0f0d;            /* near-black, faint green tint */
+  --bg-raised: #0e1a14;     /* active list items, tab bar */
+  --line: #1c3a2c;          /* hairline borders */
+  --line-dim: #13281e;      /* inner tick rings, faint dividers */
+  --accent: #3ce88f;        /* THE green — the only bright color */
+  --accent-glow: rgba(60, 232, 143, 0.30);
+  --wake: #fac775;          /* amber, wake sequence only */
+  --text-bright: #eafff2;
+  --text-dim: #7fa892;
+  --text-faint: #486a58;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'DM Mono', monospace;
+
+  /* Remap the legacy variable names onto the new palette so every existing
+     var(--…) usage across Tracker/Coach recolors without touching their CSS. */
+  --surface: var(--bg-raised);
+  --surface2: #12241b;
+  --border: var(--line);
+  --border-soft: rgba(28, 58, 44, 0.55);
+  --accent2: #1f7a4d;        /* dim accent for legacy gradients/buttons */
+  --amber: var(--wake);
+  --purple: #7fa892;         /* fold stray accents back toward the mono palette */
+  --blue: var(--text-dim);
+  --white: var(--text-bright);
+  --sub: var(--text-dim);
+  --muted: var(--text-faint);
+
+  /* Monospace everywhere — the aesthetic. IRIS wordmark is the one exception. */
+  --serif: var(--font-mono);
+  --sans: var(--font-mono);
+  --mono: var(--font-mono);
+}
+
+/* ─── Global base ─────────────────────────────────────────────────────────── */
+body{ background: var(--bg); color: var(--text-bright); letter-spacing: 0.2px; }
+
+/* Softer, cooler ambient background than the old dark-green identity. */
+body::before{ opacity: 0.35; }  /* dial back the noise texture */
+body::after{
+  height: 380px;
+  background: radial-gradient(120% 380px at 50% -80px, rgba(60, 232, 143, 0.07), transparent 72%);
+}
+
+/* Lowercase, letter-spaced labels are the house style; numbers dominate. */

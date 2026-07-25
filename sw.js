@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION whenever the shell changes to force a clean re-cache.
  */
 
-const CACHE_VERSION = 'daily-tracker-v18';
+const CACHE_VERSION = 'daily-tracker-v19';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const FONT_CACHE  = `${CACHE_VERSION}-fonts`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
@@ -18,6 +18,7 @@ const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const APP_SHELL = [
   './',
   './index.html',
+  './style-1.css',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
