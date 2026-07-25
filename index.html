@@ -3456,6 +3456,38 @@ function renderToday(data){
     cards.push('<div class="tcard wide"><div class="tcard-head"><div class="tc-ttl"><span class="tc-ic">✉️</span>Inbox</div><span class="tc-tag setup">◆ Needs setup</span></div><div class="tc-body"><div class="tc-empty"><div class="big">✉️</div>Connect <b>Gmail</b> on claude.ai, then ask Claude to switch this on and it will show unread &amp; important threads here.</div></div></div>');
   }
 
+  // Projects — read-only mirror of the per-category Google Docs. Each category is
+  // a labelled group (name links to its Doc) with an open-task count and compact
+  // task rows. Canonical order Ph.D. / APEX / IRIS / Finance; missing categories
+  // are simply skipped, unknown ones appended. Editing happens in the Docs.
+  var projects = Array.isArray(data.projects) ? data.projects.filter(function(p){ return p && p.name; }) : [];
+  if(projects.length){
+    var PJ_ORDER = ['Ph.D.','APEX','IRIS','Finance'];
+    projects = projects.slice().sort(function(a,b){
+      var ia=PJ_ORDER.indexOf(a.name), ib=PJ_ORDER.indexOf(b.name);
+      if(ia<0) ia=99; if(ib<0) ib=99;
+      return ia-ib;
+    });
+    var pj = '';
+    projects.forEach(function(p){
+      var tasks = Array.isArray(p.tasks) ? p.tasks : [];
+      var open = tasks.filter(function(t){ return t && !t.done; }).length;
+      var nameHtml = (p.url && p.url!=='#')
+        ? '<a class="pj-name" href="'+tEsc(p.url)+'" target="_blank" rel="noopener">'+tEsc(p.name)+'</a>'
+        : '<span class="pj-name pj-name-off" title="No doc linked yet">'+tEsc(p.name)+'</span>';
+      pj += '<div class="pj-group"><div class="pj-head">'+nameHtml+'<span class="pj-count">'+open+' open</span></div>';
+      if(tasks.length){
+        tasks.forEach(function(t){
+          pj += '<div class="pj-task'+(t.done?' done':'')+'"><span class="pj-dot"></span><span class="pj-tn">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</span></div>';
+        });
+      } else {
+        pj += '<div class="pj-empty">no open tasks</div>';
+      }
+      pj += '</div>';
+    });
+    cards.push(tCard('🗂','Projects','Docs',pj,'Read-only — edit in the linked Google Docs.',true));
+  }
+
   grid.innerHTML = cards.join('');
 
   var stamp = document.getElementById('today-stamp');

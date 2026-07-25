@@ -65,26 +65,24 @@ body[data-tab="today"] header{ display: none !important; }
 
 #today-section{
   padding: 16px 20px calc(var(--tabbar-h) + var(--safe-b) + 24px) !important;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
-  grid-auto-rows: min-content;
-  gap: 10px;
-  align-content: start;
+  display: block;
 }
-/* instruments + data cards become direct grid items of #today-section */
-#s1-today, #today-grid{ display: contents; }
 
-/* ── Header row (full width) ──────────────────────────────────────────────── */
-.s1-head{ grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 2px 2px 4px; }
+/* ── Instrument cluster: IRIS header + ring / telemetry / streak in a top row ─ */
+#s1-today{ display: grid; grid-template-columns: 190px 1.4fr 1.2fr; gap: 10px; margin-bottom: 10px; }
+.s1-head{ grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 2px 2px; }
 .s1-wordmark{ font-family: var(--font-mono); font-weight: 700; font-size: 17px; letter-spacing: 5px; color: var(--text-bright); }
 .s1-clock{ font-size: 11px; letter-spacing: 1.5px; color: var(--text-faint); text-transform: lowercase; white-space: nowrap; }
 
 /* ── HUD card shell (instrument cards share the language of the data cards) ── */
 .s1-card{ border: 1px solid var(--line); background: var(--bg-raised); display: flex; flex-direction: column; overflow: hidden; }
 .s1-card-tag{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-faint); padding: 9px 11px 4px; }
-.s1-ring-card{ grid-column: span 1; }
-.s1-tiles-card{ grid-column: span 2; }
-.s1-streak-card{ grid-column: span 2; }
+
+/* ── Data dashboard: CSS multi-column masonry so column heights self-balance
+      (a strict grid leaves short cards' columns half-empty; this flows the tall
+      Schedule/Tasks/Projects cards alongside the short Deadlines/Slack/Inbox). ─ */
+#today-grid{ display: block; column-width: 300px; column-gap: 10px; }
+#today-grid > .tcard{ width: 100%; margin: 0 0 10px; break-inside: avoid; -webkit-column-break-inside: avoid; }
 
 /* ── Ring instrument — tile-scale, not a centerpiece ──────────────────────── */
 .s1-ring-wrap{ position: relative; width: 128px; height: 128px; margin: 2px auto 14px; }
@@ -124,6 +122,22 @@ body[data-tab="today"] header{ display: none !important; }
 .tc-tag{ border-radius: 0 !important; letter-spacing: 1.5px; }
 .tc-tag.setup{ border-radius: 0 !important; }
 .trow{ border-radius: 0 !important; }
+
+/* ── Projects card: read-only per-category groups from the Docs ───────────── */
+.pj-group{ padding: 4px 4px 10px; }
+.pj-group + .pj-group{ border-top: 1px solid var(--line); padding-top: 10px; }
+.pj-head{ display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 4px 3px 6px; }
+.pj-name{ font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); text-decoration: none; }
+.pj-name:hover{ text-decoration: underline; }
+.pj-name-off{ color: var(--text-faint); }        /* no doc linked yet */
+.pj-count{ font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 1px; color: var(--text-faint); white-space: nowrap; }
+.pj-task{ display: flex; align-items: baseline; gap: 8px; padding: 4px 4px; }
+.pj-dot{ width: 4px; height: 4px; margin-top: 5px; flex: none; background: var(--accent); }
+.pj-tn{ flex: 1; min-width: 0; font-size: 12px; line-height: 1.4; color: var(--text-bright); }
+.pj-task.done .pj-tn{ color: var(--text-faint); text-decoration: line-through; }
+.pj-task.done .pj-dot{ background: var(--line); }
+.pj-empty{ font-size: 11px; color: var(--text-faint); letter-spacing: 1px; padding: 2px 4px 4px; }
+
 /* the data grid itself is display:contents, so its column rules don't apply;
    card widths come from .tcard.wide (span 2) in the shared #today-section grid */
 
@@ -133,9 +147,10 @@ body[data-tab="today"] header{ display: none !important; }
 .tab-btn.active{ color: var(--accent); }
 .tab-btn.active svg{ stroke: var(--accent); }
 
-/* ── Mobile: single column; ring + tiles + streak form the header cluster ──── */
+/* ── Mobile: single column; ring + tiles + streak stack as the header cluster ─ */
 @media (max-width: 680px){
-  #today-section{ grid-template-columns: 1fr; padding: 14px 14px calc(var(--tabbar-h) + var(--safe-b) + 20px) !important; }
-  .s1-ring-card, .s1-tiles-card, .s1-streak-card, .tcard, .tcard.wide{ grid-column: 1 / -1 !important; }
+  #today-section{ padding: 14px 14px calc(var(--tabbar-h) + var(--safe-b) + 20px) !important; }
+  #s1-today{ grid-template-columns: 1fr; }
+  #today-grid{ column-width: auto; column-count: 1; }
 }
 
