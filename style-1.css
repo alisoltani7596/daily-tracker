@@ -136,6 +136,9 @@ body[data-tab="today"] header{ display: none !important; }
 }
 .s1-tile-val{ font-family: var(--font-mono); font-weight: 500; font-size: 26px; line-height: 1; color: var(--text-bright); }
 .s1-tile-lbl{ font-size: 10px; letter-spacing: 2px; text-transform: lowercase; color: var(--text-faint); }
+/* Tiles awaiting the Apple Health bridge: dim the placeholder value, faint note. */
+.s1-tile.is-awaiting .s1-tile-val{ color: var(--text-faint); }
+.s1-tile-note{ font-size: 8.5px; letter-spacing: 1.5px; text-transform: lowercase; color: var(--line); }
 
 /* ── Task list ─────────────────────────────────────────────────────────────── */
 .s1-section-h{

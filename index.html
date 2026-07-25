@@ -633,8 +633,11 @@ button.tchk.done{color:#fff;}
     </div>
 
     <div class="s1-tiles">
-      <div class="s1-tile"><div class="s1-tile-val" id="s1-steps">—</div><div class="s1-tile-lbl">steps</div></div>
-      <div class="s1-tile"><div class="s1-tile-val" id="s1-sleep">—</div><div class="s1-tile-lbl">sleep</div></div>
+      <!-- steps/sleep await the Apple Health bridge (later phase). The value slot
+           stays "—" and shows a faint "awaiting link" note; when Health data lands,
+           JS fills #s1-steps/#s1-sleep and drops .is-awaiting — no layout change. -->
+      <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-steps">—</div><div class="s1-tile-lbl">steps</div><div class="s1-tile-note">awaiting link</div></div>
+      <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-sleep">—</div><div class="s1-tile-lbl">sleep</div><div class="s1-tile-note">awaiting link</div></div>
       <div class="s1-tile"><div class="s1-tile-val" id="s1-tasks-n">0</div><div class="s1-tile-lbl">tasks</div></div>
     </div>
 
