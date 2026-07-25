@@ -602,6 +602,48 @@ button.tchk.done{color:#fff;}
 
 <!-- ── TODAY (merged live dashboard: Calendar / Drive / Tasks / Inbox) ──────── -->
 <div class="today-section" id="today-section">
+
+  <!-- ═══ style-1 Today HUD (experimental) ═══════════════════════════════════
+       The living ring lands here in checkpoint 3; for now a static placeholder
+       circle + charge arc reads the layout. The legacy .today-head/#today-grid
+       below stay in the DOM (hidden on this screen) so renderToday keeps
+       populating window.__todayData for the coach. -->
+  <div id="s1-today" class="s1-today">
+    <div class="s1-head">
+      <div class="s1-wordmark">IRIS</div>
+      <div class="s1-clock"><span id="s1-date">—</span> · <span id="s1-time">—</span></div>
+    </div>
+
+    <div class="s1-ring-wrap">
+      <svg class="s1-ring-ph" viewBox="0 0 240 240" aria-hidden="true">
+        <circle class="s1-ph-tick-dash" cx="120" cy="120" r="108"/>
+        <circle class="s1-ph-circle" cx="120" cy="120" r="96"/>
+        <circle class="s1-ph-arc" id="s1-ph-arc" cx="120" cy="120" r="96"
+                transform="rotate(-90 120 120)"/>
+      </svg>
+      <div class="s1-ring-center">
+        <div class="s1-charge" id="s1-charge">0<span class="s1-charge-pct">%</span></div>
+        <div class="s1-ring-label" id="s1-ring-label">charge</div>
+      </div>
+    </div>
+
+    <div class="s1-streak">
+      <div class="s1-seg-row" id="s1-segs" aria-hidden="true"></div>
+      <div class="s1-streak-label"><span id="s1-streak-n">streak 0</span> · <span id="s1-core-v">core v1</span></div>
+    </div>
+
+    <div class="s1-tiles">
+      <div class="s1-tile"><div class="s1-tile-val" id="s1-steps">—</div><div class="s1-tile-lbl">steps</div></div>
+      <div class="s1-tile"><div class="s1-tile-val" id="s1-sleep">—</div><div class="s1-tile-lbl">sleep</div></div>
+      <div class="s1-tile"><div class="s1-tile-val" id="s1-tasks-n">0</div><div class="s1-tile-lbl">tasks</div></div>
+    </div>
+
+    <div class="s1-section">
+      <div class="s1-section-h">today</div>
+      <div class="s1-tasklist" id="s1-tasks"></div>
+    </div>
+  </div>
+
   <div class="today-head">
     <div class="today-title"><span class="tdot2"></span>Today</div>
     <div class="today-stamp" id="today-stamp">loading…</div>
@@ -4384,6 +4426,97 @@ function voiceMaybeSpeakReply(rawText){
   // attempt in case it's already loaded from cache.
   if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ window.healthVerify(); }); }
   window.healthVerify();
+})();
+</script>
+
+<!-- ─── style-1 TODAY HUD (sprint 1: layout + data wiring) ──────────────────────
+ * Renders the IRIS Today screen from existing state: charge = done/total of the
+ * visible habits; task list + count from the KV Today data; streak from
+ * localStorage (KV migration is a later sprint). The living ring, wake sequence,
+ * voice envelope, flare and full streak logic arrive in checkpoints 3–6.
+-->
+<script>
+(function(){
+  function s1El(id){ return document.getElementById(id); }
+  function s1Esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  // Charge: done / total of the visible habits for today's weekday slot.
+  function s1Charge(){
+    try{
+      var idx = (typeof coachTodayIdx==='function') ? coachTodayIdx() : [6,0,1,2,3,4,5][new Date().getDay()];
+      var done = lsGet(DONE_KEY+idx, {});
+      var visH = HABITS.filter(function(h){ return vis[h.id]; });
+      var d = visH.filter(function(h){ return done[h.id]; }).length;
+      return { done:d, total:visH.length, pct: visH.length ? Math.round(d/visH.length*100) : 0 };
+    }catch(e){ return { done:0, total:0, pct:0 }; }
+  }
+  var S1_ARC_LEN = 603.2;   // 2π·96
+  function s1RenderCharge(){
+    var c = s1Charge();
+    var chEl = s1El('s1-charge');
+    if(chEl) chEl.innerHTML = c.pct + '<span class="s1-charge-pct">%</span>';
+    var arc = s1El('s1-ph-arc');
+    if(arc) arc.style.strokeDashoffset = (S1_ARC_LEN * (1 - c.pct/100)).toFixed(1);
+    var stable = c.total>0 && c.pct>=100;
+    var hud = s1El('s1-today'); if(hud) hud.classList.toggle('is-stable', stable);
+    var lbl = s1El('s1-ring-label'); if(lbl) lbl.textContent = stable ? 'core stable' : 'charge';
+    return c;
+  }
+
+  // Tasks: prefer merged (KV + user overrides), fall back to raw KV data.
+  function s1CurrentTasks(){
+    try{ if(typeof todayMerged==='function'){ var m=todayMerged(); if(m && m.tasks) return m.tasks; } }catch(e){}
+    var td = window.__todayData; return (td && td.tasks) ? td.tasks : [];
+  }
+  function s1RenderTasks(){
+    var wrap = s1El('s1-tasks'); if(!wrap) return;
+    var tasks = s1CurrentTasks();
+    var open = tasks.filter(function(t){ return !t.done; });
+    var nEl = s1El('s1-tasks-n'); if(nEl) nEl.textContent = open.length;
+    if(!tasks.length){ wrap.innerHTML = '<div class="s1-tasks-empty">no tasks today</div>'; return; }
+    var currentTaken = false;
+    wrap.innerHTML = tasks.map(function(t){
+      var isCurrent = (!t.done && !currentTaken); if(isCurrent) currentTaken = true;
+      return '<div class="s1-task'+(t.done?' is-done':'')+(isCurrent?' is-current':'')+'">'+
+        '<span class="s1-task-box"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></span>'+
+        '<span class="s1-task-name">'+s1Esc(t.n)+'</span>'+
+        (t.hi ? '<span class="s1-task-hi">high</span>' : '')+
+      '</div>';
+    }).join('');
+  }
+
+  // Streak — localStorage for now (do not touch the Worker/KV). Full increment/
+  // reset logic lands in checkpoint 6; here we just reflect the stored value.
+  var S1_STREAK_KEY = 'streak_v1';   // { streak, lastStableDate }
+  function s1Streak(){ try{ var s=JSON.parse(localStorage.getItem(S1_STREAK_KEY)); return (s&&typeof s==='object')?s:{streak:0,lastStableDate:null}; }catch(e){ return {streak:0,lastStableDate:null}; } }
+  function s1RenderStreak(){
+    var st = s1Streak();
+    var segs = s1El('s1-segs');
+    if(segs){
+      var filled = Math.max(0, Math.min(7, st.streak|0)), html='';
+      for(var i=0;i<7;i++){ html += '<span class="s1-seg'+(i<filled?' on':'')+'"></span>'; }
+      segs.innerHTML = html;
+    }
+    var n = s1El('s1-streak-n'); if(n) n.textContent = 'streak ' + (st.streak|0);
+  }
+
+  var S1_DOW=['sun','mon','tue','wed','thu','fri','sat'];
+  var S1_MON=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  function s1Clock(){
+    var d = new Date(), dEl=s1El('s1-date'), tEl=s1El('s1-time');
+    if(dEl) dEl.textContent = S1_DOW[d.getDay()]+' '+d.getDate()+' '+S1_MON[d.getMonth()];
+    if(tEl) tEl.textContent = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  }
+
+  function s1RenderAll(){ s1Clock(); s1RenderCharge(); s1RenderStreak(); s1RenderTasks(); }
+  window.s1RenderAll = s1RenderAll;   // ring checkpoints will call this on habit/flare events
+
+  s1RenderAll();
+  setInterval(s1Clock, 1000);
+  if(window.todayReady && window.todayReady.then){ window.todayReady.then(s1RenderTasks); }
+  // Cheap refresh when returning to Today (e.g. after toggling habits on Tracker).
+  var tb = document.getElementById('tabbar');
+  if(tb) tb.addEventListener('click', function(){ setTimeout(s1RenderAll, 0); });
 })();
 </script>
 
