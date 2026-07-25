@@ -603,47 +603,54 @@ button.tchk.done{color:#fff;}
 <!-- ── TODAY (merged live dashboard: Calendar / Drive / Tasks / Inbox) ──────── -->
 <div class="today-section" id="today-section">
 
-  <!-- ═══ style-1 Today HUD (experimental) ═══════════════════════════════════
-       The living ring lands here in checkpoint 3; for now a static placeholder
-       circle + charge arc reads the layout. The legacy .today-head/#today-grid
-       below stay in the DOM (hidden on this screen) so renderToday keeps
-       populating window.__todayData for the coach. -->
+  <!-- ═══ style-1 Today HUD — instruments (checkpoint 2b) ═════════════════════
+       IRIS header + ring/telemetry/streak instruments. Via display:contents
+       (style-1.css) these sit in the SAME grid as the real dashboard cards that
+       renderToday builds into #today-grid below — the ring is one instrument
+       among many. The living ring replaces the static placeholder in checkpoint 3. -->
   <div id="s1-today" class="s1-today">
     <div class="s1-head">
       <div class="s1-wordmark">IRIS</div>
       <div class="s1-clock"><span id="s1-date">—</span> · <span id="s1-time">—</span></div>
     </div>
 
-    <div class="s1-ring-wrap">
-      <svg class="s1-ring-ph" viewBox="0 0 240 240" aria-hidden="true">
-        <circle class="s1-ph-tick-dash" cx="120" cy="120" r="108"/>
-        <circle class="s1-ph-circle" cx="120" cy="120" r="96"/>
-        <circle class="s1-ph-arc" id="s1-ph-arc" cx="120" cy="120" r="96"
-                transform="rotate(-90 120 120)"/>
-      </svg>
-      <div class="s1-ring-center">
-        <div class="s1-charge" id="s1-charge">0<span class="s1-charge-pct">%</span></div>
-        <div class="s1-ring-label" id="s1-ring-label">charge</div>
+    <!-- CORE: charge ring (tile-scale) -->
+    <div class="s1-card s1-ring-card">
+      <div class="s1-card-tag">core</div>
+      <div class="s1-ring-wrap">
+        <svg class="s1-ring-ph" viewBox="0 0 240 240" aria-hidden="true">
+          <circle class="s1-ph-tick-dash" cx="120" cy="120" r="108"/>
+          <circle class="s1-ph-circle" cx="120" cy="120" r="96"/>
+          <circle class="s1-ph-arc" id="s1-ph-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"/>
+        </svg>
+        <div class="s1-ring-center">
+          <div class="s1-charge" id="s1-charge">0<span class="s1-charge-pct">%</span></div>
+          <div class="s1-ring-label" id="s1-ring-label">charge</div>
+        </div>
       </div>
     </div>
 
-    <div class="s1-streak">
-      <div class="s1-seg-row" id="s1-segs" aria-hidden="true"></div>
-      <div class="s1-streak-label"><span id="s1-streak-n">streak 0</span> · <span id="s1-core-v">core v1</span></div>
+    <!-- TELEMETRY: live stats (kcal/done/tasks) + Health tiles awaiting the bridge -->
+    <div class="s1-card s1-tiles-card">
+      <div class="s1-card-tag">telemetry</div>
+      <div class="s1-tiles">
+        <div class="s1-tile"><div class="s1-tile-val" id="s1-kcal">0</div><div class="s1-tile-lbl">kcal</div></div>
+        <div class="s1-tile"><div class="s1-tile-val" id="s1-done">0/0</div><div class="s1-tile-lbl">done</div></div>
+        <div class="s1-tile"><div class="s1-tile-val" id="s1-tasks-n">0</div><div class="s1-tile-lbl">tasks</div></div>
+        <!-- steps/sleep await the Apple Health bridge; JS fills the value + drops
+             .is-awaiting when data lands — no layout change. -->
+        <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-steps">—</div><div class="s1-tile-lbl">steps</div><div class="s1-tile-note">awaiting link</div></div>
+        <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-sleep">—</div><div class="s1-tile-lbl">sleep</div><div class="s1-tile-note">awaiting link</div></div>
+      </div>
     </div>
 
-    <div class="s1-tiles">
-      <!-- steps/sleep await the Apple Health bridge (later phase). The value slot
-           stays "—" and shows a faint "awaiting link" note; when Health data lands,
-           JS fills #s1-steps/#s1-sleep and drops .is-awaiting — no layout change. -->
-      <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-steps">—</div><div class="s1-tile-lbl">steps</div><div class="s1-tile-note">awaiting link</div></div>
-      <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-sleep">—</div><div class="s1-tile-lbl">sleep</div><div class="s1-tile-note">awaiting link</div></div>
-      <div class="s1-tile"><div class="s1-tile-val" id="s1-tasks-n">0</div><div class="s1-tile-lbl">tasks</div></div>
-    </div>
-
-    <div class="s1-section">
-      <div class="s1-section-h">today</div>
-      <div class="s1-tasklist" id="s1-tasks"></div>
+    <!-- STREAK -->
+    <div class="s1-card s1-streak-card">
+      <div class="s1-card-tag">streak</div>
+      <div class="s1-streak">
+        <div class="s1-seg-row" id="s1-segs" aria-hidden="true"></div>
+        <div class="s1-streak-label"><span id="s1-streak-n">streak 0</span> · <span id="s1-core-v">core v1</span></div>
+      </div>
     </div>
   </div>
 
@@ -4466,26 +4473,43 @@ function voiceMaybeSpeakReply(rawText){
     return c;
   }
 
-  // Tasks: prefer merged (KV + user overrides), fall back to raw KV data.
+  // Tasks tile: open-task count from the KV data (the editable list itself lives
+  // in the real Tasks card that renderToday builds).
   function s1CurrentTasks(){
     try{ if(typeof todayMerged==='function'){ var m=todayMerged(); if(m && m.tasks) return m.tasks; } }catch(e){}
     var td = window.__todayData; return (td && td.tasks) ? td.tasks : [];
   }
-  function s1RenderTasks(){
-    var wrap = s1El('s1-tasks'); if(!wrap) return;
-    var tasks = s1CurrentTasks();
-    var open = tasks.filter(function(t){ return !t.done; });
-    var nEl = s1El('s1-tasks-n'); if(nEl) nEl.textContent = open.length;
-    if(!tasks.length){ wrap.innerHTML = '<div class="s1-tasks-empty">no tasks today</div>'; return; }
-    var currentTaken = false;
-    wrap.innerHTML = tasks.map(function(t){
-      var isCurrent = (!t.done && !currentTaken); if(isCurrent) currentTaken = true;
-      return '<div class="s1-task'+(t.done?' is-done':'')+(isCurrent?' is-current':'')+'">'+
-        '<span class="s1-task-box"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></span>'+
-        '<span class="s1-task-name">'+s1Esc(t.n)+'</span>'+
-        (t.hi ? '<span class="s1-task-hi">high</span>' : '')+
-      '</div>';
-    }).join('');
+  function s1RenderTasksTile(){
+    var nEl = s1El('s1-tasks-n'); if(!nEl) return;
+    nEl.textContent = s1CurrentTasks().filter(function(t){ return !t.done; }).length;
+  }
+
+  // Live stats for today's slot: kcal burned + done N/N (morning checks + habits),
+  // read from saved state (CHK_KEY/DONE_KEY) so it's accurate on the Today screen
+  // even though no day-panel is visible there. Mirrors updateProgress' counting.
+  function s1RenderStats(){
+    try{
+      var idx = (typeof coachTodayIdx==='function') ? coachTodayIdx() : [6,0,1,2,3,4,5][new Date().getDay()];
+      var doneH = lsGet(DONE_KEY+idx, {});
+      var visH = HABITS.filter(function(h){ return vis[h.id]; });
+      var habitsDone = visH.filter(function(h){ return doneH[h.id]; }).length;
+      var saved = lsGet(CHK_KEY+idx, []);
+      var panel = document.querySelector('.day-panel[data-panel="'+idx+'"]');
+      var kcal = 0, checksDone = 0, checksTotal = 0;
+      if(panel){
+        var items = panel.querySelectorAll('.check-item');
+        for(var i=0;i<items.length;i++){
+          var el = items[i];
+          var isMorning = el.getAttribute('data-section')==='morning';
+          var on = (saved[i] !== undefined) ? !!saved[i] : el.classList.contains('done');
+          if(isMorning){ checksTotal++; if(on) checksDone++; }
+          if(on) kcal += +(el.getAttribute('data-kcal')||0);
+        }
+      }
+      var doneTotal = habitsDone + checksDone, total = visH.length + checksTotal;
+      var kEl = s1El('s1-kcal'); if(kEl) kEl.textContent = kcal;
+      var dEl = s1El('s1-done'); if(dEl) dEl.textContent = doneTotal + '/' + total;
+    }catch(e){ /* best-effort */ }
   }
 
   // Streak — localStorage for now (do not touch the Worker/KV). Full increment/
@@ -4511,12 +4535,12 @@ function voiceMaybeSpeakReply(rawText){
     if(tEl) tEl.textContent = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
   }
 
-  function s1RenderAll(){ s1Clock(); s1RenderCharge(); s1RenderStreak(); s1RenderTasks(); }
+  function s1RenderAll(){ s1Clock(); s1RenderCharge(); s1RenderStreak(); s1RenderStats(); s1RenderTasksTile(); }
   window.s1RenderAll = s1RenderAll;   // ring checkpoints will call this on habit/flare events
 
   s1RenderAll();
   setInterval(s1Clock, 1000);
-  if(window.todayReady && window.todayReady.then){ window.todayReady.then(s1RenderTasks); }
+  if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ s1RenderTasksTile(); s1RenderStats(); }); }
   // Cheap refresh when returning to Today (e.g. after toggling habits on Tracker).
   var tb = document.getElementById('tabbar');
   if(tb) tb.addEventListener('click', function(){ setTimeout(s1RenderAll, 0); });

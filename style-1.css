@@ -52,123 +52,80 @@ body::after{
 /* Lowercase, letter-spaced labels are the house style; numbers dominate. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TODAY SCREEN — style-1 HUD (sprint 1)
+   TODAY SCREEN — style-1 HUD, checkpoint 2b: dense instrument panel
+   The IRIS header + instruments (ring, telemetry tiles, streak) and the full
+   main dashboard (Schedule / Deadlines / Tasks / Slack / Inbox — rendered by
+   renderToday into #today-grid, all interactions intact) share ONE grid via
+   display:contents, so the ring is just one instrument among many.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* The IRIS HUD is its own header on Today, so drop the legacy sticky app bar
-   here. The old .today-head/#today-grid stay in the DOM (renderToday still
-   populates window.__todayData for the coach) but are hidden on this screen. */
+/* IRIS is Today's header, so drop the legacy sticky app bar + the old title row. */
 body[data-tab="today"] header{ display: none !important; }
-#today-section > .today-head,
-#today-section > #today-grid{ display: none !important; }
+#today-section > .today-head{ display: none !important; }
 
-#today-section{ padding: 0 !important; }
-.s1-today{
-  max-width: 460px;
-  margin: 0 auto;
-  padding: 18px 22px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 26px;
+#today-section{
+  padding: 16px 20px calc(var(--tabbar-h) + var(--safe-b) + 24px) !important;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  grid-auto-rows: min-content;
+  gap: 10px;
+  align-content: start;
 }
+/* instruments + data cards become direct grid items of #today-section */
+#s1-today, #today-grid{ display: contents; }
 
-/* ── Header row ────────────────────────────────────────────────────────────── */
-.s1-head{ display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.s1-wordmark{
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: 5px;       /* the one uppercase, letter-spaced exception */
-  color: var(--text-bright);
-  padding-left: 2px;
-}
-.s1-clock{
-  font-size: 11px;
-  letter-spacing: 1.5px;
-  color: var(--text-faint);
-  text-transform: lowercase;
-  white-space: nowrap;
-}
+/* ── Header row (full width) ──────────────────────────────────────────────── */
+.s1-head{ grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 2px 2px 4px; }
+.s1-wordmark{ font-family: var(--font-mono); font-weight: 700; font-size: 17px; letter-spacing: 5px; color: var(--text-bright); }
+.s1-clock{ font-size: 11px; letter-spacing: 1.5px; color: var(--text-faint); text-transform: lowercase; white-space: nowrap; }
 
-/* ── The ring (checkpoint-2 static placeholder) ───────────────────────────── */
-.s1-ring-wrap{ position: relative; width: 100%; max-width: 300px; margin: 6px auto 2px; aspect-ratio: 1; }
+/* ── HUD card shell (instrument cards share the language of the data cards) ── */
+.s1-card{ border: 1px solid var(--line); background: var(--bg-raised); display: flex; flex-direction: column; overflow: hidden; }
+.s1-card-tag{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-faint); padding: 9px 11px 4px; }
+.s1-ring-card{ grid-column: span 1; }
+.s1-tiles-card{ grid-column: span 2; }
+.s1-streak-card{ grid-column: span 2; }
+
+/* ── Ring instrument — tile-scale, not a centerpiece ──────────────────────── */
+.s1-ring-wrap{ position: relative; width: 128px; height: 128px; margin: 2px auto 14px; }
 .s1-ring-ph{ width: 100%; height: 100%; display: block; }
-.s1-ph-circle{ fill: none; stroke: var(--line); stroke-width: 1.5; }
-.s1-ph-tick-dash{ fill: none; stroke: var(--line-dim); stroke-width: 1; stroke-dasharray: 1 7; }
+.s1-ph-circle{ fill: none; stroke: var(--line); stroke-width: 2; }
+.s1-ph-tick-dash{ fill: none; stroke: var(--line-dim); stroke-width: 1.5; stroke-dasharray: 1 7; }
 .s1-ph-arc{
-  fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round;
-  /* 2πr = 603.2 for r=96; JS sets the dashoffset from charge. */
-  stroke-dasharray: 603.2; stroke-dashoffset: 603.2;
+  fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round;
+  stroke-dasharray: 603.2; stroke-dashoffset: 603.2;  /* 2π·96; JS sets offset from charge */
   transition: stroke-dashoffset 0.6s cubic-bezier(.16,1,.3,1);
 }
-.s1-ring-center{
-  position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 2px; pointer-events: none;
-}
-.s1-charge{
-  font-family: var(--font-mono); font-weight: 500;
-  font-size: clamp(46px, 15vw, 68px); line-height: 1;
-  color: var(--text-bright); letter-spacing: -1px;
-}
+.s1-ring-center{ position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; pointer-events: none; }
+.s1-charge{ font-family: var(--font-mono); font-weight: 500; font-size: 30px; line-height: 1; color: var(--text-bright); letter-spacing: -0.5px; }
 .s1-charge-pct{ font-size: 0.42em; color: var(--text-dim); margin-left: 2px; letter-spacing: 0; }
-.s1-ring-label{
-  font-size: 11px; letter-spacing: 3px; text-transform: lowercase; color: var(--text-faint);
-}
-/* stable state (100%) — set by JS in a later checkpoint */
+.s1-ring-label{ font-size: 9px; letter-spacing: 2.5px; text-transform: lowercase; color: var(--text-faint); }
 .s1-today.is-stable .s1-charge{ color: #eafff2; }
 .s1-today.is-stable .s1-ph-arc{ stroke: #eafff2; }
 .s1-today.is-stable .s1-ring-label{ color: var(--text-dim); }
 
-/* ── Streak row ────────────────────────────────────────────────────────────── */
-.s1-streak{ display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.s1-seg-row{ display: flex; gap: 5px; flex: 1; max-width: 220px; }
-.s1-seg{ flex: 1; height: 4px; background: var(--line); }
+/* ── Telemetry tiles: live stats (kcal/done/tasks) + steps/sleep placeholders ─ */
+.s1-tiles{ display: grid; grid-template-columns: repeat(auto-fit, minmax(62px, 1fr)); gap: 1px; background: var(--line); border-top: 1px solid var(--line); margin-top: 4px; }
+.s1-tile{ background: var(--bg-raised); padding: 11px 10px 10px; display: flex; flex-direction: column; gap: 4px; min-height: 62px; justify-content: flex-end; }
+.s1-tile-val{ font-family: var(--font-mono); font-weight: 500; font-size: 21px; line-height: 1; color: var(--text-bright); }
+.s1-tile-lbl{ font-size: 9px; letter-spacing: 1.5px; text-transform: lowercase; color: var(--text-faint); }
+.s1-tile.is-awaiting .s1-tile-val{ color: var(--text-faint); }
+.s1-tile-note{ font-size: 8px; letter-spacing: 1px; text-transform: lowercase; color: var(--line-dim); }
+
+/* ── Streak instrument ────────────────────────────────────────────────────── */
+.s1-streak{ display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 6px 11px 13px; }
+.s1-seg-row{ display: flex; gap: 5px; flex: 1; max-width: 260px; }
+.s1-seg{ flex: 1; height: 5px; background: var(--line); }
 .s1-seg.on{ background: var(--accent); }
 .s1-streak-label{ font-size: 11px; letter-spacing: 1.5px; color: var(--text-dim); white-space: nowrap; text-transform: lowercase; }
 
-/* ── Stat tiles ────────────────────────────────────────────────────────────── */
-.s1-tiles{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.s1-tile{
-  border: 1px solid var(--line);
-  padding: 14px 12px 12px;
-  display: flex; flex-direction: column; gap: 6px;
-  min-height: 76px; justify-content: space-between;
-}
-.s1-tile-val{ font-family: var(--font-mono); font-weight: 500; font-size: 26px; line-height: 1; color: var(--text-bright); }
-.s1-tile-lbl{ font-size: 10px; letter-spacing: 2px; text-transform: lowercase; color: var(--text-faint); }
-/* Tiles awaiting the Apple Health bridge: dim the placeholder value, faint note. */
-.s1-tile.is-awaiting .s1-tile-val{ color: var(--text-faint); }
-.s1-tile-note{ font-size: 8.5px; letter-spacing: 1.5px; text-transform: lowercase; color: var(--line); }
-
-/* ── Task list ─────────────────────────────────────────────────────────────── */
-.s1-section-h{
-  font-size: 11px; letter-spacing: 3px; text-transform: lowercase;
-  color: var(--accent); margin-bottom: 12px;
-}
-.s1-tasklist{ display: flex; flex-direction: column; gap: 7px; }
-.s1-task{
-  border-left: 2px solid var(--line);
-  background: var(--bg-raised);
-  padding: 11px 13px;
-  display: flex; align-items: center; gap: 11px;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-}
-.s1-task.is-current{ border-left-color: var(--accent); }
-.s1-task-box{
-  width: 13px; height: 13px; flex: none; border: 1.5px solid var(--text-faint);
-  display: grid; place-items: center;
-}
-.s1-task.is-done .s1-task-box{ border-color: var(--accent); background: var(--accent); }
-.s1-task-box svg{ width: 9px; height: 9px; stroke: var(--bg); stroke-width: 2.4; fill: none; opacity: 0; }
-.s1-task.is-done .s1-task-box svg{ opacity: 1; }
-.s1-task-name{
-  flex: 1; min-width: 0; font-size: 13px; color: var(--text-bright); line-height: 1.35;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.s1-task.is-done .s1-task-name{ color: var(--text-faint); text-decoration: line-through; }
-.s1-task-hi{ font-size: 9px; letter-spacing: 1px; color: var(--wake); border: 1px solid rgba(250,199,117,.35); padding: 1px 5px; text-transform: lowercase; flex: none; }
-.s1-tasks-empty{ font-size: 12px; color: var(--text-faint); letter-spacing: 1px; padding: 8px 2px; }
+/* ── Data cards (renderToday): square-cornered HUD, square micro-label ─────── */
+.tcard{ border-radius: 0 !important; background: var(--bg-raised); }
+.tc-tag{ border-radius: 0 !important; letter-spacing: 1.5px; }
+.tc-tag.setup{ border-radius: 0 !important; }
+.trow{ border-radius: 0 !important; }
+/* the data grid itself is display:contents, so its column rules don't apply;
+   card widths come from .tcard.wide (span 2) in the shared #today-section grid */
 
 /* ── Bottom tab bar: active accent, inactive faint ─────────────────────────── */
 .tabbar{ background: var(--bg-raised); border-top: 1px solid var(--line); }
@@ -176,7 +133,9 @@ body[data-tab="today"] header{ display: none !important; }
 .tab-btn.active{ color: var(--accent); }
 .tab-btn.active svg{ stroke: var(--accent); }
 
-@media (max-width: 380px){
-  .s1-today{ padding: 16px 16px 8px; gap: 22px; }
+/* ── Mobile: single column; ring + tiles + streak form the header cluster ──── */
+@media (max-width: 680px){
+  #today-section{ grid-template-columns: 1fr; padding: 14px 14px calc(var(--tabbar-h) + var(--safe-b) + 20px) !important; }
+  .s1-ring-card, .s1-tiles-card, .s1-streak-card, .tcard, .tcard.wide{ grid-column: 1 / -1 !important; }
 }
 
