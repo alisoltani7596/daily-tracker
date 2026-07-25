@@ -189,6 +189,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:18p
 .hlabel{font-size:13px;color:var(--white);}
 .hsub{font-size:11px;color:var(--sub);margin-top:1px;}
 .priv-badge{font-size:10px;background:#2a1f30;color:#9b85c4;border-radius:20px;padding:1px 6px;margin-left:5px;}
+/* ── Health-verified habits (Garmin auto-tick + protein/water suggestions) ──── */
+/* Auto-ticked box reads distinct from a manual tick: hollow accent ring, not a
+   solid fill, so at a glance you know Garmin did it, not you. */
+.habit-item.habit-verified .hbox{background:transparent;border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--surface);}
+.habit-item.habit-verified .htick{stroke:var(--accent);opacity:1;}
+.habit-verified-badge{font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:rgba(87,196,138,.12);border:1px solid rgba(87,196,138,.3);border-radius:20px;padding:1px 6px;margin-left:6px;white-space:nowrap;}
+/* Suggestion: highlighted, awaiting a one-tap confirm (never auto-checked). */
+.habit-item.habit-suggest{background:rgba(212,160,64,.08);box-shadow:inset 2px 0 0 var(--amber);}
+.habit-item.habit-suggest:hover{background:rgba(212,160,64,.13);}
+.habit-suggest-hint{font-family:var(--mono);font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:var(--amber);background:rgba(212,160,64,.12);border:1px solid rgba(212,160,64,.3);border-radius:20px;padding:1px 6px;margin-left:6px;white-space:nowrap;}
 .habit-move-btns{display:flex;flex-direction:column;gap:1px;flex-shrink:0;opacity:0;transition:opacity .15s;}
 .habit-item:hover .habit-move-btns{opacity:1;}
 .hmove-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:9px;line-height:1;padding:1px 3px;transition:color .12s;}
@@ -2179,6 +2189,8 @@ function buildHabits(){
     }
     col.appendChild(sec);
   }
+  // Re-apply Garmin auto-tick / suggestions after any (re)build of the columns.
+  if(typeof healthVerifyHabits==='function') healthVerifyHabits();
 }
 
 function toggleHabit(el){
@@ -2187,6 +2199,14 @@ function toggleHabit(el){
   const done=lsGet(DONE_KEY+day,{});
   done[id]=el.classList.contains('done');
   lsSet(DONE_KEY+day,done);
+  // A manual tap supersedes any health hint: clear the suggestion highlight, and
+  // if the user unticks a Garmin-verified habit, drop its badge (their call wins).
+  el.classList.remove('habit-suggest');
+  var sh = el.querySelector('.habit-suggest-hint'); if(sh) sh.remove();
+  if(!el.classList.contains('done')){
+    el.classList.remove('habit-verified');
+    var vb = el.querySelector('.habit-verified-badge'); if(vb) vb.remove();
+  }
   updateProgress();
 }
 
@@ -3439,6 +3459,9 @@ function todayApply(raw){
     generated = raw || null;   // plain today.json (Pages fallback) or cached
     overrides = null;
   }
+  // Capture the Apple Health / Garmin map (GET /today `health`) for the Tracker's
+  // health-verified habits. Absent from the Pages fallback — leave prior value.
+  if(raw && typeof raw==='object' && raw.health && typeof raw.health==='object'){ window.__health = raw.health; }
   // Prefer server overrides; fall back to the local mirror (offline / no server).
   if(!overrides){ try{ overrides = JSON.parse(localStorage.getItem(TODAY_OVERRIDES_KEY)); }catch(e){} }
   window.__todayGenerated = generated || {};
@@ -4177,6 +4200,109 @@ function voiceMaybeSpeakReply(rawText){
   // Kick the wake flow once the DOM is ready (script already runs late in body).
   if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', wakeInit); }
   else { wakeInit(); }
+})();
+</script>
+
+<!-- ─── HEALTH-VERIFIED HABITS (Tracker) ────────────────────────────────────────
+ * Reads the Apple Health / Garmin map (window.__health, from GET /today) and,
+ * for today's habit column, AUTO-TICKS habits their samples verify (marked
+ * "verified · Garmin") and SUGGESTS protein/water (highlighted, one-tap confirm —
+ * never auto-checked). Rules: only ticks (never unticks the user's state), missing
+ * fields = no action, re-running is idempotent. Body Battery rules stay dormant
+ * until those fields exist and must not error on absence.
+-->
+<script>
+(function(){
+  // Fixed to *today's* weekday slot (not the mutable currentDay), since the health
+  // entry is keyed by today's actual date.
+  var HEALTH_TODAY_IDX = [6,0,1,2,3,4,5][new Date().getDay()];
+  function healthTodayDate(){ var d=new Date(); function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+
+  // Parse "HH:MM" or an ISO datetime's time part → minutes since midnight, else null.
+  function healthMins(str){
+    if(typeof str!=='string' || !str) return null;
+    var m = str.match(/T(\d{2}):(\d{2})/) || str.match(/^(\d{1,2}):(\d{2})/);
+    if(!m) return null;
+    var h=+m[1], mi=+m[2];
+    if(h>23 || mi>59) return null;
+    return h*60+mi;
+  }
+
+  // Each test returns true (fires), false (condition not met), or undefined (field
+  // missing → no action). Never throws on absent fields.
+  var HEALTH_AUTOTICK = [
+    { id:'wake',         test:function(e){ var m=healthMins(e.sleep_end);   return m==null?undefined:(m<=8*60); } },      // woke ≤ 08:00
+    // "in bed by midnight": bedtime in the evening (≥12:00) counts, or exactly 00:00; 00:01–11:59 does not.
+    { id:'sleep',        test:function(e){ var m=healthMins(e.sleep_start); return m==null?undefined:(m>=12*60 || m===0); } },
+    { id:'steps',        test:function(e){ return typeof e.steps==='number' ? (e.steps>=8000) : undefined; } },
+    { id:'garmin_sleep', test:function(e){ return typeof e.sleep_score==='number' ? (e.sleep_score>90) : undefined; } },
+    { id:'garmin_wake',  test:function(e){ return typeof e.body_battery_wake==='number' ? (e.body_battery_wake>=100) : undefined; } },
+    { id:'garmin_bed',   test:function(e){ return typeof e.body_battery_bed==='number' ? (e.body_battery_bed<30) : undefined; } },
+  ];
+  var HEALTH_SUGGEST = [
+    { id:'protein', test:function(e){ return typeof e.protein_g==='number' ? (e.protein_g>=160) : undefined; }, hint:function(e){ return e.protein_g+' g'; } },
+    { id:'water',   test:function(e){ return typeof e.water_ml==='number' ? (e.water_ml>=2500) : undefined; }, hint:function(e){ return (e.water_ml/1000).toFixed(1)+' L'; } },
+  ];
+
+  function healthApplyMarks(day, verified, suggest){
+    var col = document.getElementById('hcol-'+day);
+    if(!col) return;
+    col.querySelectorAll('.habit-item').forEach(function(el){
+      var id = el.dataset.id, lbl = el.querySelector('.hlabel');
+      // Auto-tick (verified): tick + badge. Only adds — never removes a user's tick.
+      if(verified[id]){
+        el.classList.add('done','habit-verified');
+        if(lbl && !el.querySelector('.habit-verified-badge')){
+          var b=document.createElement('span'); b.className='habit-verified-badge'; b.textContent='verified · Garmin'; lbl.appendChild(b);
+        }
+      }
+      // Suggest: highlight + hint (only while not done). Cleared once done/tapped.
+      if(suggest[id]){
+        el.classList.add('habit-suggest');
+        var ex = el.querySelector('.habit-suggest-hint');
+        var txt = suggest[id]+' · tap to confirm';
+        if(ex){ ex.textContent = txt; }
+        else if(lbl){ var s=document.createElement('span'); s.className='habit-suggest-hint'; s.textContent=txt; lbl.appendChild(s); }
+      } else {
+        el.classList.remove('habit-suggest');
+        var old = el.querySelector('.habit-suggest-hint'); if(old) old.remove();
+      }
+    });
+  }
+
+  // Runs on load (once health arrives) and after any habit rebuild. Idempotent.
+  window.healthVerifyHabits = function(){
+    try{
+      var health = window.__health;
+      if(!health || typeof health!=='object') return;
+      var entry = health[healthTodayDate()];
+      if(!entry || typeof entry!=='object') return;    // no entry for today → no action
+
+      var day = HEALTH_TODAY_IDX;
+      var done = lsGet(DONE_KEY+day, {});
+      var verified = {}, changed = false;
+      HEALTH_AUTOTICK.forEach(function(r){
+        if(r.test(entry) === true){
+          verified[r.id] = true;
+          if(!done[r.id]){ done[r.id] = true; changed = true; }   // tick only
+        }
+      });
+      if(changed) lsSet(DONE_KEY+day, done);
+
+      var suggest = {};
+      HEALTH_SUGGEST.forEach(function(r){
+        if(r.test(entry) === true && !done[r.id]) suggest[r.id] = r.hint(entry);
+      });
+
+      healthApplyMarks(day, verified, suggest);
+      if(typeof updateProgress==='function') updateProgress();
+    }catch(e){ /* health verification is best-effort; never break the tracker */ }
+  };
+
+  // Fire once health data is available (captured in todayApply), plus a direct
+  // attempt in case it's already loaded from cache.
+  if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ window.healthVerifyHabits(); }); }
+  window.healthVerifyHabits();
 })();
 </script>
 

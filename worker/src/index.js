@@ -270,8 +270,11 @@ export default {
       const entry = {};
       if (typeof payload.sleep_start === "string" && payload.sleep_start) entry.sleep_start = payload.sleep_start.slice(0, 40);
       if (typeof payload.sleep_end === "string" && payload.sleep_end) entry.sleep_end = payload.sleep_end.slice(0, 40);
-      if (typeof payload.sleep_minutes === "number" && isFinite(payload.sleep_minutes)) entry.sleep_minutes = Math.max(0, Math.round(payload.sleep_minutes));
-      if (typeof payload.steps === "number" && isFinite(payload.steps)) entry.steps = Math.max(0, Math.round(payload.steps));
+      // Non-negative, finite, rounded integers for every numeric metric.
+      const numFields = ["sleep_minutes", "steps", "protein_g", "water_ml", "sleep_score", "body_battery_wake", "body_battery_bed"];
+      for (const f of numFields) {
+        if (typeof payload[f] === "number" && isFinite(payload[f])) entry[f] = Math.max(0, Math.round(payload[f]));
+      }
 
       const map = safeParse(await env.TODAY_KV.get("health_data")) || {};
       map[date] = entry;  // overwrite → idempotent per date
