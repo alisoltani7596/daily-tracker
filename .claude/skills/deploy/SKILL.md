@@ -58,3 +58,14 @@ npx wrangler deploy
 ## 4. Verify
 - Tell the user the Pages URL and (if deployed) the Worker URL.
 - Suggest running `/coach-smoke-test` to confirm the live coach reply end-to-end.
+- If the Worker's `/health-push` route changed, smoke-test it (needs the
+  `EDIT_TOKEN` value; server-to-server, no Origin required). Expect `{"ok":true}`:
+  ```bash
+  WORKER=https://daily-tracker-coach.alisoltani75.workers.dev
+  curl -s -X POST "$WORKER/health-push" \
+    -H "content-type: application/json" -H "x-edit-token: $EDIT_TOKEN" \
+    -d '{"date":"2026-07-24","sleep_start":"23:15","sleep_end":"06:47","sleep_minutes":452,"steps":8241}'
+  # → {"ok":true}   (403 = bad token, 400 = bad JSON / missing date)
+  # Then confirm it surfaces in /today (browser Origin required):
+  curl -s "$WORKER/today" -H "Origin: https://alisoltani7596.github.io" | grep -o '"health":[^}]*}[^}]*}'
+  ```

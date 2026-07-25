@@ -132,16 +132,19 @@ export default {
       if (!env.TODAY_KV) {
         return json({ error: "today store not configured" }, 500, corsHeaders(allowOrigin));
       }
-      const [genStr, ovrStr] = await Promise.all([
+      const [genStr, ovrStr, healthStr] = await Promise.all([
         env.TODAY_KV.get("today"),
         env.TODAY_KV.get("today_overrides"),
+        env.TODAY_KV.get("health_data"),
       ]);
       if (genStr == null && ovrStr == null) {
         return json({ error: "not found" }, 404, corsHeaders(allowOrigin));
       }
+      // `health` is the full per-date map (≤30 days); the app can render it later.
       const payload = {
         generated: genStr ? safeParse(genStr) : null,
         overrides: ovrStr ? safeParse(ovrStr) : null,
+        health: healthStr ? safeParse(healthStr) : null,
       };
       return new Response(JSON.stringify(payload), {
         status: 200,
@@ -234,6 +237,53 @@ export default {
       return json({ ok: true }, 200, corsHeaders(allowOrigin));
     }
 
+    // POST /health-push — store a day's Apple Health / Garmin sample (pushed by an
+    // iOS Shortcut). Server-to-server like /task-add: gated purely by the shared
+    // EDIT_TOKEN in x-edit-token (same blast radius, one fewer secret), NOT CORS.
+    // Body: {date (required, YYYY-MM-DD), sleep_start, sleep_end, sleep_minutes,
+    // steps} — all but date optional, since Health samples can be patchy. KV key
+    // `health_data` is a per-date map, pruned to the last 30 days; a repeat POST
+    // for the same date overwrites (idempotent — the shortcut may re-run).
+    if (request.method === "POST" && url.pathname === "/health-push") {
+      if (!env.TODAY_KV) {
+        return json({ error: "health store not configured" }, 500, corsHeaders(allowOrigin));
+      }
+      if (!env.EDIT_TOKEN) {
+        return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      }
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) {
+        return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      }
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin));
+      }
+      const date = (payload && typeof payload.date === "string") ? payload.date.trim() : "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return json({ error: "`date` (YYYY-MM-DD) is required" }, 400, corsHeaders(allowOrigin));
+      }
+
+      // Keep only the recognised fields that are present (all optional).
+      const entry = {};
+      if (typeof payload.sleep_start === "string" && payload.sleep_start) entry.sleep_start = payload.sleep_start.slice(0, 40);
+      if (typeof payload.sleep_end === "string" && payload.sleep_end) entry.sleep_end = payload.sleep_end.slice(0, 40);
+      if (typeof payload.sleep_minutes === "number" && isFinite(payload.sleep_minutes)) entry.sleep_minutes = Math.max(0, Math.round(payload.sleep_minutes));
+      if (typeof payload.steps === "number" && isFinite(payload.steps)) entry.steps = Math.max(0, Math.round(payload.steps));
+
+      const map = safeParse(await env.TODAY_KV.get("health_data")) || {};
+      map[date] = entry;  // overwrite → idempotent per date
+
+      // Prune to the most recent 30 dates (ISO date strings sort chronologically).
+      const dates = Object.keys(map).sort();
+      while (dates.length > 30) { delete map[dates.shift()]; }
+
+      await env.TODAY_KV.put("health_data", JSON.stringify(map));
+      return json({ ok: true }, 200, corsHeaders(allowOrigin));
+    }
+
     // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
     // Today data into the TODAY_KV `today` key. This is a server-to-server call
     // (curl, no browser Origin), so it is gated purely by the REFRESH_TOKEN secret
@@ -323,15 +373,16 @@ export default {
       return json({ error: "Method not allowed" }, 405, corsHeaders(allowOrigin));
     }
 
-    // Default POST route: the coach chat.
-    return handleChat(request, env, allowOrigin, SYSTEM_PROMPT, MAX_TOKENS);
+    // Default POST route: the coach chat. Inject the latest health sample so the
+    // coach can reference last night's sleep and yesterday's steps.
+    return handleChat(request, env, allowOrigin, SYSTEM_PROMPT, MAX_TOKENS, true);
   },
 };
 
 // ─── Shared chat proxy (coach + planner) ───────────────────────────────────────
 // Proxies a { messages, context } chat turn to the Anthropic Messages API with a
 // given static system prompt (cached) followed by the volatile per-message context.
-async function handleChat(request, env, allowOrigin, systemPrompt, maxTokens) {
+async function handleChat(request, env, allowOrigin, systemPrompt, maxTokens, injectHealth) {
   // Reject cross-origin callers not on the allowlist.
   if (!allowOrigin) {
     return json({ error: "Origin not allowed" }, 403, {});
@@ -358,6 +409,15 @@ async function handleChat(request, env, allowOrigin, systemPrompt, maxTokens) {
     { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
   ];
   if (context) system.push({ type: "text", text: context });
+
+  // Append the latest Apple Health / Garmin sample (coach only), as a volatile
+  // block after the cache breakpoint — best-effort, never fails the request.
+  if (injectHealth && env.TODAY_KV) {
+    try {
+      const block = formatHealthForContext(latestHealthEntry(safeParse(await env.TODAY_KV.get("health_data"))));
+      if (block) system.push({ type: "text", text: block });
+    } catch { /* health context is optional */ }
+  }
 
   let apiResp;
   try {
@@ -421,6 +481,30 @@ function json(obj, status, extraHeaders) {
 
 function safeParse(str) {
   try { return JSON.parse(str); } catch { return null; }
+}
+
+// The most recent health entry from the per-date map (ISO dates sort by string).
+function latestHealthEntry(map) {
+  if (!map || typeof map !== "object") return null;
+  const dates = Object.keys(map).sort();
+  if (!dates.length) return null;
+  const date = dates[dates.length - 1];
+  return { date, ...map[date] };
+}
+
+// Format the latest health entry as a compact context block for the coach.
+function formatHealthForContext(h) {
+  if (!h) return "";
+  const lines = ["health_data (Apple Health / Garmin, latest available):", "  date: " + h.date];
+  if (typeof h.sleep_minutes === "number") {
+    let s = "  sleep: " + Math.floor(h.sleep_minutes / 60) + "h " + (h.sleep_minutes % 60) + "m";
+    if (h.sleep_start && h.sleep_end) s += " (" + h.sleep_start + " → " + h.sleep_end + ")";
+    lines.push(s);
+  } else if (h.sleep_start && h.sleep_end) {
+    lines.push("  sleep: " + h.sleep_start + " → " + h.sleep_end);
+  }
+  if (typeof h.steps === "number") lines.push("  steps: " + h.steps);
+  return lines.join("\n") + "\n";
 }
 
 // Validate the top-level shape of a Today payload before writing it to KV, so a
