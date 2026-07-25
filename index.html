@@ -575,6 +575,12 @@ button.tchk.done{color:#fff;}
 <div id="wake-overlay" class="wake-overlay" hidden>
   <div class="wake-inner">
     <div class="wake-eyebrow" id="wake-date"></div>
+    <svg class="s1-ring-svg wake-ring" viewBox="0 0 240 240" aria-hidden="true">
+      <g class="s1-ring-ticks"></g>
+      <circle class="s1-ring-dash" cx="120" cy="120" r="72"/>
+      <path class="s1-ring-blob" d=""/>
+      <circle class="s1-ring-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"/>
+    </svg>
     <div class="wake-greeting" id="wake-greeting">Good morning</div>
     <div class="wake-brief" id="wake-brief"></div>
     <button id="wake-start" class="wake-start" hidden>▶ Good morning</button>
@@ -618,10 +624,11 @@ button.tchk.done{color:#fff;}
     <div class="s1-card s1-ring-card">
       <div class="s1-card-tag">core</div>
       <div class="s1-ring-wrap">
-        <svg class="s1-ring-ph" viewBox="0 0 240 240" aria-hidden="true">
-          <circle class="s1-ph-tick-dash" cx="120" cy="120" r="108"/>
-          <circle class="s1-ph-circle" cx="120" cy="120" r="96"/>
-          <circle class="s1-ph-arc" id="s1-ph-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"/>
+        <svg class="s1-ring-svg" viewBox="0 0 240 240" aria-hidden="true">
+          <g class="s1-ring-ticks"></g>
+          <circle class="s1-ring-dash" cx="120" cy="120" r="72"/>
+          <path class="s1-ring-blob" d=""/>
+          <circle class="s1-ring-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"/>
         </svg>
         <div class="s1-ring-center">
           <div class="s1-charge" id="s1-charge">0<span class="s1-charge-pct">%</span></div>
@@ -2269,6 +2276,9 @@ function toggleHabit(el){
     var vb = el.querySelector('.habit-verified-badge'); if(vb) vb.remove();
   }
   updateProgress();
+  // Ring: flare on completion (micro-reward), and refresh charge/stats/streak.
+  if(el.classList.contains('done') && window.s1RingFlare) s1RingFlare();
+  if(window.s1RenderAll) s1RenderAll();
 }
 
 // ─── CHECK ITEMS ──────────────────────────────────────────────────────────────
@@ -3848,6 +3858,7 @@ function voiceStopCloud(){
   voiceCloudSeq++;                                  // invalidate any in-flight playback
   if(voiceAudio){ try{ voiceAudio.pause(); }catch(e){} voiceAudio.onended = null; voiceAudio.onerror = null; voiceAudio = null; }
   voiceRevokeAll();
+  if(window.s1VoiceSpeaking) s1VoiceSpeaking(false);
 }
 // The Aura speaker to use: the saved "cloud:<speaker>" pick, else the Helios
 // default — so fresh devices (no saved voice) sound like Helios out of the box.
@@ -3904,19 +3915,20 @@ function voiceSpeakCloud(text, opts){
   }
   function playFrom(i){
     if(myseq !== voiceCloudSeq) return;              // superseded / stopped
-    if(i >= chunks.length){ if(opts.onend) opts.onend(); return; }
+    if(i >= chunks.length){ if(window.s1VoiceSpeaking) s1VoiceSpeaking(false); if(opts.onend) opts.onend(); return; }
     fetchChunk(i).then(function(url){
       if(myseq !== voiceCloudSeq || !url) return;
       fetchChunk(i + 1);                             // warm the next chunk
       var a = new Audio(url);
       voiceAudio = a;
+      if(window.s1VoiceAudioAttach) s1VoiceAudioAttach(a);   // feed the ring's analyser
       a.onended = function(){ if(myseq === voiceCloudSeq) playFrom(i + 1); };
       a.onerror = function(){ if(myseq !== voiceCloudSeq) return; if(!started){ if(opts.onplayfail) opts.onplayfail(); } else { playFrom(i + 1); } };
       var pr = a.play();
       if(pr && pr.then){
-        pr.then(function(){ if(myseq === voiceCloudSeq && !started){ started = true; if(opts.onstart) opts.onstart(); } })
+        pr.then(function(){ if(myseq === voiceCloudSeq && !started){ started = true; if(window.s1VoiceSpeaking) s1VoiceSpeaking(true, false); if(opts.onstart) opts.onstart(); } })
           .catch(function(){ if(myseq !== voiceCloudSeq) return; if(!started){ if(opts.onplayfail) opts.onplayfail(); } else { playFrom(i + 1); } });
-      } else if(!started){ started = true; if(opts.onstart) opts.onstart(); }
+      } else if(!started){ started = true; if(window.s1VoiceSpeaking) s1VoiceSpeaking(true, false); if(opts.onstart) opts.onstart(); }
     }).catch(function(){
       if(myseq !== voiceCloudSeq) return;
       if(i === 0 && !started){ if(opts.onfail) opts.onfail(); }   // first chunk failed → whole-text native fallback
@@ -4062,9 +4074,10 @@ function voiceSpeakNative(text, opts){
   var u = new SpeechSynthesisUtterance(text);
   if(voiceChosen){ u.voice = voiceChosen; u.lang = voiceChosen.lang || 'en-US'; } else { u.lang = 'en-US'; }
   u.rate = 0.9; u.pitch = 1.0;   // slightly slower than default — the 1.0 rate reads too fast
-  if(opts.onstart) u.onstart = opts.onstart;
-  if(opts.onend)   u.onend   = opts.onend;
-  u.onerror = function(e){ if(opts.onerror) opts.onerror(e); };
+  // No audio stream from speechSynthesis, so the ring uses a simulated envelope.
+  u.onstart = function(){ if(window.s1VoiceSpeaking) s1VoiceSpeaking(true, true); if(opts.onstart) opts.onstart(); };
+  u.onend   = function(){ if(window.s1VoiceSpeaking) s1VoiceSpeaking(false); if(opts.onend) opts.onend(); };
+  u.onerror = function(e){ if(window.s1VoiceSpeaking) s1VoiceSpeaking(false); if(opts.onerror) opts.onerror(e); };
   try{ window.speechSynthesis.speak(u); return true; }catch(e){ if(opts.onerror) opts.onerror(e); return false; }
 }
 
@@ -4154,6 +4167,7 @@ function wakeInit(){
   var ov = document.getElementById('wake-overlay');
   if(!ov) return;
   ov.hidden = false;
+  if(window.s1RingWake) s1RingWake();          // amber boot behind/within the overlay
   document.getElementById('wake-date').textContent =
     new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
   document.getElementById('wake-greeting').textContent = 'Good ' + voiceTimeOfDay();
@@ -4492,16 +4506,13 @@ function voiceMaybeSpeakReply(rawText){
       return { done:d, total:visH.length, pct: visH.length ? Math.round(d/visH.length*100) : 0 };
     }catch(e){ return { done:0, total:0, pct:0 }; }
   }
-  var S1_ARC_LEN = 603.2;   // 2π·96
   function s1RenderCharge(){
     var c = s1Charge();
     var chEl = s1El('s1-charge');
     if(chEl) chEl.innerHTML = c.pct + '<span class="s1-charge-pct">%</span>';
-    var arc = s1El('s1-ph-arc');
-    if(arc) arc.style.strokeDashoffset = (S1_ARC_LEN * (1 - c.pct/100)).toFixed(1);
-    var stable = c.total>0 && c.pct>=100;
-    var hud = s1El('s1-today'); if(hud) hud.classList.toggle('is-stable', stable);
-    var lbl = s1El('s1-ring-label'); if(lbl) lbl.textContent = stable ? 'core stable' : 'charge';
+    // The ring engine owns the charge arc, the stable state, and the streak bump.
+    if(window.s1RingSetCharge) s1RingSetCharge(c.pct);
+    var lbl = s1El('s1-ring-label'); if(lbl) lbl.textContent = (c.total>0 && c.pct>=100) ? 'core stable' : 'charge';
     return c;
   }
 
@@ -4544,12 +4555,12 @@ function voiceMaybeSpeakReply(rawText){
     }catch(e){ /* best-effort */ }
   }
 
-  // Streak — localStorage for now (do not touch the Worker/KV). Full increment/
-  // reset logic lands in checkpoint 6; here we just reflect the stored value.
+  // Streak — localStorage; the ring engine owns increment (on stable) and the
+  // broken-streak reset (s1StreakCheck). Here we just reflect the current value.
   var S1_STREAK_KEY = 'streak_v1';   // { streak, lastStableDate }
   function s1Streak(){ try{ var s=JSON.parse(localStorage.getItem(S1_STREAK_KEY)); return (s&&typeof s==='object')?s:{streak:0,lastStableDate:null}; }catch(e){ return {streak:0,lastStableDate:null}; } }
   function s1RenderStreak(){
-    var st = s1Streak();
+    var st = (typeof window.s1StreakCheck==='function') ? window.s1StreakCheck() : s1Streak();
     var segs = s1El('s1-segs');
     if(segs){
       var filled = Math.max(0, Math.min(7, st.streak|0)), html='';
@@ -4576,6 +4587,168 @@ function voiceMaybeSpeakReply(rawText){
   // Cheap refresh when returning to Today (e.g. after toggling habits on Tracker).
   var tb = document.getElementById('tabbar');
   if(tb) tb.addEventListener('click', function(){ setTimeout(s1RenderAll, 0); });
+})();
+</script>
+
+<!-- ─── style-1 LIVING RING (checkpoints 3–6) ───────────────────────────────────
+ * One rAF loop drives every .s1-ring-svg (HUD + wake overlay). State machine:
+ *   idle    — slow breathing + ~1px wobble (never a perfect circle)
+ *   wake    — amber ~2s boot (expand & settle), eases back to green; fired by ?wake=1
+ *   speaking— amplitude follows the coach voice: an AnalyserNode on the /tts <audio>
+ *             chunks (survives sequential chunk playback), or a simulated envelope
+ *             for the speechSynthesis fallback
+ *   stable  — at 100% charge the ring eases to near-white + keeps a glow for the day
+ * Plus: habit-tap flare, streak logic (localStorage), reduced-motion + tab-hidden
+ * pause. Exposes window.s1Ring* hooks used by the voice/wake/habit code.
+-->
+<script>
+(function(){
+  var REDUCED = false;
+  try{ REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  var CX=120, CY=120, R=88, N=96, TAU=Math.PI*2, ARC_LEN=603.2;
+
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function rings(){ return document.querySelectorAll('.s1-ring-svg'); }
+  function blobs(){ return document.querySelectorAll('.s1-ring-blob'); }
+  function arcs(){ return document.querySelectorAll('.s1-ring-arc'); }
+  function ringClass(cls,on){ rings().forEach(function(s){ s.classList.toggle(cls, on); }); }
+
+  // ── static decoration: 48 ticks (every 6th longer) into each ring ──
+  (function buildTicks(){
+    var html='';
+    for(var i=0;i<48;i++){
+      var a=i/48*TAU - Math.PI/2, lng=(i%6===0), r1=110, r2=lng?119:114;
+      html += '<line x1="'+(CX+Math.cos(a)*r1).toFixed(1)+'" y1="'+(CY+Math.sin(a)*r1).toFixed(1)+
+              '" x2="'+(CX+Math.cos(a)*r2).toFixed(1)+'" y2="'+(CY+Math.sin(a)*r2).toFixed(1)+
+              '" stroke-width="'+(lng?1.4:0.8)+'"/>';
+    }
+    document.querySelectorAll('.s1-ring-ticks').forEach(function(g){ g.innerHTML = html; });
+  })();
+
+  // ── state ──
+  var wakeUntil=0, speaking=false, speakSim=false, stable=false, flare=0, env=0, charge=0;
+  var simTarget=0, simNext=0, ph1=0, ph2=1.7, ph3=4.2;
+
+  // ── Web Audio: one context + analyser, per-chunk source nodes feed it ──
+  var actx=null, analyser=null, freq=null, sourced=(typeof WeakSet!=='undefined')?new WeakSet():null;
+  function ensureCtx(){
+    if(actx) return actx;
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext; if(!AC) return null;
+      actx = new AC();
+      analyser = actx.createAnalyser(); analyser.fftSize = 256;
+      freq = new Uint8Array(analyser.frequencyBinCount);
+      analyser.connect(actx.destination);
+    }catch(e){ actx=null; }
+    return actx;
+  }
+  // Called by voiceSpeakCloud for each chunk <audio> — route it through the shared
+  // analyser once (createMediaElementSource is once-per-element; chunks are new
+  // elements, so the analyser persists across the whole utterance).
+  window.s1VoiceAudioAttach = function(el){
+    if(REDUCED || !el || !ensureCtx()) return;
+    if(sourced && sourced.has(el)) return;
+    try{ var s=actx.createMediaElementSource(el); s.connect(analyser); if(sourced) sourced.add(el); }catch(e){}
+    try{ if(actx.state==='suspended') actx.resume(); }catch(e){}
+  };
+  // Speaking on/off from the voice layer (simulated=true for speechSynthesis).
+  window.s1VoiceSpeaking = function(on, simulated){
+    speaking = !!on; speakSim = !!simulated;
+    if(on){ try{ if(actx && actx.state==='suspended') actx.resume(); }catch(e){} }
+    updateGlow();
+  };
+  window.s1RingWake  = function(){ wakeUntil = now()+2200; ringClass('is-wake', true); };
+  window.s1RingFlare = function(){ flare = 1; };
+  window.s1RingSetCharge = function(pct){
+    charge = Math.max(0, Math.min(1, (pct||0)/100));
+    arcs().forEach(function(a){ a.style.strokeDashoffset = (ARC_LEN*(1-charge)).toFixed(1); });
+    var was = stable; stable = charge >= 1;
+    ringClass('is-stable', stable);
+    var hud = document.getElementById('s1-today'); if(hud) hud.classList.toggle('is-stable', stable);
+    updateGlow();
+    if(stable && !was && typeof s1StreakMarkStable==='function') s1StreakMarkStable();
+  };
+  function updateGlow(){ ringClass('glow', speaking || stable); }
+
+  // ── organic blob path (3 drifting sine harmonics) ──
+  function wave(t){ return Math.sin(t*6+ph1)*0.55 + Math.sin(t*11+ph2)*0.30 + Math.sin(t*17+ph3)*0.15; }
+  function path(amp, breath){
+    var d='', xtra=flare*6, r,x,y,th;
+    for(var i=0;i<=N;i++){
+      th=(i%N)/N*TAU; r=R+breath+amp*wave(th)+xtra;
+      x=CX+Math.cos(th)*r; y=CY+Math.sin(th)*r;
+      d += (i===0?'M':'L')+x.toFixed(2)+' '+y.toFixed(2);
+    }
+    return d+'Z';
+  }
+  function staticPath(){
+    var d='',x,y,th; for(var i=0;i<=N;i++){ th=(i%N)/N*TAU; x=CX+Math.cos(th)*R; y=CY+Math.sin(th)*R; d+=(i===0?'M':'L')+x.toFixed(2)+' '+y.toFixed(2); } return d+'Z';
+  }
+
+  // ── the loop ──
+  var raf=0;
+  function frame(){
+    var t = now()/1000;
+    ph1+=0.006; ph2+=0.011; ph3+=0.017;
+    var isWake = now() < wakeUntil;
+    if(!isWake && document.querySelector('.s1-ring-svg.is-wake')) ringClass('is-wake', false);
+
+    // voice envelope
+    if(speaking){
+      if(speakSim || !analyser){
+        if(now() > simNext){ simTarget = 0.25 + Math.random()*0.5; simNext = now()+140; }
+        env += (simTarget - env)*0.18;
+      } else {
+        analyser.getByteFrequencyData(freq);
+        var sum=0; for(var k=0;k<freq.length;k++) sum+=freq[k];
+        env += ((sum/freq.length/255) - env)*0.18;
+      }
+    } else { env += (0 - env)*0.12; }
+
+    var amp;
+    if(speaking) amp = 2 + env*8;                                   // ~8px, voice-modulated
+    else if(isWake){ var p=1-(wakeUntil-now())/2200; amp = 2.5 + Math.sin(Math.max(0,Math.min(1,p))*Math.PI)*3.2; }
+    else if(stable) amp = 1.4;
+    else amp = 1.2;                                                 // idle wobble
+
+    var bspeed = isWake?2.4:(speaking?1.6:1.1);
+    var breath = Math.sin(t*bspeed)*(isWake?2.2:1.1);
+
+    var d = path(amp, breath), sw = (2 + flare*2.6).toFixed(1);
+    blobs().forEach(function(b){ b.setAttribute('d', d); b.style.strokeWidth = sw; });
+    flare = flare>0.004 ? flare*0.94 : 0;
+
+    raf = requestAnimationFrame(frame);
+  }
+  function start(){ if(raf) return; if(REDUCED){ blobs().forEach(function(b){ b.setAttribute('d', staticPath()); }); return; } raf=requestAnimationFrame(frame); }
+  function stop(){ if(raf){ cancelAnimationFrame(raf); raf=0; } }
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) stop(); else start(); });
+
+  // ── streak logic (localStorage; KV migration is a later sprint) ──
+  var STREAK_KEY = 'streak_v1';
+  function sk(){ try{ var s=JSON.parse(localStorage.getItem(STREAK_KEY)); return (s&&typeof s==='object')?s:{streak:0,lastStableDate:null}; }catch(e){ return {streak:0,lastStableDate:null}; } }
+  function skSet(s){ try{ localStorage.setItem(STREAK_KEY, JSON.stringify(s)); }catch(e){} }
+  function dstr(off){ var d=new Date(); d.setDate(d.getDate()+off); function p(x){return(x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+  window.s1StreakCheck = function(){                      // reset a broken streak on load
+    var s=sk(), today=dstr(0), yest=dstr(-1);
+    if(s.lastStableDate && s.lastStableDate!==today && s.lastStableDate!==yest){ s.streak=0; skSet(s); }
+    return s;
+  };
+  window.s1StreakMarkStable = function(){                 // called when charge hits 100%
+    var s=sk(), today=dstr(0), yest=dstr(-1);
+    if(s.lastStableDate===today) return;
+    s.streak = (s.lastStableDate===yest) ? (s.streak|0)+1 : 1;
+    s.lastStableDate = today; skSet(s);
+    if(typeof s1RenderStreak==='function') s1RenderStreak();
+  };
+
+  // boot
+  arcs().forEach(function(a){ a.style.strokeDashoffset = ARC_LEN.toFixed(1); });
+  blobs().forEach(function(b){ b.setAttribute('d', staticPath()); });   // render immediately (before 1st frame / while tab hidden)
+  s1StreakCheck();
+  start();
+  // push the current charge (and stable/streak) into the ring now that hooks exist
+  if(typeof s1RenderAll==='function') s1RenderAll();
 })();
 </script>
 
