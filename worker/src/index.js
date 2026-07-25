@@ -271,7 +271,7 @@ export default {
       if (typeof payload.sleep_start === "string" && payload.sleep_start) entry.sleep_start = payload.sleep_start.slice(0, 40);
       if (typeof payload.sleep_end === "string" && payload.sleep_end) entry.sleep_end = payload.sleep_end.slice(0, 40);
       // Non-negative, finite, rounded integers for every numeric metric.
-      const numFields = ["sleep_minutes", "steps", "protein_g", "water_ml", "sleep_score", "body_battery_wake", "body_battery_bed"];
+      const numFields = ["sleep_minutes", "steps", "protein_g", "water_ml", "sleep_score", "body_battery_wake", "body_battery_bed", "workout_minutes", "workout_kcal"];
       for (const f of numFields) {
         if (typeof payload[f] === "number" && isFinite(payload[f])) entry[f] = Math.max(0, Math.round(payload[f]));
       }

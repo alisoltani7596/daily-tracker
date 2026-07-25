@@ -156,6 +156,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:18p
 .check-link{font-size:11px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--accent2);border-radius:20px;padding:2px 8px;margin-top:5px;transition:background .12s;}
 .check-link:hover{background:var(--accent2);color:var(--white);}
 .kcal-badge{font-family:var(--mono);font-size:11px;color:var(--amber);background:rgba(212,160,64,.12);border:1px solid rgba(212,160,64,.25);border-radius:20px;padding:2px 8px;white-space:nowrap;margin-left:auto;flex-shrink:0;}
+/* Garmin-verified check items (Morning "Wake up" + workout completion): hollow
+   accent tick, distinct from a manual solid tick, plus a "verified · Garmin" badge. */
+.check-item.check-verified .check-box{background:transparent;border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--surface);}
+.check-item.check-verified .check-tick{stroke:var(--accent);opacity:1;}
+.check-verified-badge{font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:rgba(87,196,138,.12);border:1px solid rgba(87,196,138,.3);border-radius:20px;padding:1px 6px;margin-left:6px;white-space:nowrap;}
+/* Actual workout kcal from Garmin, shown next to the estimated kcal badge. */
+.kcal-actual-badge{font-family:var(--mono);font-size:11px;color:var(--accent);background:rgba(87,196,138,.12);border:1px solid rgba(87,196,138,.3);border-radius:20px;padding:2px 8px;white-space:nowrap;flex-shrink:0;margin-left:6px;}
 
 .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px;}
 .ex-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;text-decoration:none;color:var(--white);transition:border-color .15s;display:flex;align-items:center;gap:8px;padding:7px 9px;}
@@ -2214,6 +2221,11 @@ function toggleHabit(el){
 function toggle(el){
   el.classList.toggle('done');
   saveChecks();
+  // If the user unticks a Garmin-verified check item, drop its badge (their call).
+  if(!el.classList.contains('done')){
+    el.classList.remove('check-verified');
+    var vb = el.querySelector('.check-verified-badge'); if(vb) vb.remove();
+  }
   updateProgress();
 }
 
@@ -4299,10 +4311,77 @@ function voiceMaybeSpeakReply(rawText){
     }catch(e){ /* health verification is best-effort; never break the tracker */ }
   };
 
+  // ── Check-item sections: Morning Routine + workout (same rule engine) ────────
+  function healthMarkCheckVerified(el){
+    el.classList.add('check-verified');
+    var lbl = el.querySelector('.check-label');
+    if(lbl && !el.querySelector('.check-verified-badge')){
+      var b=document.createElement('span'); b.className='check-verified-badge'; b.textContent='verified · Garmin'; lbl.appendChild(b);
+    }
+  }
+  function healthMarkWorkoutKcal(el, kcal){
+    var badge = el.querySelector('.kcal-badge'); if(!badge) return;
+    var txt = kcal + ' kcal · garmin';
+    var ex = el.querySelector('.kcal-actual-badge');
+    if(ex){ ex.textContent = txt; }
+    else { var s=document.createElement('span'); s.className='kcal-actual-badge'; s.textContent=txt; badge.insertAdjacentElement('afterend', s); }
+  }
+  // Persist one day's check panel (panel-targeted mirror of saveChecks, so it
+  // works even when that day isn't the visible panel).
+  function healthSaveCheckPanel(panel, day){
+    var state = Array.prototype.map.call(panel.querySelectorAll('.check-item'), function(i){ return i.classList.contains('done'); });
+    lsSet(CHK_KEY+day, state);
+    var kcal = 0; panel.querySelectorAll('.check-item.done').forEach(function(el){ kcal += +(el.dataset.kcal||0); });
+    weekKcal[day] = kcal; lsSet(WEEK_KEY, weekKcal);
+  }
+  function healthVerifyChecks(){
+    try{
+      var health = window.__health;
+      if(!health || typeof health!=='object') return;
+      var entry = health[healthTodayDate()];
+      if(!entry || typeof entry!=='object') return;       // no entry for today → no action
+      var day = HEALTH_TODAY_IDX;
+      var panel = document.querySelector('.day-panel[data-panel="'+day+'"]');
+      if(!panel) return;
+      var changed = false;
+
+      // Morning Routine "Wake up at 8:00 am" ← sleep_end ≤ 08:00 (same as habit).
+      var wm = healthMins(entry.sleep_end);
+      if(wm!=null && wm <= 8*60){
+        panel.querySelectorAll('.check-item[data-section="morning"] .check-label').forEach(function(lbl){
+          // Prefix match: a "verified · Garmin" badge appended into the label
+          // changes its textContent, so an exact match would fail to re-match.
+          if(lbl.textContent.trim().indexOf('Wake up at 8:00 am')===0){
+            var el = lbl.closest('.check-item');
+            if(el){ if(!el.classList.contains('done')){ el.classList.add('done'); changed=true; } healthMarkCheckVerified(el); }
+          }
+        });
+      }
+
+      // Workout completion (a "Complete …" row carrying a kcal badge) ←
+      // workout_minutes ≥ 25. Actual workout_kcal is shown whenever present.
+      var wkOk = (typeof entry.workout_minutes==='number') && (entry.workout_minutes >= 25);
+      var hasKcal = (typeof entry.workout_kcal==='number');
+      panel.querySelectorAll('.check-item').forEach(function(el){
+        var lbl = el.querySelector('.check-label');
+        if(!lbl || !el.querySelector('.kcal-badge')) return;
+        if(!/^Complete\b/.test(lbl.textContent.trim())) return;
+        if(wkOk){ if(!el.classList.contains('done')){ el.classList.add('done'); changed=true; } healthMarkCheckVerified(el); }
+        if(hasKcal){ healthMarkWorkoutKcal(el, entry.workout_kcal); }
+      });
+
+      if(changed) healthSaveCheckPanel(panel, day);
+      if(panel.classList.contains('visible') && typeof updateProgress==='function') updateProgress();
+    }catch(e){ /* best-effort; never break the tracker */ }
+  }
+
+  // Habits (per-column) + check sections (Morning Routine / workout) together.
+  window.healthVerify = function(){ window.healthVerifyHabits(); healthVerifyChecks(); };
+
   // Fire once health data is available (captured in todayApply), plus a direct
   // attempt in case it's already loaded from cache.
-  if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ window.healthVerifyHabits(); }); }
-  window.healthVerifyHabits();
+  if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ window.healthVerify(); }); }
+  window.healthVerify();
 })();
 </script>
 
