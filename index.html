@@ -2177,6 +2177,10 @@ HABITS.forEach(h=>{ if(!(h.id in vis)) vis[h.id] = !h.private; });
 
 let currentDay = [6,0,1,2,3,4,5][new Date().getDay()];
 let weekKcal   = lsGet(WEEK_KEY, {});
+// The Tracker's viewed date (date navigation lands in a later checkpoint). All
+// panel reads/writes go to this date's record; "today"-scoped consumers (ring
+// charge, health auto-tick, coach state) always use todayIso() instead.
+let currentDate = null;   // set to todayIso() once the helpers below are defined
 
 /* ═══ DATE-KEYED DAY RECORDS (style-1) ═══════════════════════════════════════
  * Daily records keyed by ISO date: { v, date, weekday(0=Mon..6=Sun), plan,
@@ -2235,6 +2239,7 @@ function migrateToRecords(){
   }catch(e){ /* never break boot on migration */ }
 }
 migrateToRecords();
+currentDate = todayIso();
 
 // ─── SIDE LINKS (inject into each day's side col) ─────────────────────────────
 const SIDE_HTML = `
@@ -2272,7 +2277,7 @@ for(let d=0;d<7;d++) document.getElementById('scol-'+d).innerHTML = SIDE_HTML;
 function buildHabits(){
   for(let d=0;d<7;d++){
     const col  = document.getElementById('hcol-'+d);
-    const done = lsGet(DONE_KEY+d, {});
+    const done = recHabits(currentDate);   // habits are the same list every day; done-state is the viewed date's
     col.innerHTML = '';
     const sec = document.createElement('div');
     sec.className = 'habit-section';
@@ -2347,10 +2352,8 @@ function s1TrackerReadouts(){
 
 function toggleHabit(el){
   el.classList.toggle('done');
-  const day=+el.dataset.day, id=el.dataset.id;
-  const done=lsGet(DONE_KEY+day,{});
-  done[id]=el.classList.contains('done');
-  lsSet(DONE_KEY+day,done);
+  const id=el.dataset.id;
+  recSetHabit(currentDate, id, el.classList.contains('done'));   // write to the viewed date's record
   // A manual tap supersedes any health hint: clear the suggestion highlight, and
   // if the user unticks a Garmin-verified habit, drop its badge (their call wins).
   el.classList.remove('habit-suggest');
@@ -2380,19 +2383,15 @@ function toggle(el){
 function saveChecks(){
   const panel = document.querySelector('.day-panel.visible');
   if(!panel) return;
-  const day = +panel.dataset.panel;
   const state = Array.from(panel.querySelectorAll('.check-item')).map(i=>i.classList.contains('done'));
-  lsSet(CHK_KEY+day, state);
-  // update week kcal
   const kcal = calcKcal(panel);
-  weekKcal[day] = kcal;
-  lsSet(WEEK_KEY, weekKcal);
+  recSetChecks(currentDate, state, kcal);   // viewed date's record (checks + kcal)
 }
 
 function loadChecks(day){
   const panel = document.querySelector(`[data-panel="${day}"]`);
   if(!panel) return;
-  const state = lsGet(CHK_KEY+day, []);
+  const state = recChecks(currentDate);      // apply the viewed date's checks to its weekday panel
   panel.querySelectorAll('.check-item').forEach((el,i)=>{
     el.classList.toggle('done', !!state[i]);
   });
@@ -2415,7 +2414,7 @@ function updateProgress(){
   const doneChecks = checks.filter(i=>i.classList.contains('done'));
   const kcal = calcKcal(panel);
 
-  const done = lsGet(DONE_KEY+day,{});
+  const done = recHabits(currentDate);
   const visHabits = HABITS.filter(h=>vis[h.id]);
   const doneHabits = visHabits.filter(h=>done[h.id]);
 
@@ -2423,7 +2422,7 @@ function updateProgress(){
   const doneTotal = doneChecks.length + doneHabits.length;
   const pct = total>0 ? Math.round(doneTotal/total*100) : 0;
 
-  const totalWeek = Object.values(weekKcal).reduce((a,b)=>a+b,0);
+  let totalWeek = 0; for(let wd=0;wd<7;wd++){ totalWeek += recKcal(dateForWeekdayThisWeek(wd)); }
   const deficit = 600 + kcal;
 
   document.getElementById('prog-fill').style.width = pct+'%';
@@ -2854,24 +2853,25 @@ function coachSetMode(mode){
 function coachTrackerState(){
   const idx = coachTodayIdx();
   const now = new Date();
-  const done = lsGet(DONE_KEY+idx, {});
+  const today = todayIso();
+  const done = recHabits(today);
   const visHabits = HABITS.filter(h=>vis[h.id]);
   const habitsDone = visHabits.filter(h=>done[h.id]).length;
 
   const panel = document.querySelector('[data-panel="'+idx+'"]');
   const chkTotal = panel ? panel.querySelectorAll('.check-item').length : 0;
-  const chkState = lsGet(CHK_KEY+idx, []);
+  const chkState = recChecks(today);
   const chkDone = chkState.filter(Boolean).length;
   const chkPct = chkTotal ? Math.round(chkDone/chkTotal*100) : 0;
 
-  const kcal = weekKcal[idx] || 0;
-  const weekTotal = Object.values(weekKcal).reduce((a,b)=>a+(+b||0), 0);
+  const kcal = recKcal(today);
+  let weekTotal = 0; for(let wd=0; wd<7; wd++){ weekTotal += recKcal(dateForWeekdayThisWeek(wd)); }
 
   // Days so far this week where every visible habit was completed.
   let daysComplete = 0;
   if(visHabits.length){
     for(let d=0; d<=idx; d++){
-      const dn = lsGet(DONE_KEY+d, {});
+      const dn = recHabits(dateForWeekdayThisWeek(d));
       if(visHabits.every(h=>dn[h.id])) daysComplete++;
     }
   }
@@ -4512,8 +4512,8 @@ function voiceMaybeSpeakReply(rawText){
       var entry = health[healthTodayDate()];
       if(!entry || typeof entry!=='object') return;    // no entry for today → no action
 
-      var day = HEALTH_TODAY_IDX;
-      var done = lsGet(DONE_KEY+day, {});
+      var day = HEALTH_TODAY_IDX, today = todayIso();
+      var done = recHabits(today);
       var verified = {}, changed = false;
       HEALTH_AUTOTICK.forEach(function(r){
         if(r.test(entry) === true){
@@ -4521,7 +4521,7 @@ function voiceMaybeSpeakReply(rawText){
           if(!done[r.id]){ done[r.id] = true; changed = true; }   // tick only
         }
       });
-      if(changed) lsSet(DONE_KEY+day, done);
+      if(changed){ var rr=dayRec(today); rr.habits=done; dayRecSave(rr); }
 
       var suggest = {};
       HEALTH_SUGGEST.forEach(function(r){
@@ -4552,9 +4552,8 @@ function voiceMaybeSpeakReply(rawText){
   // works even when that day isn't the visible panel).
   function healthSaveCheckPanel(panel, day){
     var state = Array.prototype.map.call(panel.querySelectorAll('.check-item'), function(i){ return i.classList.contains('done'); });
-    lsSet(CHK_KEY+day, state);
     var kcal = 0; panel.querySelectorAll('.check-item.done').forEach(function(el){ kcal += +(el.dataset.kcal||0); });
-    weekKcal[day] = kcal; lsSet(WEEK_KEY, weekKcal);
+    recSetChecks(todayIso(), state, kcal);   // health verify always targets today's record
   }
   function healthVerifyChecks(){
     try{
@@ -4618,11 +4617,10 @@ function voiceMaybeSpeakReply(rawText){
   function s1El(id){ return document.getElementById(id); }
   function s1Esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 
-  // Charge: done / total of the visible habits for today's weekday slot.
+  // Charge: done / total of the visible habits for TODAY (the ring is today's core).
   function s1Charge(){
     try{
-      var idx = (typeof coachTodayIdx==='function') ? coachTodayIdx() : [6,0,1,2,3,4,5][new Date().getDay()];
-      var done = lsGet(DONE_KEY+idx, {});
+      var done = recHabits(todayIso());
       var visH = HABITS.filter(function(h){ return vis[h.id]; });
       var d = visH.filter(function(h){ return done[h.id]; }).length;
       return { done:d, total:visH.length, pct: visH.length ? Math.round(d/visH.length*100) : 0 };
@@ -4655,10 +4653,11 @@ function voiceMaybeSpeakReply(rawText){
   function s1RenderStats(){
     try{
       var idx = (typeof coachTodayIdx==='function') ? coachTodayIdx() : [6,0,1,2,3,4,5][new Date().getDay()];
-      var doneH = lsGet(DONE_KEY+idx, {});
+      var today = todayIso();
+      var doneH = recHabits(today);
       var visH = HABITS.filter(function(h){ return vis[h.id]; });
       var habitsDone = visH.filter(function(h){ return doneH[h.id]; }).length;
-      var saved = lsGet(CHK_KEY+idx, []);
+      var saved = recChecks(today);
       var panel = document.querySelector('.day-panel[data-panel="'+idx+'"]');
       var kcal = 0, checksDone = 0, checksTotal = 0;
       if(panel){
