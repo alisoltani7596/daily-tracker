@@ -175,3 +175,65 @@ body[data-tab="today"] header{ display: none !important; }
   #today-grid{ column-width: auto; column-count: 1; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRACKER SCREEN — HUD language
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Square corners everywhere on this screen's chrome. */
+.progress-card,.card,.habit-section,.kc,.day-tab,.lg,.bonus-card,.ex-card,.hiit-link,
+.manage-btn,.check-link,.kcal-badge,.priv-badge,.check-box,.hbox,.ex-thumb,.yt-thumb,
+.modal,.modal-item .tog{ border-radius: 0 !important; }
+
+/* Cards → HUD surface + hairline. */
+.progress-card,.card,.habit-section,.lg,.bonus-card{ background: var(--bg-raised); border-color: var(--line); }
+.card-title,.habit-head{ background: transparent; border-bottom-color: var(--line); }
+
+/* Progress → thin accent line + mono micro-labels. */
+.progress-card{ padding: 12px 14px 14px; }
+.prog-label{ font-family: var(--font-mono); font-size: 10px; font-weight: 400; letter-spacing: 2px; text-transform: lowercase; color: var(--text-faint); }
+.prog-count{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+.prog-track{ height: 2px; background: var(--line); border-radius: 0; margin-bottom: 14px; }
+.prog-fill{ background: var(--accent); border-radius: 0; box-shadow: 0 0 6px var(--accent-glow); }
+
+/* kcal → large telemetry readouts in a hairline-split strip. */
+.kcal-row{ gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.kc{ background: var(--bg-raised); text-align: left; padding: 12px 12px 10px; }
+.kc-val{ font-family: var(--font-mono); font-weight: 500; font-size: 26px; line-height: 1; color: var(--text-bright); }
+.kc-lbl{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.5px; text-transform: lowercase; color: var(--text-faint); margin-top: 6px; }
+
+/* Day tabs → one segmented mono control; active = the single accent. */
+.day-tabs{ display: inline-flex; gap: 0; flex-wrap: nowrap; border: 1px solid var(--line); width: fit-content; max-width: 100%; overflow: hidden; margin-bottom: 14px; }
+.day-tab{ border: none; border-right: 1px solid var(--line); background: transparent; color: var(--text-faint); padding: 8px 15px; letter-spacing: 1px; }
+.day-tab:last-child{ border-right: none; }
+.day-tab:hover{ color: var(--text-dim); background: var(--surface2); }
+.day-tab.active,.day-tab.active.lift,.day-tab.active.hiit,.day-tab.active.rest{ background: var(--accent2); border-color: var(--line); color: #fff; }
+
+/* Card headers → mono micro-label; fold the inline accent spans to one accent. */
+.card-title{ letter-spacing: 2px; color: var(--text-faint); }
+.card-title span[style]{ color: var(--text-dim) !important; }
+/* Per-card completion readout (n/total), injected by s1TrackerReadouts. */
+.s1-cd-count{ margin-left: auto; font-family: var(--font-mono); font-size: 10px; letter-spacing: .5px; color: var(--text-dim); }
+.s1-cd-count.is-full{ color: var(--accent); }
+.habit-head .s1-cd-count{ margin-left: auto; margin-right: 10px; }
+
+/* Checklist / habit boxes → square; verified hollow-tick already handled. */
+.check-item.done .check-box,.habit-item.done .hbox{ background: var(--accent); border-color: var(--accent); }
+.hbox{ border-color: var(--text-faint); }
+
+/* Exercise / video cards, manage + link chips → HUD. */
+.ex-card,.hiit-link{ background: var(--bg-raised); border-color: var(--line); }
+.ex-name{ color: var(--text-bright); }
+.ex-sets,.hiit-meta{ color: var(--text-dim); }
+.manage-btn{ color: var(--text-dim); border-color: var(--line); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: lowercase; }
+.manage-btn:hover{ border-color: var(--accent); color: var(--accent); }
+.check-link{ border-color: var(--line); color: var(--accent); }
+.check-link:hover{ background: var(--surface2); color: var(--text-bright); }
+.kcal-badge{ color: var(--text-dim); background: transparent; border-color: var(--line); }
+
+/* Plans section → HUD heading + segmented sub-tabs. */
+.plans-section{ border-top-color: var(--line); }
+.plans-title{ font-family: var(--font-mono); font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-bright); }
+.plans-chevron{ color: var(--text-faint); }
+.plans-tabs{ gap: 0; border: 1px solid var(--line); overflow: hidden; }
+.bonus-card,.bonus-grid .bonus-card{ background: var(--bg-raised); }

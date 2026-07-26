@@ -2261,6 +2261,30 @@ function buildHabits(){
   }
   // Re-apply Garmin auto-tick / suggestions after any (re)build of the columns.
   if(typeof healthVerifyHabits==='function') healthVerifyHabits();
+  if(typeof s1TrackerReadouts==='function') s1TrackerReadouts();
+}
+
+// style-1 HUD: per-card completion readouts (n/total, mono) in each card header.
+function s1TrackerReadouts(){
+  var panel = document.querySelector('.day-panel.visible');
+  if(!panel) return;
+  function setCount(host, before, done, total){
+    if(!host || !total) return;
+    var c = host.querySelector('.s1-cd-count');
+    if(!c){ c = document.createElement('span'); c.className = 's1-cd-count'; before ? host.insertBefore(c, before) : host.appendChild(c); }
+    c.textContent = done + '/' + total;
+    c.classList.toggle('is-full', done === total);
+  }
+  panel.querySelectorAll('.card').forEach(function(card){
+    var title = card.querySelector('.card-title');
+    var items = card.querySelectorAll('.check-item');
+    if(title && items.length) setCount(title, null, card.querySelectorAll('.check-item.done').length, items.length);
+  });
+  panel.querySelectorAll('.habit-section').forEach(function(sec){
+    var head = sec.querySelector('.habit-head');
+    var items = sec.querySelectorAll('.habit-item');
+    if(head && items.length) setCount(head, head.querySelector('.manage-btn'), sec.querySelectorAll('.habit-item.done').length, items.length);
+  });
 }
 
 function toggleHabit(el){
@@ -2352,6 +2376,7 @@ function updateProgress(){
   document.getElementById('hdr-kcal').textContent = kcal;
   document.getElementById('hdr-done').textContent = doneTotal+'/'+total;
   document.getElementById('hdr-pct').textContent = pct+'%';
+  if(typeof s1TrackerReadouts==='function') s1TrackerReadouts();
 }
 
 // ─── DAY SWITCHING ────────────────────────────────────────────────────────────
