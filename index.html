@@ -3812,6 +3812,13 @@ function todaySave(){
   clearTimeout(_todaySaveTimer);
   _todaySaveTimer = setTimeout(function(){ todayPushOverrides(base); }, 600);
 }
+// style-1 HUD toast (non-blocking; replaces stray alert()s).
+function s1Toast(msg){
+  var t = document.getElementById('s1-toast');
+  if(!t){ t = document.createElement('div'); t.id = 's1-toast'; t.className = 's1-toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(s1Toast._t); s1Toast._t = setTimeout(function(){ t.classList.remove('show'); }, 3800);
+}
 function todayEditToken(){
   var t = null; try{ t = localStorage.getItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}
   if(!t){
@@ -3828,7 +3835,7 @@ function todayPushOverrides(base){
     headers:{'content-type':'application/json','x-edit-token':token},
     body: JSON.stringify(window.__todayOverrides)
   }).then(function(r){
-    if(r.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}; alert('Today edit token rejected — you will be asked again on the next edit.'); }
+    if(r.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}; s1Toast('today edit token rejected — you’ll be asked again on the next edit'); }
   }).catch(function(){ /* offline: local mirror already saved */ });
 }
 

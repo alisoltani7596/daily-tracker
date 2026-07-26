@@ -300,3 +300,37 @@ body[data-tab="today"] header{ display: none !important; }
 
 /* Planner plan-approval card is already square HUD; keep the confirm button square. */
 .plan-confirm-btn{ border-radius: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SWEEP — remaining chrome: tab bar, wake button, modal, toast
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Bottom tab bar: square HUD, one accent, no glow (glow lives only on the ring). */
+.tabbar{ background: var(--bg-raised); border-top: 1px solid var(--line); border-radius: 0 !important; box-shadow: none !important; }
+.tab-btn{ border-radius: 0 !important; }
+.tab-btn.active{ color: var(--accent); background: transparent; }
+.tab-btn.active::before{ box-shadow: none; border-radius: 0; }
+.tab-badge{ border-radius: 0 !important; color: #04120a; }
+
+/* Wake start button: square mono, no elevation glow. */
+.wake-start{ border-radius: 0; font-family: var(--font-mono); font-weight: 500; letter-spacing: 1px; box-shadow: none; border: 1px solid var(--accent); }
+.wake-start:hover{ background: var(--accent); }
+.wake-eyebrow{ color: var(--text-faint); }
+
+/* Manage-habits modal → HUD. */
+.modal-overlay{ background: rgba(0,0,0,.78); }
+.modal{ border-color: var(--line); background: var(--bg-raised); }
+.modal-head{ background: var(--bg-raised); border-bottom-color: var(--line); }
+.modal-title{ font-family: var(--font-mono); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; }
+.modal-close{ color: var(--text-dim); }
+.modal-item{ border-bottom-color: var(--line); }
+.modal-hint{ font-style: normal; color: var(--text-faint); font-family: var(--font-mono); font-size: 10px; letter-spacing: .5px; }
+.tog{ border-radius: 0 !important; }
+.tog-knob{ border-radius: 0 !important; }
+
+/* HUD toast (replaces the native token-rejected alert). Amber = advisory. */
+.s1-toast{ position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 20px); transform: translateX(-50%);
+  z-index: 600; background: var(--bg-raised); border: 1px solid var(--wake); color: var(--text-bright);
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .3px; padding: 11px 16px; max-width: 88vw;
+  opacity: 0; transition: opacity .25s ease; pointer-events: none; }
+.s1-toast.show{ opacity: 1; }
