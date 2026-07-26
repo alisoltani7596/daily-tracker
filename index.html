@@ -5,7 +5,7 @@
 <title>Daily Tracker</title>
 
 <!-- PWA -->
-<meta name="theme-color" content="#111a13">
+<meta name="theme-color" content="#0a0f0d">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,10 +14,10 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
-<!-- Google Fonts: DM Serif Display, DM Sans, DM Mono -->
+<!-- Google Fonts: JetBrains Mono (style-1) + legacy DM family fallback -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0f1712;--surface:#161f18;--surface2:#1c2a1e;--border:#294029;--border-soft:rgba(42,63,45,.55);
@@ -53,9 +53,9 @@ body::after{content:'';position:fixed;top:0;left:0;right:0;height:340px;backgrou
 header{position:sticky;top:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);margin-bottom:14px;}
 
 /* screens: show only the active tab's content (screens, not sections) */
-body[data-tab="today"]   :is(.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="today"]   :is(.trk-datebar,.trk-hist,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
 body[data-tab="tracker"] #today-section{display:none!important;}
-body[data-tab="coach"]   :is(#today-section,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="coach"]   :is(#today-section,.trk-datebar,.trk-hist,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
 /* coach is a focused full-screen chat — hide the app bar behind it */
 body[data-tab="coach"] header{display:none!important;}
 
@@ -134,10 +134,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:18p
 
 .main-grid{display:block;margin-bottom:18px;}
 .day-panel{display:none;}
-.day-panel.visible{display:grid;grid-template-columns:280px 1fr 290px;gap:14px;}
-.day-left{display:flex;flex-direction:column;gap:12px;}
-.day-middle{display:flex;flex-direction:column;gap:12px;}
-.day-right{display:flex;flex-direction:column;gap:10px;}
+/* Hierarchy: Daily Habits is the hero (dominant left column), workout/routine
+   checklists next, and the LeetCode/links column collapses to a full-width row
+   below — hidden by default, revealed by the #side-toggle disclosure. */
+.day-panel.visible{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;align-items:start;}
+.day-left{display:flex;flex-direction:column;gap:12px;grid-column:1;}
+.day-middle{display:flex;flex-direction:column;gap:12px;grid-column:2;}
+.day-right{flex-direction:column;gap:10px;grid-column:1 / -1;display:none;}
+body.side-open .day-right{display:flex;}
 
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
 .card-title{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:9px 14px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;}
@@ -454,21 +458,23 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 .coach-voice-preview:hover{border-color:var(--accent);color:var(--accent);}
 
 /* ─── Wake briefing overlay ──────────────────────────────────────────────────── */
-.wake-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:32px;
+/* Scrollable: display:flex + margin:auto on the child centers it AND lets tall
+   content scroll (align-items:center would clip the top, hiding the controls). */
+.wake-overlay{position:fixed;inset:0;z-index:500;display:flex;overflow-y:auto;overflow-x:hidden;padding:32px;
   background:radial-gradient(ellipse at 50% 25%, rgba(76,175,125,.14), transparent 60%), var(--bg);
-  opacity:1;transition:opacity .4s ease;}
+  opacity:1;transition:opacity .4s ease;-webkit-overflow-scrolling:touch;}
 .wake-overlay[hidden]{display:none;}
 .wake-overlay.closing{opacity:0;}
-.wake-inner{width:100%;max-width:640px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;
+.wake-inner{margin:auto;width:100%;max-width:640px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;
   animation:wakeIn .5s cubic-bezier(.22,.61,.36,1);}
 @keyframes wakeIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
 .wake-eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
-.wake-greeting{font-family:var(--serif);font-size:clamp(2.4rem,6vw,3.6rem);color:var(--white);line-height:1.05;margin-bottom:10px;}
+.wake-greeting{font-family:var(--serif);font-size:clamp(2rem,5vw,3rem);color:var(--white);line-height:1.05;margin-bottom:6px;}
 .wake-brief{display:flex;flex-direction:column;gap:9px;max-width:520px;margin:4px auto 0;}
 .wake-brief .wl{font-size:clamp(15px,2.4vw,18px);line-height:1.5;color:var(--sub);padding-bottom:9px;border-bottom:1px solid rgba(42,63,45,.5);}
 .wake-brief .wl:last-child{border-bottom:none;}
 .wake-brief .wl b{color:var(--white);font-weight:600;}
-.wake-start{margin-top:26px;background:var(--accent2);border:none;border-radius:16px;color:#fff;font-family:var(--serif);font-size:clamp(1.3rem,3.5vw,1.7rem);padding:18px 40px;cursor:pointer;box-shadow:0 10px 34px rgba(76,175,125,.3);transition:transform .15s,background .15s;}
+.wake-start{margin-top:18px;background:var(--accent2);border:none;border-radius:16px;color:#fff;font-family:var(--serif);font-size:clamp(1.2rem,3vw,1.5rem);padding:14px 34px;cursor:pointer;box-shadow:0 10px 34px rgba(76,175,125,.3);transition:transform .15s,background .15s;}
 .wake-start:hover{background:var(--accent);transform:translateY(-1px);}
 .wake-start[hidden]{display:none;}
 .wake-speaking{margin-top:26px;display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
@@ -483,9 +489,9 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 /* day panel: 3-col on desktop → stack on tablet/phone, habits+workout before links */
 @media (max-width:900px){
   .day-panel.visible{grid-template-columns:1fr;}
-  .day-left{order:1;}
-  .day-middle{order:2;}
-  .day-right{order:3;}
+  .day-left{order:1;grid-column:auto;}
+  .day-middle{order:2;grid-column:auto;}
+  .day-right{order:3;grid-column:auto;}
 }
 @media (max-width:640px){
   .coach-drawer{width:100%;border-left:none;}
@@ -566,6 +572,8 @@ button.tchk.done{color:#fff;}
 .tc-foot a{color:var(--accent);text-decoration:none;}
 .tc-foot a:hover{text-decoration:underline;}
 </style>
+<!-- style-1 experimental redesign: token overrides + Today HUD (loaded last to win) -->
+<link rel="stylesheet" href="style-1.css">
 </head>
 <body>
 
@@ -573,6 +581,12 @@ button.tchk.done{color:#fff;}
 <div id="wake-overlay" class="wake-overlay" hidden>
   <div class="wake-inner">
     <div class="wake-eyebrow" id="wake-date"></div>
+    <svg class="s1-ring-svg wake-ring" viewBox="0 0 240 240" aria-hidden="true">
+      <g class="s1-ring-ticks"></g>
+      <circle class="s1-ring-dash" cx="120" cy="120" r="72"/>
+      <path class="s1-ring-blob" d=""/>
+      <circle class="s1-ring-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"/>
+    </svg>
     <div class="wake-greeting" id="wake-greeting">Good morning</div>
     <div class="wake-brief" id="wake-brief"></div>
     <button id="wake-start" class="wake-start" hidden>▶ Good morning</button>
@@ -587,7 +601,7 @@ button.tchk.done{color:#fff;}
 </svg>
 
 <header>
-  <div class="logo"><h1>Daily Tracker</h1><span>96 kg → 88 kg · 12-week program</span></div>
+  <div class="logo"><h1>Daily Tracker</h1></div>
   <div class="header-right">
     <div id="clock">18:08:29</div>
     <div class="hstats">
@@ -600,6 +614,59 @@ button.tchk.done{color:#fff;}
 
 <!-- ── TODAY (merged live dashboard: Calendar / Drive / Tasks / Inbox) ──────── -->
 <div class="today-section" id="today-section">
+
+  <!-- ═══ style-1 Today HUD — instruments (checkpoint 2b) ═════════════════════
+       IRIS header + ring/telemetry/streak instruments. Via display:contents
+       (style-1.css) these sit in the SAME grid as the real dashboard cards that
+       renderToday builds into #today-grid below — the ring is one instrument
+       among many. The living ring replaces the static placeholder in checkpoint 3. -->
+  <div id="s1-today" class="s1-today">
+    <div class="s1-head">
+      <div class="s1-wordmark">IRIS</div>
+      <div class="s1-clock"><span id="s1-date">—</span> · <span id="s1-time">—</span></div>
+    </div>
+
+    <!-- CORE: charge ring (tile-scale) -->
+    <div class="s1-card s1-ring-card">
+      <div class="s1-card-tag">core</div>
+      <div class="s1-ring-wrap">
+        <svg class="s1-ring-svg" viewBox="0 0 240 240" aria-hidden="true">
+          <g class="s1-ring-ticks"></g>
+          <circle class="s1-ring-dash" cx="120" cy="120" r="72"/>
+          <path class="s1-ring-blob" d=""/>
+          <circle class="s1-ring-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"/>
+        </svg>
+        <div class="s1-ring-center">
+          <div class="s1-charge" id="s1-charge">0<span class="s1-charge-pct">%</span></div>
+          <div class="s1-ring-label" id="s1-ring-label">charge</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TELEMETRY: live stats (kcal/done/tasks) + Health tiles awaiting the bridge -->
+    <div class="s1-card s1-tiles-card">
+      <div class="s1-card-tag">telemetry</div>
+      <div class="s1-tiles">
+        <div class="s1-tile"><div class="s1-tile-val" id="s1-kcal">0</div><div class="s1-tile-lbl">kcal</div></div>
+        <div class="s1-tile"><div class="s1-tile-val" id="s1-done">0/0</div><div class="s1-tile-lbl">done</div></div>
+        <div class="s1-tile"><div class="s1-tile-val" id="s1-tasks-n">0</div><div class="s1-tile-lbl">tasks</div></div>
+        <!-- steps/sleep await the Apple Health bridge; JS fills the value + drops
+             .is-awaiting when data lands — no layout change. -->
+        <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-steps">—</div><div class="s1-tile-lbl">steps</div><div class="s1-tile-note">awaiting link</div></div>
+        <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-sleep">—</div><div class="s1-tile-lbl">sleep</div><div class="s1-tile-note">awaiting link</div></div>
+      </div>
+    </div>
+
+    <!-- STREAK -->
+    <div class="s1-card s1-streak-card">
+      <div class="s1-card-tag">streak</div>
+      <div class="s1-streak">
+        <div class="s1-seg-row" id="s1-segs" aria-hidden="true"></div>
+        <div class="s1-streak-label"><span id="s1-streak-n">streak 0</span> · <span id="s1-core-v">core v1</span></div>
+      </div>
+    </div>
+  </div>
+
   <div class="today-head">
     <div class="today-title"><span class="tdot2"></span>Today</div>
     <div class="today-stamp" id="today-stamp">loading…</div>
@@ -971,14 +1038,32 @@ button.tchk.done{color:#fff;}
   </div>
 </div>
 
-<div class="day-tabs">
-  <button class="day-tab lift active" data-day="0">MON — Lift A</button>
-  <button class="day-tab hiit" data-day="1">TUE — HIIT</button>
-  <button class="day-tab lift" data-day="2">WED — Lift B</button>
-  <button class="day-tab hiit" data-day="3">THU — HIIT</button>
-  <button class="day-tab lift" data-day="4">FRI — Lift C</button>
-  <button class="day-tab hiit" data-day="5">SAT — HIIT</button>
-  <button class="day-tab rest" data-day="6">SUN — Rest</button>
+<!-- style-1: DATE is the primary day navigation (opens on today; prev/next/today). -->
+<div class="trk-datebar" id="trk-datebar">
+  <button class="trk-nav" id="trk-prev" aria-label="Previous day">‹</button>
+  <div class="trk-date" id="trk-date">—</div>
+  <button class="trk-nav" id="trk-next" aria-label="Next day">›</button>
+  <button class="trk-today" id="trk-today">today</button>
+  <span class="trk-plan" id="trk-plan"></span>
+</div>
+
+<!-- style-1: real history — last 7 days from the date-record store; each cell's
+     dot reflects that date's habit completion, tap to open that date. -->
+<div class="trk-hist" id="trk-hist"></div>
+
+<!-- Weekday plan tabs demoted to a secondary "edit plan" context (a template
+     selector — jumps to that weekday this week), no longer daily navigation. -->
+<div class="plan-edit collapsed" id="plan-edit">
+  <button class="plan-edit-toggle" id="plan-edit-toggle" aria-expanded="false"><span class="plan-edit-chev">▸</span>edit plan</button>
+  <div class="day-tabs" id="day-tabs">
+    <button class="day-tab lift active" data-day="0">MON — Lift A</button>
+    <button class="day-tab hiit" data-day="1">TUE — HIIT</button>
+    <button class="day-tab lift" data-day="2">WED — Lift B</button>
+    <button class="day-tab hiit" data-day="3">THU — HIIT</button>
+    <button class="day-tab lift" data-day="4">FRI — Lift C</button>
+    <button class="day-tab hiit" data-day="5">SAT — HIIT</button>
+    <button class="day-tab rest" data-day="6">SUN — Rest</button>
+  </div>
 </div>
 
 <div class="progress-card">
@@ -988,9 +1073,12 @@ button.tchk.done{color:#fff;}
     <div class="kc"><div class="kc-val" id="kc-burn">0</div><div class="kc-lbl">kcal burned</div></div>
     <div class="kc"><div class="kc-val">2,200</div><div class="kc-lbl">kcal target</div></div>
     <div class="kc"><div class="kc-val" id="kc-net">–600</div><div class="kc-lbl">deficit</div></div>
-    <div class="kc"><div class="kc-val" id="kc-week">694</div><div class="kc-lbl">week total</div></div>
   </div>
 </div>
+
+<!-- LeetCode / stretch / HIIT / link column — collapsed by default, revealed as a
+     full-width row below the habits+checklists so it doesn't crowd the daily view. -->
+<button class="side-toggle" id="side-toggle" aria-expanded="false"><span class="side-chev">▸</span>LeetCode &amp; links</button>
 
 <div class="main-grid">
 <div id="days-container">
@@ -2114,6 +2202,69 @@ HABITS.forEach(h=>{ if(!(h.id in vis)) vis[h.id] = !h.private; });
 
 let currentDay = [6,0,1,2,3,4,5][new Date().getDay()];
 let weekKcal   = lsGet(WEEK_KEY, {});
+// The Tracker's viewed date (date navigation lands in a later checkpoint). All
+// panel reads/writes go to this date's record; "today"-scoped consumers (ring
+// charge, health auto-tick, coach state) always use todayIso() instead.
+let currentDate = null;   // set to todayIso() once the helpers below are defined
+
+/* ═══ DATE-KEYED DAY RECORDS (style-1) ═══════════════════════════════════════
+ * Daily records keyed by ISO date: { v, date, weekday(0=Mon..6=Sun), plan,
+ * habits:{id:bool}, checks:[bool], kcal }. The weekday plan (Lift A / HIIT /
+ * Rest) is a template stamped onto each date. Shape is sync-ready; local for now.
+ * The legacy weekday-keyed keys (habit_done_v3_N, chk_state_v3_N, week_kcal_v3)
+ * are NEVER deleted — the migration copies from them and the UI stops writing
+ * them once redirected (a later checkpoint). */
+const RECORDS_KEY = 'day_records_v1';
+const RECORDS_MIGRATED = 'records_migrated_v1';
+const WEEKDAY_PLAN = ['Lift A','HIIT','Lift B','HIIT','Lift C','HIIT','Rest']; // 0=Mon..6=Sun
+
+function isoLocal(d){ function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function todayIso(){ return isoLocal(new Date()); }
+function parseIso(s){ var a=String(s).split('-').map(Number); return new Date(a[0], (a[1]||1)-1, a[2]||1); }
+function weekdayIdxOf(d){ return [6,0,1,2,3,4,5][d.getDay()]; }   // JS getDay (0=Sun) → app idx (0=Mon)
+function weekdayOfIso(s){ return weekdayIdxOf(parseIso(s)); }
+function dateForWeekdayThisWeek(wd){
+  var t=new Date(); t.setHours(0,0,0,0);
+  var d=new Date(t); d.setDate(t.getDate() + (wd - weekdayIdxOf(t)));
+  return isoLocal(d);
+}
+
+function dayRecords(){ return lsGet(RECORDS_KEY, {}) || {}; }
+function dayRecordsSet(m){ lsSet(RECORDS_KEY, m); }
+function dayRec(dateStr){
+  var r = dayRecords()[dateStr];
+  if(r && typeof r==='object') return r;
+  var wd = weekdayOfIso(dateStr);
+  return { v:1, date:dateStr, weekday:wd, plan:WEEKDAY_PLAN[wd], habits:{}, checks:[], kcal:0 };
+}
+function dayRecSave(rec){ var m=dayRecords(); m[rec.date]=rec; dayRecordsSet(m); }
+function recHabits(dateStr){ return dayRec(dateStr).habits || {}; }
+function recSetHabit(dateStr, id, on){ var r=dayRec(dateStr); if(!r.habits) r.habits={}; r.habits[id]=!!on; dayRecSave(r); }
+function recChecks(dateStr){ return dayRec(dateStr).checks || []; }
+function recSetChecks(dateStr, checks, kcal){ var r=dayRec(dateStr); r.checks=checks; if(kcal!=null) r.kcal=+kcal; dayRecSave(r); }
+function recKcal(dateStr){ return +(dayRec(dateStr).kcal||0); }
+
+// One-time migration: stamp this week's dates from the weekday-keyed data. Past +
+// today only (future weekday slots can hold stale prior-cycle ticks). Never
+// clobbers an existing record; never deletes the old keys.
+function migrateToRecords(){
+  try{
+    if(localStorage.getItem(RECORDS_MIGRATED)) return;
+    var m = dayRecords(), wk = lsGet(WEEK_KEY, {}) || {}, todayWd = weekdayIdxOf(new Date());
+    for(var wd=0; wd<=todayWd; wd++){
+      var date = dateForWeekdayThisWeek(wd);
+      if(m[date]) continue;
+      var habits = lsGet(DONE_KEY+wd, {}) || {}, checks = lsGet(CHK_KEY+wd, []) || [], kcal = +(wk[wd]||0);
+      var hasData = Object.keys(habits).length || checks.some(Boolean) || kcal>0;
+      if(!hasData && wd !== todayWd) continue;   // only stamp past days that actually have data; always stamp today
+      m[date] = { v:1, date:date, weekday:wd, plan:WEEKDAY_PLAN[wd], habits:habits, checks:checks, kcal:kcal };
+    }
+    dayRecordsSet(m);
+    localStorage.setItem(RECORDS_MIGRATED, new Date().toISOString());
+  }catch(e){ /* never break boot on migration */ }
+}
+migrateToRecords();
+currentDate = todayIso();
 
 // ─── SIDE LINKS (inject into each day's side col) ─────────────────────────────
 const SIDE_HTML = `
@@ -2151,7 +2302,7 @@ for(let d=0;d<7;d++) document.getElementById('scol-'+d).innerHTML = SIDE_HTML;
 function buildHabits(){
   for(let d=0;d<7;d++){
     const col  = document.getElementById('hcol-'+d);
-    const done = lsGet(DONE_KEY+d, {});
+    const done = recHabits(currentDate);   // habits are the same list every day; done-state is the viewed date's
     col.innerHTML = '';
     const sec = document.createElement('div');
     sec.className = 'habit-section';
@@ -2172,6 +2323,7 @@ function buildHabits(){
       el.innerHTML = `<div class="hbox"><svg class="htick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
         <span class="hicon">${h.icon}</span>
         <div style="flex:1"><div class="hlabel">${h.label}${h.private?'<span class="priv-badge">private</span>':''}</div>${h.sub?`<div class="hsub">${h.sub}</div>`:''}</div>
+        <span class="hstreak" data-streak-for="${h.id}" title="consecutive days"></span>
         <div class="habit-move-btns" onclick="event.stopPropagation()">
           <button class="hmove-btn" onclick="moveHabit('${h.id}',-1)" title="Move up">▲</button>
           <button class="hmove-btn" onclick="moveHabit('${h.id}',1)" title="Move down">▼</button>
@@ -2198,14 +2350,36 @@ function buildHabits(){
   }
   // Re-apply Garmin auto-tick / suggestions after any (re)build of the columns.
   if(typeof healthVerifyHabits==='function') healthVerifyHabits();
+  if(typeof s1TrackerReadouts==='function') s1TrackerReadouts();
+}
+
+// style-1 HUD: per-card completion readouts (n/total, mono) in each card header.
+function s1TrackerReadouts(){
+  var panel = document.querySelector('.day-panel.visible');
+  if(!panel) return;
+  function setCount(host, before, done, total){
+    if(!host || !total) return;
+    var c = host.querySelector('.s1-cd-count');
+    if(!c){ c = document.createElement('span'); c.className = 's1-cd-count'; before ? host.insertBefore(c, before) : host.appendChild(c); }
+    c.textContent = done + '/' + total;
+    c.classList.toggle('is-full', done === total);
+  }
+  panel.querySelectorAll('.card').forEach(function(card){
+    var title = card.querySelector('.card-title');
+    var items = card.querySelectorAll('.check-item');
+    if(title && items.length) setCount(title, null, card.querySelectorAll('.check-item.done').length, items.length);
+  });
+  panel.querySelectorAll('.habit-section').forEach(function(sec){
+    var head = sec.querySelector('.habit-head');
+    var items = sec.querySelectorAll('.habit-item');
+    if(head && items.length) setCount(head, head.querySelector('.manage-btn'), sec.querySelectorAll('.habit-item.done').length, items.length);
+  });
 }
 
 function toggleHabit(el){
   el.classList.toggle('done');
-  const day=+el.dataset.day, id=el.dataset.id;
-  const done=lsGet(DONE_KEY+day,{});
-  done[id]=el.classList.contains('done');
-  lsSet(DONE_KEY+day,done);
+  const id=el.dataset.id;
+  recSetHabit(currentDate, id, el.classList.contains('done'));   // write to the viewed date's record
   // A manual tap supersedes any health hint: clear the suggestion highlight, and
   // if the user unticks a Garmin-verified habit, drop its badge (their call wins).
   el.classList.remove('habit-suggest');
@@ -2215,6 +2389,11 @@ function toggleHabit(el){
     var vb = el.querySelector('.habit-verified-badge'); if(vb) vb.remove();
   }
   updateProgress();
+  if(typeof renderHistStrip==='function') renderHistStrip();   // completion dot for this date
+  if(typeof updateHabitStreaks==='function') updateHabitStreaks();
+  // Ring: flare on completion (micro-reward), and refresh charge/stats/streak.
+  if(el.classList.contains('done') && window.s1RingFlare) s1RingFlare();
+  if(window.s1RenderAll) s1RenderAll();
 }
 
 // ─── CHECK ITEMS ──────────────────────────────────────────────────────────────
@@ -2232,19 +2411,15 @@ function toggle(el){
 function saveChecks(){
   const panel = document.querySelector('.day-panel.visible');
   if(!panel) return;
-  const day = +panel.dataset.panel;
   const state = Array.from(panel.querySelectorAll('.check-item')).map(i=>i.classList.contains('done'));
-  lsSet(CHK_KEY+day, state);
-  // update week kcal
   const kcal = calcKcal(panel);
-  weekKcal[day] = kcal;
-  lsSet(WEEK_KEY, weekKcal);
+  recSetChecks(currentDate, state, kcal);   // viewed date's record (checks + kcal)
 }
 
 function loadChecks(day){
   const panel = document.querySelector(`[data-panel="${day}"]`);
   if(!panel) return;
-  const state = lsGet(CHK_KEY+day, []);
+  const state = recChecks(currentDate);      // apply the viewed date's checks to its weekday panel
   panel.querySelectorAll('.check-item').forEach((el,i)=>{
     el.classList.toggle('done', !!state[i]);
   });
@@ -2267,7 +2442,7 @@ function updateProgress(){
   const doneChecks = checks.filter(i=>i.classList.contains('done'));
   const kcal = calcKcal(panel);
 
-  const done = lsGet(DONE_KEY+day,{});
+  const done = recHabits(currentDate);
   const visHabits = HABITS.filter(h=>vis[h.id]);
   const doneHabits = visHabits.filter(h=>done[h.id]);
 
@@ -2275,32 +2450,109 @@ function updateProgress(){
   const doneTotal = doneChecks.length + doneHabits.length;
   const pct = total>0 ? Math.round(doneTotal/total*100) : 0;
 
-  const totalWeek = Object.values(weekKcal).reduce((a,b)=>a+b,0);
   const deficit = 600 + kcal;
 
   document.getElementById('prog-fill').style.width = pct+'%';
   document.getElementById('prog-txt').textContent = doneTotal+' of '+total+' ('+pct+'%)';
   document.getElementById('kc-burn').textContent = kcal;
   document.getElementById('kc-net').textContent = '–'+deficit;
-  document.getElementById('kc-week').textContent = totalWeek;
   document.getElementById('hdr-kcal').textContent = kcal;
   document.getElementById('hdr-done').textContent = doneTotal+'/'+total;
   document.getElementById('hdr-pct').textContent = pct+'%';
+  if(typeof s1TrackerReadouts==='function') s1TrackerReadouts();
 }
 
 // ─── DAY SWITCHING ────────────────────────────────────────────────────────────
 const tabs   = document.querySelectorAll('.day-tab');
 const panels = document.querySelectorAll('.day-panel');
 
-function showDay(i){
-  tabs.forEach((t,j)=>t.classList.toggle('active',j===i));
-  panels.forEach((p,j)=>p.classList.toggle('visible',j===i));
-  currentDay = i;
-  loadChecks(i);
+// Show a specific DATE: pick its weekday plan panel, overlay that date's record.
+const TRK_DOW = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const TRK_MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function applyHabitRecord(){
+  var h = recHabits(currentDate), col = document.getElementById('hcol-'+currentDay);
+  if(col) col.querySelectorAll('.habit-item').forEach(function(el){ el.classList.toggle('done', !!h[el.dataset.id]); });
+}
+function renderDateBar(){
+  var d = parseIso(currentDate);
+  var el = document.getElementById('trk-date'); if(el) el.textContent = TRK_DOW[d.getDay()]+' · '+TRK_MON[d.getMonth()]+' '+d.getDate();
+  var pl = document.getElementById('trk-plan'); if(pl) pl.textContent = WEEKDAY_PLAN[weekdayOfIso(currentDate)];
+  var tb = document.getElementById('trk-today'); if(tb) tb.style.visibility = (currentDate===todayIso()) ? 'hidden' : 'visible';
+  document.querySelectorAll('.day-tab').forEach(function(t,j){ t.classList.toggle('active', j===currentDay); });
+}
+// ─── REAL HISTORY (from the date-record store) ────────────────────────────────
+// Fraction of visible daily habits completed on a given date (0–1). Undefined
+// records (days never touched) read as 0, which is correct — nothing was logged.
+function dayCompletion(iso){
+  var h = recHabits(iso);
+  var vh = (typeof HABITS!=='undefined') ? HABITS.filter(function(x){ return vis[x.id]; }) : [];
+  if(!vh.length) return 0;
+  var done = vh.filter(function(x){ return h[x.id]; }).length;
+  return done / vh.length;
+}
+// Per-habit streak: consecutive days (ending today, or yesterday if today isn't
+// yet ticked) that this habit was done. Records only exist from migration onward,
+// so streaks build forward — a day with no record breaks the run.
+function habitStreak(habitId){
+  var d = new Date(); d.setHours(0,0,0,0);
+  if(!recHabits(isoLocal(d))[habitId]) d.setDate(d.getDate()-1);  // today incomplete ≠ broken
+  var n = 0;
+  for(var i=0;i<400;i++){ if(recHabits(isoLocal(d))[habitId]){ n++; d.setDate(d.getDate()-1); } else break; }
+  return n;
+}
+function updateHabitStreaks(){
+  document.querySelectorAll('.hstreak').forEach(function(s){
+    var n = habitStreak(s.dataset.streakFor);
+    s.textContent = n>1 ? ('×'+n) : '';
+    s.classList.toggle('on', n>1);
+  });
+}
+function renderHistStrip(){
+  var el = document.getElementById('trk-hist'); if(!el) return;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var html = '';
+  for(var i=6;i>=0;i--){
+    var d = new Date(today); d.setDate(today.getDate()-i);
+    var iso = isoLocal(d), ratio = dayCompletion(iso);
+    var lvl = ratio>=1 ? 'full' : (ratio>0 ? 'partial' : 'none');
+    var cur = (iso===currentDate) ? ' cur' : '';
+    var tod = (iso===todayIso()) ? ' is-today' : '';
+    html += '<button class="hist-cell'+cur+tod+'" data-date="'+iso+'">'
+          +   '<span class="hist-dow">'+TRK_DOW[d.getDay()].charAt(0)+'</span>'
+          +   '<span class="hist-day">'+d.getDate()+'</span>'
+          +   '<span class="hist-dot '+lvl+'"></span>'
+          + '</button>';
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.hist-cell').forEach(function(c){ c.onclick = function(){ showDate(c.dataset.date); }; });
+}
+function showDate(dateStr){
+  currentDate = dateStr;
+  currentDay = weekdayOfIso(dateStr);
+  panels.forEach((p,j)=>p.classList.toggle('visible', j===currentDay));
+  loadChecks(currentDay);      // applies currentDate's checks to panel
+  applyHabitRecord();          // applies currentDate's habits to the visible column
+  renderDateBar();
+  renderHistStrip();           // real 7-day history + current-day highlight
+  updateHabitStreaks();        // per-habit streaks from records
+  if(typeof healthVerifyChecks==='function'){ /* health is today-only; re-render marks if viewing today */ }
   updateProgress();
 }
+function trkShift(days){ var d=parseIso(currentDate); d.setDate(d.getDate()+days); showDate(isoLocal(d)); }
+// Back-compat: an "edit plan" weekday tab jumps to that weekday's date this week.
+function showDay(i){ showDate(dateForWeekdayThisWeek(i)); }
 
 tabs.forEach((t,i)=>t.addEventListener('click',()=>showDay(i)));
+(function wireDateNav(){
+  var prev=document.getElementById('trk-prev'), next=document.getElementById('trk-next'),
+      td=document.getElementById('trk-today'), pe=document.getElementById('plan-edit-toggle'), peSec=document.getElementById('plan-edit');
+  if(prev) prev.onclick=function(){ trkShift(-1); };
+  if(next) next.onclick=function(){ trkShift(1); };
+  if(td) td.onclick=function(){ showDate(todayIso()); };
+  if(pe) pe.onclick=function(){ var c=peSec.classList.toggle('collapsed'); pe.setAttribute('aria-expanded', String(!c)); };
+  var st=document.getElementById('side-toggle');
+  if(st) st.onclick=function(){ var open=document.body.classList.toggle('side-open'); st.setAttribute('aria-expanded', String(open)); };
+})();
 
 // ─── MODAL ────────────────────────────────────────────────────────────────────
 function openModal(e){ if(e) e.stopPropagation();
@@ -2378,7 +2630,7 @@ tick(); setInterval(tick,1000);
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 buildHabits();
-showDay([6,0,1,2,3,4,5][new Date().getDay()]);
+showDate(todayIso());   // always open on today's actual date
 
 // PLANS
 const PLANS_KEY = 'plans_data_v1';
@@ -2705,24 +2957,25 @@ function coachSetMode(mode){
 function coachTrackerState(){
   const idx = coachTodayIdx();
   const now = new Date();
-  const done = lsGet(DONE_KEY+idx, {});
+  const today = todayIso();
+  const done = recHabits(today);
   const visHabits = HABITS.filter(h=>vis[h.id]);
   const habitsDone = visHabits.filter(h=>done[h.id]).length;
 
   const panel = document.querySelector('[data-panel="'+idx+'"]');
   const chkTotal = panel ? panel.querySelectorAll('.check-item').length : 0;
-  const chkState = lsGet(CHK_KEY+idx, []);
+  const chkState = recChecks(today);
   const chkDone = chkState.filter(Boolean).length;
   const chkPct = chkTotal ? Math.round(chkDone/chkTotal*100) : 0;
 
-  const kcal = weekKcal[idx] || 0;
-  const weekTotal = Object.values(weekKcal).reduce((a,b)=>a+(+b||0), 0);
+  const kcal = recKcal(today);
+  let weekTotal = 0; for(let wd=0; wd<7; wd++){ weekTotal += recKcal(dateForWeekdayThisWeek(wd)); }
 
   // Days so far this week where every visible habit was completed.
   let daysComplete = 0;
   if(visHabits.length){
     for(let d=0; d<=idx; d++){
-      const dn = lsGet(DONE_KEY+d, {});
+      const dn = recHabits(dateForWeekdayThisWeek(d));
       if(visHabits.every(h=>dn[h.id])) daysComplete++;
     }
   }
@@ -2858,6 +3111,13 @@ function coachRenderCommitments(){
 // ─── conversation render ──────────────────────────────────────────────────────
 function coachEsc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+// style-1 HUD: mono micro-label above each message (role + time when stored).
+function coachMsgMeta(m){
+  var role = (m.role==='user') ? 'you' : 'coach';
+  var t = '';
+  if(m.t){ var d=new Date(m.t); t = ' · ' + ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+  return '<div class="coach-msg-meta">'+role+t+'</div>';
+}
 function coachRenderMessages(){
   const body = document.getElementById('coach-body');
   if(coachMode==='planner'){ return plannerRenderMessages(body); }
@@ -2869,7 +3129,7 @@ function coachRenderMessages(){
     return;
   }
   body.innerHTML = chat.messages.map(m=>
-    '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>'
+    '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachMsgMeta(m)+coachEsc(m.content)+'</div>'
   ).join('');
   body.scrollTop = body.scrollHeight;
 }
@@ -2884,7 +3144,7 @@ function plannerRenderMessages(body){
     return;
   }
   body.innerHTML = chat.messages.map(function(m, i){
-    var html = '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>';
+    var html = '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachMsgMeta(m)+coachEsc(m.content)+'</div>';
     if(m.role==='assistant' && m.plan && m.plan.length){ html += plannerPlanCardHtml(m, i); }
     return html;
   }).join('');
@@ -2938,7 +3198,7 @@ async function coachSend(){
 
   const chatKey = isPlanner ? PLANNER_CHAT_KEY : COACH_CHAT_KEY;
   const chat = lsGet(chatKey, {messages:[]});
-  chat.messages.push({role:'user', content:text});
+  chat.messages.push({role:'user', content:text, t:Date.now()});
   lsSet(chatKey, chat);
   input.value = '';
   input.style.height = 'auto';
@@ -2965,7 +3225,7 @@ async function coachSend(){
     const chat2 = lsGet(chatKey, {messages:[]});
     if(isPlanner){
       const parsed = plannerParsePlan(data.text || '');
-      const asst = {role:'assistant', content: parsed.cleanText || '(no reply)'};
+      const asst = {role:'assistant', content: parsed.cleanText || '(no reply)', t:Date.now()};
       if(parsed.plan && parsed.plan.length) asst.plan = parsed.plan;
       chat2.messages.push(asst);
       lsSet(chatKey, chat2);
@@ -2974,7 +3234,7 @@ async function coachSend(){
     } else {
       const parsed = coachParseCommitments(data.text || '');
       if(parsed.commitments.length) coachAddCommitments(parsed.commitments);
-      chat2.messages.push({role:'assistant', content: parsed.cleanText || '(no reply)'});
+      chat2.messages.push({role:'assistant', content: parsed.cleanText || '(no reply)', t:Date.now()});
       lsSet(chatKey, chat2);
       coachRenderMessages();
       coachRenderCommitments();
@@ -3071,7 +3331,7 @@ function coachViewSession(origIdx){
   }
   html += '<div class="coach-hist-transcript">';
   (s.messages||[]).forEach(m=>{
-    html += '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>';
+    html += '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachMsgMeta(m)+coachEsc(m.content)+'</div>';
   });
   if(!(s.messages||[]).length) html += '<div class="coach-empty">Transcript not stored for this session.</div>';
   html += '</div>';
@@ -3321,6 +3581,19 @@ function tLink(url, inner){
   if(!url || url==='#'){ return '<div class="trow trow-disabled" aria-disabled="true" title="No link yet">'+inner+'</div>'; }
   return '<a class="trow" href="'+tEsc(url)+'" target="_blank" rel="noopener">'+inner+'</a>';
 }
+// Whole days from today to a deadline given as day + 3-letter month (no year, as
+// stored on override-added deadlines). Picks the next occurrence (rolls to next
+// year if the date already passed); returns null when unparseable (e.g. undated).
+var DEADLINE_MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+function deadlineDaysFromDate(dayStr, monStr){
+  var day = parseInt(dayStr, 10);
+  var mi = DEADLINE_MONTHS.indexOf(String(monStr||'').slice(0,3).toLowerCase());
+  if(!(day>=1 && day<=31) || mi<0) return null;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var target = new Date(today.getFullYear(), mi, day); target.setHours(0,0,0,0);
+  if(target < today) target = new Date(today.getFullYear()+1, mi, day);
+  return Math.round((target - today) / 86400000);
+}
 function tCard(ic,title,tag,body,foot,wide){
   return '<div class="tcard'+(wide?' wide':'')+'"><div class="tcard-head"><div class="tc-ttl"><span class="tc-ic">'+ic+'</span>'+title+'</div><span class="tc-tag">● '+tag+'</span></div><div class="tc-body">'+body+'</div>'+(foot?'<div class="tc-foot">'+foot+'</div>':'')+'</div>';
 }
@@ -3355,8 +3628,12 @@ function renderToday(data){
   var dl = '';
   (data.deadlines||[]).forEach(function(d){
     var k = tEsc(d.key||d.n);
-    var b = (d.days!=null && d.days<=14)?'soon':'ok';
-    var lbl = (d.days!=null)?((d.days===0)?'today':(d.days+'d')):'set';
+    // Generated deadlines carry `days` (computed by the pipeline); override-added
+    // ones don't, so compute the count client-side from their date at render time
+    // (so it's always current). Undated added deadlines stay 'set'.
+    var days = (d.days!=null) ? d.days : (d.added ? deadlineDaysFromDate(d.d, d.m) : null);
+    var b = (days!=null && days<=14)?'soon':'ok';
+    var lbl = (days!=null)?((days===0)?'today':(days+'d')):'set';
     dl += '<div class="trow dl-row" data-key="'+k+'">'+
       '<div class="tdate'+(d.added?' dl-date':'')+'"'+(d.added?' data-act="dl-date" title="Edit date"':'')+'><div class="d">'+tEsc(d.d)+'</div><div class="m">'+tEsc(d.m)+'</div></div>'+
       '<div class="tn dl-name" data-act="dl-rename">'+tEsc(d.n)+'</div>'+
@@ -3400,6 +3677,34 @@ function renderToday(data){
     cards.push(tCard('✉️','Inbox','Gmail',ib,'Recent unread &amp; important threads.',true));
   } else {
     cards.push('<div class="tcard wide"><div class="tcard-head"><div class="tc-ttl"><span class="tc-ic">✉️</span>Inbox</div><span class="tc-tag setup">◆ Needs setup</span></div><div class="tc-body"><div class="tc-empty"><div class="big">✉️</div>Connect <b>Gmail</b> on claude.ai, then ask Claude to switch this on and it will show unread &amp; important threads here.</div></div></div>');
+  }
+
+  // Projects — read-only mirror of the per-category Google Docs. Each category is
+  // a labelled group (name links to its Doc) with an open-task count and compact
+  // task rows. Canonical order Ph.D. / APEX / IRIS / Finance; missing categories
+  // are simply skipped, unknown ones appended. Editing happens in the Docs.
+  // Render categories in the payload's array order as-is — the pipeline owns
+  // ordering now (no client-side canonical sort).
+  var projects = Array.isArray(data.projects) ? data.projects.filter(function(p){ return p && p.name; }) : [];
+  if(projects.length){
+    var pj = '';
+    projects.forEach(function(p){
+      var tasks = Array.isArray(p.tasks) ? p.tasks : [];
+      var open = tasks.filter(function(t){ return t && !t.done; }).length;
+      var nameHtml = (p.url && p.url!=='#')
+        ? '<a class="pj-name" href="'+tEsc(p.url)+'" target="_blank" rel="noopener">'+tEsc(p.name)+'</a>'
+        : '<span class="pj-name pj-name-off" title="No doc linked yet">'+tEsc(p.name)+'</span>';
+      pj += '<div class="pj-group"><div class="pj-head">'+nameHtml+'<span class="pj-count">'+open+' open</span></div>';
+      if(tasks.length){
+        tasks.forEach(function(t){
+          pj += '<div class="pj-task'+(t.done?' done':'')+'"><span class="pj-dot"></span><span class="pj-tn">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</span></div>';
+        });
+      } else {
+        pj += '<div class="pj-empty">no open tasks</div>';
+      }
+      pj += '</div>';
+    });
+    cards.push(tCard('🗂','Projects','Docs',pj,'Read-only — edit in the linked Google Docs.',true));
   }
 
   grid.innerHTML = cards.join('');
@@ -3669,6 +3974,13 @@ function todaySave(){
   clearTimeout(_todaySaveTimer);
   _todaySaveTimer = setTimeout(function(){ todayPushOverrides(base); }, 600);
 }
+// style-1 HUD toast (non-blocking; replaces stray alert()s).
+function s1Toast(msg){
+  var t = document.getElementById('s1-toast');
+  if(!t){ t = document.createElement('div'); t.id = 's1-toast'; t.className = 's1-toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(s1Toast._t); s1Toast._t = setTimeout(function(){ t.classList.remove('show'); }, 3800);
+}
 function todayEditToken(){
   var t = null; try{ t = localStorage.getItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}
   if(!t){
@@ -3685,7 +3997,7 @@ function todayPushOverrides(base){
     headers:{'content-type':'application/json','x-edit-token':token},
     body: JSON.stringify(window.__todayOverrides)
   }).then(function(r){
-    if(r.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}; alert('Today edit token rejected — you will be asked again on the next edit.'); }
+    if(r.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}; s1Toast('today edit token rejected — you’ll be asked again on the next edit'); }
   }).catch(function(){ /* offline: local mirror already saved */ });
 }
 
@@ -3762,6 +4074,7 @@ function voiceStopCloud(){
   voiceCloudSeq++;                                  // invalidate any in-flight playback
   if(voiceAudio){ try{ voiceAudio.pause(); }catch(e){} voiceAudio.onended = null; voiceAudio.onerror = null; voiceAudio = null; }
   voiceRevokeAll();
+  if(window.s1VoiceSpeaking) s1VoiceSpeaking(false);
 }
 // The Aura speaker to use: the saved "cloud:<speaker>" pick, else the Helios
 // default — so fresh devices (no saved voice) sound like Helios out of the box.
@@ -3818,19 +4131,20 @@ function voiceSpeakCloud(text, opts){
   }
   function playFrom(i){
     if(myseq !== voiceCloudSeq) return;              // superseded / stopped
-    if(i >= chunks.length){ if(opts.onend) opts.onend(); return; }
+    if(i >= chunks.length){ if(window.s1VoiceSpeaking) s1VoiceSpeaking(false); if(opts.onend) opts.onend(); return; }
     fetchChunk(i).then(function(url){
       if(myseq !== voiceCloudSeq || !url) return;
       fetchChunk(i + 1);                             // warm the next chunk
       var a = new Audio(url);
       voiceAudio = a;
+      if(window.s1VoiceAudioAttach) s1VoiceAudioAttach(a);   // feed the ring's analyser
       a.onended = function(){ if(myseq === voiceCloudSeq) playFrom(i + 1); };
       a.onerror = function(){ if(myseq !== voiceCloudSeq) return; if(!started){ if(opts.onplayfail) opts.onplayfail(); } else { playFrom(i + 1); } };
       var pr = a.play();
       if(pr && pr.then){
-        pr.then(function(){ if(myseq === voiceCloudSeq && !started){ started = true; if(opts.onstart) opts.onstart(); } })
+        pr.then(function(){ if(myseq === voiceCloudSeq && !started){ started = true; if(window.s1VoiceSpeaking) s1VoiceSpeaking(true, false); if(opts.onstart) opts.onstart(); } })
           .catch(function(){ if(myseq !== voiceCloudSeq) return; if(!started){ if(opts.onplayfail) opts.onplayfail(); } else { playFrom(i + 1); } });
-      } else if(!started){ started = true; if(opts.onstart) opts.onstart(); }
+      } else if(!started){ started = true; if(window.s1VoiceSpeaking) s1VoiceSpeaking(true, false); if(opts.onstart) opts.onstart(); }
     }).catch(function(){
       if(myseq !== voiceCloudSeq) return;
       if(i === 0 && !started){ if(opts.onfail) opts.onfail(); }   // first chunk failed → whole-text native fallback
@@ -3976,9 +4290,10 @@ function voiceSpeakNative(text, opts){
   var u = new SpeechSynthesisUtterance(text);
   if(voiceChosen){ u.voice = voiceChosen; u.lang = voiceChosen.lang || 'en-US'; } else { u.lang = 'en-US'; }
   u.rate = 0.9; u.pitch = 1.0;   // slightly slower than default — the 1.0 rate reads too fast
-  if(opts.onstart) u.onstart = opts.onstart;
-  if(opts.onend)   u.onend   = opts.onend;
-  u.onerror = function(e){ if(opts.onerror) opts.onerror(e); };
+  // No audio stream from speechSynthesis, so the ring uses a simulated envelope.
+  u.onstart = function(){ if(window.s1VoiceSpeaking) s1VoiceSpeaking(true, true); if(opts.onstart) opts.onstart(); };
+  u.onend   = function(){ if(window.s1VoiceSpeaking) s1VoiceSpeaking(false); if(opts.onend) opts.onend(); };
+  u.onerror = function(e){ if(window.s1VoiceSpeaking) s1VoiceSpeaking(false); if(opts.onerror) opts.onerror(e); };
   try{ window.speechSynthesis.speak(u); return true; }catch(e){ if(opts.onerror) opts.onerror(e); return false; }
 }
 
@@ -4068,6 +4383,7 @@ function wakeInit(){
   var ov = document.getElementById('wake-overlay');
   if(!ov) return;
   ov.hidden = false;
+  if(window.s1RingWake) s1RingWake();          // amber boot behind/within the overlay
   document.getElementById('wake-date').textContent =
     new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
   document.getElementById('wake-greeting').textContent = 'Good ' + voiceTimeOfDay();
@@ -4077,10 +4393,13 @@ function wakeInit(){
   });
 }
 
+var WAKE_BRIEF_MAX = 5;   // on-screen lines; the full briefing is still spoken
 function wakeSpeakBriefing(d){
   var brief = voiceComposeBriefing(d);
-  document.getElementById('wake-brief').innerHTML =
-    brief.lines.map(function(l){ return '<div class="wl">' + l + '</div>'; }).join('');
+  var shown = brief.lines.slice(0, WAKE_BRIEF_MAX).map(function(l){ return '<div class="wl">' + l + '</div>'; });
+  if(brief.lines.length > WAKE_BRIEF_MAX) shown.push('<div class="wl wl-more">+' + (brief.lines.length - WAKE_BRIEF_MAX) + ' more · spoken in full</div>');
+  document.getElementById('wake-brief').innerHTML = shown.join('');
+
   var startBtn = document.getElementById('wake-start');
   var speaking = document.getElementById('wake-speaking');
   var tod = voiceTimeOfDay();
@@ -4088,24 +4407,31 @@ function wakeSpeakBriefing(d){
 
   function onStart(){ started = true; startBtn.hidden = true; speaking.hidden = false; }
   function onEnd(){ if(ended) return; ended = true; speaking.hidden = true; wakeDismiss(); }
-  function showButton(label){ speaking.hidden = true; startBtn.textContent = label; startBtn.hidden = false; }
+  // Reveal the tap-to-start button (no-op once real playback has begun/ended).
+  function showButton(){ if(started || ended) return; speaking.hidden = true; startBtn.textContent = '▶ Good ' + tod; startBtn.hidden = false; }
 
   if(!TTS_OK){
-    // No speech engine: show the written brief and a plain continue button.
-    showButton('Continue →');
-    startBtn.onclick = wakeDismiss;
-    return;
+    startBtn.textContent = 'Continue →'; startBtn.hidden = false; startBtn.onclick = wakeDismiss; return;
   }
+  // The tap is a real user gesture — unblocks autoplay + the audio context, so the
+  // full router (cloud → native) can play with the ring's voice envelope.
   startBtn.onclick = function(){
-    startBtn.hidden = true;
-    voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:onEnd });
+    startBtn.hidden = true; ended = false;
+    voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:function(){ showButton(); } });
   };
-  // Attempt to speak on load; iOS/Safari usually block until a gesture, so if it
-  // hasn't begun shortly, reveal the big tap-to-start button.
-  voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:function(){ if(!started) showButton('▶ Good ' + tod); } });
-  // Cloud synthesis adds a beat before audio starts; if nothing has begun by then,
-  // assume a gesture is required (iOS/Safari) and reveal the tap-to-start button.
-  setTimeout(function(){ if(!started && !ended) showButton('▶ Good ' + tod); }, 1600);
+
+  // Auto-attempt. Prefer cloud DIRECTLY: a blocked autoplay fires onplayfail and we
+  // reveal the button at once. (Going through voiceSpeak would silently fall back to
+  // a gesture-blocked speechSynthesis, which could mask the block and never surface
+  // the button — the reported bug.) onStart only fires on real cloud playback.
+  var auto = false;
+  if(typeof voiceUseCloud === 'function' && voiceUseCloud() && typeof voiceSpeakCloud === 'function'){
+    auto = voiceSpeakCloud(brief.speech, { onstart:onStart, onend:onEnd, onfail:showButton, onplayfail:showButton });
+  } else {
+    auto = voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:showButton });
+  }
+  if(!auto) showButton();
+  setTimeout(showButton, 1600);   // backstop if nothing has begun
 }
 
 function wakeDismiss(){
@@ -4290,8 +4616,8 @@ function voiceMaybeSpeakReply(rawText){
       var entry = health[healthTodayDate()];
       if(!entry || typeof entry!=='object') return;    // no entry for today → no action
 
-      var day = HEALTH_TODAY_IDX;
-      var done = lsGet(DONE_KEY+day, {});
+      var day = HEALTH_TODAY_IDX, today = todayIso();
+      var done = recHabits(today);
       var verified = {}, changed = false;
       HEALTH_AUTOTICK.forEach(function(r){
         if(r.test(entry) === true){
@@ -4299,7 +4625,7 @@ function voiceMaybeSpeakReply(rawText){
           if(!done[r.id]){ done[r.id] = true; changed = true; }   // tick only
         }
       });
-      if(changed) lsSet(DONE_KEY+day, done);
+      if(changed){ var rr=dayRec(today); rr.habits=done; dayRecSave(rr); }
 
       var suggest = {};
       HEALTH_SUGGEST.forEach(function(r){
@@ -4330,9 +4656,8 @@ function voiceMaybeSpeakReply(rawText){
   // works even when that day isn't the visible panel).
   function healthSaveCheckPanel(panel, day){
     var state = Array.prototype.map.call(panel.querySelectorAll('.check-item'), function(i){ return i.classList.contains('done'); });
-    lsSet(CHK_KEY+day, state);
     var kcal = 0; panel.querySelectorAll('.check-item.done').forEach(function(el){ kcal += +(el.dataset.kcal||0); });
-    weekKcal[day] = kcal; lsSet(WEEK_KEY, weekKcal);
+    recSetChecks(todayIso(), state, kcal);   // health verify always targets today's record
   }
   function healthVerifyChecks(){
     try{
@@ -4382,6 +4707,273 @@ function voiceMaybeSpeakReply(rawText){
   // attempt in case it's already loaded from cache.
   if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ window.healthVerify(); }); }
   window.healthVerify();
+})();
+</script>
+
+<!-- ─── style-1 TODAY HUD (sprint 1: layout + data wiring) ──────────────────────
+ * Renders the IRIS Today screen from existing state: charge = done/total of the
+ * visible habits; task list + count from the KV Today data; streak from
+ * localStorage (KV migration is a later sprint). The living ring, wake sequence,
+ * voice envelope, flare and full streak logic arrive in checkpoints 3–6.
+-->
+<script>
+(function(){
+  function s1El(id){ return document.getElementById(id); }
+  function s1Esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  // Charge: done / total of the visible habits for TODAY (the ring is today's core).
+  function s1Charge(){
+    try{
+      var done = recHabits(todayIso());
+      var visH = HABITS.filter(function(h){ return vis[h.id]; });
+      var d = visH.filter(function(h){ return done[h.id]; }).length;
+      return { done:d, total:visH.length, pct: visH.length ? Math.round(d/visH.length*100) : 0 };
+    }catch(e){ return { done:0, total:0, pct:0 }; }
+  }
+  function s1RenderCharge(){
+    var c = s1Charge();
+    var chEl = s1El('s1-charge');
+    if(chEl) chEl.innerHTML = c.pct + '<span class="s1-charge-pct">%</span>';
+    // The ring engine owns the charge arc, the stable state, and the streak bump.
+    if(window.s1RingSetCharge) s1RingSetCharge(c.pct);
+    var lbl = s1El('s1-ring-label'); if(lbl) lbl.textContent = (c.total>0 && c.pct>=100) ? 'core stable' : 'charge';
+    return c;
+  }
+
+  // Tasks tile: open-task count from the KV data (the editable list itself lives
+  // in the real Tasks card that renderToday builds).
+  function s1CurrentTasks(){
+    try{ if(typeof todayMerged==='function'){ var m=todayMerged(); if(m && m.tasks) return m.tasks; } }catch(e){}
+    var td = window.__todayData; return (td && td.tasks) ? td.tasks : [];
+  }
+  function s1RenderTasksTile(){
+    var nEl = s1El('s1-tasks-n'); if(!nEl) return;
+    nEl.textContent = s1CurrentTasks().filter(function(t){ return !t.done; }).length;
+  }
+
+  // Live stats for today's slot: kcal burned + done N/N (morning checks + habits),
+  // read from saved state (CHK_KEY/DONE_KEY) so it's accurate on the Today screen
+  // even though no day-panel is visible there. Mirrors updateProgress' counting.
+  function s1RenderStats(){
+    try{
+      var idx = (typeof coachTodayIdx==='function') ? coachTodayIdx() : [6,0,1,2,3,4,5][new Date().getDay()];
+      var today = todayIso();
+      var doneH = recHabits(today);
+      var visH = HABITS.filter(function(h){ return vis[h.id]; });
+      var habitsDone = visH.filter(function(h){ return doneH[h.id]; }).length;
+      var saved = recChecks(today);
+      var panel = document.querySelector('.day-panel[data-panel="'+idx+'"]');
+      var kcal = 0, checksDone = 0, checksTotal = 0;
+      if(panel){
+        var items = panel.querySelectorAll('.check-item');
+        for(var i=0;i<items.length;i++){
+          var el = items[i];
+          var isMorning = el.getAttribute('data-section')==='morning';
+          var on = (saved[i] !== undefined) ? !!saved[i] : el.classList.contains('done');
+          if(isMorning){ checksTotal++; if(on) checksDone++; }
+          if(on) kcal += +(el.getAttribute('data-kcal')||0);
+        }
+      }
+      var doneTotal = habitsDone + checksDone, total = visH.length + checksTotal;
+      var kEl = s1El('s1-kcal'); if(kEl) kEl.textContent = kcal;
+      var dEl = s1El('s1-done'); if(dEl) dEl.textContent = doneTotal + '/' + total;
+    }catch(e){ /* best-effort */ }
+  }
+
+  // Streak — localStorage; the ring engine owns increment (on stable) and the
+  // broken-streak reset (s1StreakCheck). Here we just reflect the current value.
+  var S1_STREAK_KEY = 'streak_v1';   // { streak, lastStableDate }
+  function s1Streak(){ try{ var s=JSON.parse(localStorage.getItem(S1_STREAK_KEY)); return (s&&typeof s==='object')?s:{streak:0,lastStableDate:null}; }catch(e){ return {streak:0,lastStableDate:null}; } }
+  function s1RenderStreak(){
+    var st = (typeof window.s1StreakCheck==='function') ? window.s1StreakCheck() : s1Streak();
+    var segs = s1El('s1-segs');
+    if(segs){
+      var filled = Math.max(0, Math.min(7, st.streak|0)), html='';
+      for(var i=0;i<7;i++){ html += '<span class="s1-seg'+(i<filled?' on':'')+'"></span>'; }
+      segs.innerHTML = html;
+    }
+    var n = s1El('s1-streak-n'); if(n) n.textContent = 'streak ' + (st.streak|0);
+  }
+
+  var S1_DOW=['sun','mon','tue','wed','thu','fri','sat'];
+  var S1_MON=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  function s1Clock(){
+    var d = new Date(), dEl=s1El('s1-date'), tEl=s1El('s1-time');
+    if(dEl) dEl.textContent = S1_DOW[d.getDay()]+' '+d.getDate()+' '+S1_MON[d.getMonth()];
+    if(tEl) tEl.textContent = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  }
+
+  function s1RenderAll(){ s1Clock(); s1RenderCharge(); s1RenderStreak(); s1RenderStats(); s1RenderTasksTile(); }
+  window.s1RenderAll = s1RenderAll;   // ring checkpoints will call this on habit/flare events
+
+  s1RenderAll();
+  setInterval(s1Clock, 1000);
+  if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ s1RenderTasksTile(); s1RenderStats(); }); }
+  // Cheap refresh when returning to Today (e.g. after toggling habits on Tracker).
+  var tb = document.getElementById('tabbar');
+  if(tb) tb.addEventListener('click', function(){ setTimeout(s1RenderAll, 0); });
+})();
+</script>
+
+<!-- ─── style-1 LIVING RING (checkpoints 3–6) ───────────────────────────────────
+ * One rAF loop drives every .s1-ring-svg (HUD + wake overlay). State machine:
+ *   idle    — slow breathing + ~1px wobble (never a perfect circle)
+ *   wake    — amber ~2s boot (expand & settle), eases back to green; fired by ?wake=1
+ *   speaking— amplitude follows the coach voice: an AnalyserNode on the /tts <audio>
+ *             chunks (survives sequential chunk playback), or a simulated envelope
+ *             for the speechSynthesis fallback
+ *   stable  — at 100% charge the ring eases to near-white + keeps a glow for the day
+ * Plus: habit-tap flare, streak logic (localStorage), reduced-motion + tab-hidden
+ * pause. Exposes window.s1Ring* hooks used by the voice/wake/habit code.
+-->
+<script>
+(function(){
+  var REDUCED = false;
+  try{ REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  var CX=120, CY=120, R=88, N=96, TAU=Math.PI*2, ARC_LEN=603.2;
+
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function rings(){ return document.querySelectorAll('.s1-ring-svg'); }
+  function blobs(){ return document.querySelectorAll('.s1-ring-blob'); }
+  function arcs(){ return document.querySelectorAll('.s1-ring-arc'); }
+  function ringClass(cls,on){ rings().forEach(function(s){ s.classList.toggle(cls, on); }); }
+
+  // ── static decoration: 48 ticks (every 6th longer) into each ring ──
+  (function buildTicks(){
+    var html='';
+    for(var i=0;i<48;i++){
+      var a=i/48*TAU - Math.PI/2, lng=(i%6===0), r1=110, r2=lng?119:114;
+      html += '<line x1="'+(CX+Math.cos(a)*r1).toFixed(1)+'" y1="'+(CY+Math.sin(a)*r1).toFixed(1)+
+              '" x2="'+(CX+Math.cos(a)*r2).toFixed(1)+'" y2="'+(CY+Math.sin(a)*r2).toFixed(1)+
+              '" stroke-width="'+(lng?1.4:0.8)+'"/>';
+    }
+    document.querySelectorAll('.s1-ring-ticks').forEach(function(g){ g.innerHTML = html; });
+  })();
+
+  // ── state ──
+  var wakeUntil=0, speaking=false, speakSim=false, stable=false, flare=0, env=0, charge=0;
+  var simTarget=0, simNext=0, ph1=0, ph2=1.7, ph3=4.2;
+
+  // ── Web Audio: one context + analyser, per-chunk source nodes feed it ──
+  var actx=null, analyser=null, freq=null, sourced=(typeof WeakSet!=='undefined')?new WeakSet():null;
+  function ensureCtx(){
+    if(actx) return actx;
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext; if(!AC) return null;
+      actx = new AC();
+      analyser = actx.createAnalyser(); analyser.fftSize = 256;
+      freq = new Uint8Array(analyser.frequencyBinCount);
+      analyser.connect(actx.destination);
+    }catch(e){ actx=null; }
+    return actx;
+  }
+  // Called by voiceSpeakCloud for each chunk <audio> — route it through the shared
+  // analyser once (createMediaElementSource is once-per-element; chunks are new
+  // elements, so the analyser persists across the whole utterance).
+  window.s1VoiceAudioAttach = function(el){
+    if(REDUCED || !el || !ensureCtx()) return;
+    if(sourced && sourced.has(el)) return;
+    try{ var s=actx.createMediaElementSource(el); s.connect(analyser); if(sourced) sourced.add(el); }catch(e){}
+    try{ if(actx.state==='suspended') actx.resume(); }catch(e){}
+  };
+  // Speaking on/off from the voice layer (simulated=true for speechSynthesis).
+  window.s1VoiceSpeaking = function(on, simulated){
+    speaking = !!on; speakSim = !!simulated;
+    if(on){ try{ if(actx && actx.state==='suspended') actx.resume(); }catch(e){} }
+    updateGlow();
+  };
+  window.s1RingWake  = function(){ wakeUntil = now()+2200; ringClass('is-wake', true); };
+  window.s1RingFlare = function(){ flare = 1; };
+  window.s1RingSetCharge = function(pct){
+    charge = Math.max(0, Math.min(1, (pct||0)/100));
+    arcs().forEach(function(a){ a.style.strokeDashoffset = (ARC_LEN*(1-charge)).toFixed(1); });
+    var was = stable; stable = charge >= 1;
+    ringClass('is-stable', stable);
+    var hud = document.getElementById('s1-today'); if(hud) hud.classList.toggle('is-stable', stable);
+    updateGlow();
+    if(stable && !was && typeof s1StreakMarkStable==='function') s1StreakMarkStable();
+  };
+  function updateGlow(){ ringClass('glow', speaking || stable); }
+
+  // ── organic blob path (3 drifting sine harmonics) ──
+  function wave(t){ return Math.sin(t*6+ph1)*0.55 + Math.sin(t*11+ph2)*0.30 + Math.sin(t*17+ph3)*0.15; }
+  function path(amp, breath){
+    var d='', xtra=flare*6, r,x,y,th;
+    for(var i=0;i<=N;i++){
+      th=(i%N)/N*TAU; r=R+breath+amp*wave(th)+xtra;
+      x=CX+Math.cos(th)*r; y=CY+Math.sin(th)*r;
+      d += (i===0?'M':'L')+x.toFixed(2)+' '+y.toFixed(2);
+    }
+    return d+'Z';
+  }
+  function staticPath(){
+    var d='',x,y,th; for(var i=0;i<=N;i++){ th=(i%N)/N*TAU; x=CX+Math.cos(th)*R; y=CY+Math.sin(th)*R; d+=(i===0?'M':'L')+x.toFixed(2)+' '+y.toFixed(2); } return d+'Z';
+  }
+
+  // ── the loop ──
+  var raf=0;
+  function frame(){
+    var t = now()/1000;
+    ph1+=0.006; ph2+=0.011; ph3+=0.017;
+    var isWake = now() < wakeUntil;
+    if(!isWake && document.querySelector('.s1-ring-svg.is-wake')) ringClass('is-wake', false);
+
+    // voice envelope
+    if(speaking){
+      if(speakSim || !analyser){
+        if(now() > simNext){ simTarget = 0.25 + Math.random()*0.5; simNext = now()+140; }
+        env += (simTarget - env)*0.18;
+      } else {
+        analyser.getByteFrequencyData(freq);
+        var sum=0; for(var k=0;k<freq.length;k++) sum+=freq[k];
+        env += ((sum/freq.length/255) - env)*0.18;
+      }
+    } else { env += (0 - env)*0.12; }
+
+    var amp;
+    if(speaking) amp = 2 + env*8;                                   // ~8px, voice-modulated
+    else if(isWake){ var p=1-(wakeUntil-now())/2200; amp = 2.5 + Math.sin(Math.max(0,Math.min(1,p))*Math.PI)*3.2; }
+    else if(stable) amp = 1.4;
+    else amp = 1.2;                                                 // idle wobble
+
+    var bspeed = isWake?2.4:(speaking?1.6:1.1);
+    var breath = Math.sin(t*bspeed)*(isWake?2.2:1.1);
+
+    var d = path(amp, breath), sw = (2 + flare*2.6).toFixed(1);
+    blobs().forEach(function(b){ b.setAttribute('d', d); b.style.strokeWidth = sw; });
+    flare = flare>0.004 ? flare*0.94 : 0;
+
+    raf = requestAnimationFrame(frame);
+  }
+  function start(){ if(raf) return; if(REDUCED){ blobs().forEach(function(b){ b.setAttribute('d', staticPath()); }); return; } raf=requestAnimationFrame(frame); }
+  function stop(){ if(raf){ cancelAnimationFrame(raf); raf=0; } }
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) stop(); else start(); });
+
+  // ── streak logic (localStorage; KV migration is a later sprint) ──
+  var STREAK_KEY = 'streak_v1';
+  function sk(){ try{ var s=JSON.parse(localStorage.getItem(STREAK_KEY)); return (s&&typeof s==='object')?s:{streak:0,lastStableDate:null}; }catch(e){ return {streak:0,lastStableDate:null}; } }
+  function skSet(s){ try{ localStorage.setItem(STREAK_KEY, JSON.stringify(s)); }catch(e){} }
+  function dstr(off){ var d=new Date(); d.setDate(d.getDate()+off); function p(x){return(x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+  window.s1StreakCheck = function(){                      // reset a broken streak on load
+    var s=sk(), today=dstr(0), yest=dstr(-1);
+    if(s.lastStableDate && s.lastStableDate!==today && s.lastStableDate!==yest){ s.streak=0; skSet(s); }
+    return s;
+  };
+  window.s1StreakMarkStable = function(){                 // called when charge hits 100%
+    var s=sk(), today=dstr(0), yest=dstr(-1);
+    if(s.lastStableDate===today) return;
+    s.streak = (s.lastStableDate===yest) ? (s.streak|0)+1 : 1;
+    s.lastStableDate = today; skSet(s);
+    if(typeof s1RenderStreak==='function') s1RenderStreak();
+  };
+
+  // boot
+  arcs().forEach(function(a){ a.style.strokeDashoffset = ARC_LEN.toFixed(1); });
+  blobs().forEach(function(b){ b.setAttribute('d', staticPath()); });   // render immediately (before 1st frame / while tab hidden)
+  s1StreakCheck();
+  start();
+  // push the current charge (and stable/streak) into the ring now that hooks exist
+  if(typeof s1RenderAll==='function') s1RenderAll();
 })();
 </script>
 

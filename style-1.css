@@ -1,0 +1,381 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   style-1 — JARVIS-minimal, green. Experimental redesign (branch: style-1).
+   Loaded AFTER the inline <style> in index.html so its :root overrides win and
+   the whole app recolors to the new palette. Sprint 1 redesigns the Today
+   screen only; Tracker/Coach just inherit the palette + mono type.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Design tokens — single source of truth ──────────────────────────────── */
+:root{
+  --bg: #0a0f0d;            /* near-black, faint green tint */
+  --bg-raised: #0e1a14;     /* active list items, tab bar */
+  --line: #1c3a2c;          /* hairline borders */
+  --line-dim: #13281e;      /* inner tick rings, faint dividers */
+  --accent: #3ce88f;        /* THE green — the only bright color */
+  --accent-glow: rgba(60, 232, 143, 0.30);
+  --wake: #fac775;          /* amber, wake sequence only */
+  --text-bright: #eafff2;
+  --text-dim: #7fa892;
+  --text-faint: #486a58;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'DM Mono', monospace;
+
+  /* Remap the legacy variable names onto the new palette so every existing
+     var(--…) usage across Tracker/Coach recolors without touching their CSS. */
+  --surface: var(--bg-raised);
+  --surface2: #12241b;
+  --border: var(--line);
+  --border-soft: rgba(28, 58, 44, 0.55);
+  --accent2: #1f7a4d;        /* dim accent for legacy gradients/buttons */
+  --amber: var(--wake);
+  --purple: #7fa892;         /* fold stray accents back toward the mono palette */
+  --blue: var(--text-dim);
+  --white: var(--text-bright);
+  --sub: var(--text-dim);
+  --muted: var(--text-faint);
+
+  /* Monospace everywhere — the aesthetic. IRIS wordmark is the one exception. */
+  --serif: var(--font-mono);
+  --sans: var(--font-mono);
+  --mono: var(--font-mono);
+}
+
+/* ─── Global base ─────────────────────────────────────────────────────────── */
+body{ background: var(--bg); color: var(--text-bright); letter-spacing: 0.2px; }
+
+/* Softer, cooler ambient background than the old dark-green identity. */
+body::before{ opacity: 0.35; }  /* dial back the noise texture */
+body::after{
+  height: 380px;
+  background: radial-gradient(120% 380px at 50% -80px, rgba(60, 232, 143, 0.07), transparent 72%);
+}
+
+/* Lowercase, letter-spaced labels are the house style; numbers dominate. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TODAY SCREEN — style-1 HUD, checkpoint 2b: dense instrument panel
+   The IRIS header + instruments (ring, telemetry tiles, streak) and the full
+   main dashboard (Schedule / Deadlines / Tasks / Slack / Inbox — rendered by
+   renderToday into #today-grid, all interactions intact) share ONE grid via
+   display:contents, so the ring is just one instrument among many.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* IRIS is Today's header, so drop the legacy sticky app bar + the old title row. */
+body[data-tab="today"] header{ display: none !important; }
+#today-section > .today-head{ display: none !important; }
+
+#today-section{
+  padding: 16px 20px calc(var(--tabbar-h) + var(--safe-b) + 24px) !important;
+  display: block;
+}
+
+/* ── Instrument cluster: IRIS header + ring / telemetry / streak in a top row ─ */
+#s1-today{ display: grid; grid-template-columns: 190px 1.4fr 1.2fr; gap: 10px; margin-bottom: 10px; }
+.s1-head{ grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 2px 2px; }
+.s1-wordmark{ font-family: var(--font-mono); font-weight: 700; font-size: 17px; letter-spacing: 5px; color: var(--text-bright); }
+.s1-clock{ font-size: 11px; letter-spacing: 1.5px; color: var(--text-faint); text-transform: lowercase; white-space: nowrap; }
+
+/* ── HUD card shell (instrument cards share the language of the data cards) ── */
+.s1-card{ border: 1px solid var(--line); background: var(--bg-raised); display: flex; flex-direction: column; overflow: hidden; }
+.s1-card-tag{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-faint); padding: 9px 11px 4px; }
+
+/* ── Data dashboard: CSS multi-column masonry so column heights self-balance
+      (a strict grid leaves short cards' columns half-empty; this flows the tall
+      Schedule/Tasks/Projects cards alongside the short Deadlines/Slack/Inbox). ─ */
+#today-grid{ display: block; column-width: 300px; column-gap: 10px; }
+#today-grid > .tcard{ width: 100%; margin: 0 0 10px; break-inside: avoid; -webkit-column-break-inside: avoid; }
+
+/* ── Living ring instrument — tile-scale (also used large in the wake overlay) ─ */
+.s1-ring-wrap{ position: relative; width: 128px; height: 128px; margin: 2px auto 14px; }
+.s1-ring-svg{ width: 100%; height: 100%; display: block; overflow: visible; }
+.s1-ring-ticks line{ stroke: var(--line); }
+.s1-ring-dash{ fill: none; stroke: var(--line-dim); stroke-width: 1; stroke-dasharray: 1 6; }
+.s1-ring-blob{
+  fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round;
+  transition: stroke 0.6s ease;   /* eases wake amber → green, → white on stable */
+}
+.s1-ring-arc{
+  fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round;
+  stroke-dasharray: 603.2; stroke-dashoffset: 603.2;  /* 2π·96; JS sets offset from charge */
+  transition: stroke-dashoffset 0.6s cubic-bezier(.16,1,.3,1), stroke 0.6s ease, opacity 0.4s ease;
+}
+.s1-ring-center{ position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; pointer-events: none; }
+.s1-charge{ font-family: var(--font-mono); font-weight: 500; font-size: 30px; line-height: 1; color: var(--text-bright); letter-spacing: -0.5px; }
+.s1-charge-pct{ font-size: 0.42em; color: var(--text-dim); margin-left: 2px; letter-spacing: 0; }
+.s1-ring-label{ font-size: 9px; letter-spacing: 2.5px; text-transform: lowercase; color: var(--text-faint); }
+
+/* ── Ring states (classes toggled on every .s1-ring-svg by the ring engine) ── */
+.s1-ring-svg.is-wake .s1-ring-blob{ stroke: var(--wake); }        /* amber boot */
+.s1-ring-svg.is-wake .s1-ring-arc{ opacity: 0; }                  /* hide charge arc during boot (avoids the amber overlap/stray stroke) */
+.s1-ring-svg.is-stable .s1-ring-blob{ stroke: #eafff2; }          /* core stable */
+.s1-ring-svg.glow .s1-ring-blob{ filter: drop-shadow(0 0 6px var(--accent-glow)); }  /* speaking / stable */
+.s1-ring-svg.is-stable.glow .s1-ring-blob{ filter: drop-shadow(0 0 7px rgba(234,255,242,0.4)); }
+.s1-today.is-stable .s1-charge{ color: #eafff2; }
+.s1-today.is-stable .s1-ring-label{ color: var(--text-dim); }
+
+/* Reduced motion: static ring + charge arc; speaking = a gentle opacity pulse. */
+@media (prefers-reduced-motion: reduce){
+  .s1-ring-svg.glow .s1-ring-blob{ filter: none; animation: s1RingPulse 1.6s ease-in-out infinite; }
+}
+@keyframes s1RingPulse{ 0%,100%{ opacity: 1; } 50%{ opacity: 0.55; } }
+
+/* Wake overlay ring — the large centerpiece during the morning briefing. */
+.wake-ring{ width: min(38vw, 216px); height: min(38vw, 216px); margin: 2px auto 12px; }
+.wake-ring .s1-ring-blob{ stroke-width: 1.6; }
+.wake-brief .wl-more{ color: var(--text-faint); font-style: normal; border-bottom: none; }
+
+/* ── Telemetry tiles: live stats (kcal/done/tasks) + steps/sleep placeholders ─ */
+.s1-tiles{ display: grid; grid-template-columns: repeat(auto-fit, minmax(62px, 1fr)); gap: 1px; background: var(--line); border-top: 1px solid var(--line); margin-top: 4px; }
+.s1-tile{ background: var(--bg-raised); padding: 11px 10px 10px; display: flex; flex-direction: column; gap: 4px; min-height: 62px; justify-content: flex-end; }
+.s1-tile-val{ font-family: var(--font-mono); font-weight: 500; font-size: 21px; line-height: 1; color: var(--text-bright); }
+.s1-tile-lbl{ font-size: 9px; letter-spacing: 1.5px; text-transform: lowercase; color: var(--text-faint); }
+.s1-tile.is-awaiting .s1-tile-val{ color: var(--text-faint); }
+.s1-tile-note{ font-size: 8px; letter-spacing: 1px; text-transform: lowercase; color: var(--line-dim); }
+
+/* ── Streak instrument ────────────────────────────────────────────────────── */
+.s1-streak{ display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 6px 11px 13px; }
+.s1-seg-row{ display: flex; gap: 5px; flex: 1; max-width: 260px; }
+.s1-seg{ flex: 1; height: 5px; background: var(--line); }
+.s1-seg.on{ background: var(--accent); }
+.s1-streak-label{ font-size: 11px; letter-spacing: 1.5px; color: var(--text-dim); white-space: nowrap; text-transform: lowercase; }
+
+/* ── Data cards (renderToday): square-cornered HUD, square micro-label ─────── */
+.tcard{ border-radius: 0 !important; background: var(--bg-raised); }
+.tc-tag{ border-radius: 0 !important; letter-spacing: 1.5px; }
+.tc-tag.setup{ border-radius: 0 !important; }
+.trow{ border-radius: 0 !important; }
+
+/* ── Projects card: read-only per-category groups from the Docs ───────────── */
+.pj-group{ padding: 4px 4px 10px; }
+.pj-group + .pj-group{ border-top: 1px solid var(--line); padding-top: 10px; }
+.pj-head{ display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 4px 3px 6px; }
+.pj-name{ font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); text-decoration: none; }
+.pj-name:hover{ text-decoration: underline; }
+.pj-name-off{ color: var(--text-faint); }        /* no doc linked yet */
+.pj-count{ font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 1px; color: var(--text-faint); white-space: nowrap; }
+.pj-task{ display: flex; align-items: baseline; gap: 8px; padding: 4px 4px; }
+.pj-dot{ width: 4px; height: 4px; margin-top: 5px; flex: none; background: var(--accent); }
+.pj-tn{ flex: 1; min-width: 0; font-size: 12px; line-height: 1.4; color: var(--text-bright); }
+.pj-task.done .pj-tn{ color: var(--text-faint); text-decoration: line-through; }
+.pj-task.done .pj-dot{ background: var(--line); }
+.pj-empty{ font-size: 11px; color: var(--text-faint); letter-spacing: 1px; padding: 2px 4px 4px; }
+
+/* the data grid itself is display:contents, so its column rules don't apply;
+   card widths come from .tcard.wide (span 2) in the shared #today-section grid */
+
+/* ── Bottom tab bar: active accent, inactive faint ─────────────────────────── */
+.tabbar{ background: var(--bg-raised); border-top: 1px solid var(--line); }
+.tab-btn{ color: var(--text-faint); }
+.tab-btn.active{ color: var(--accent); }
+.tab-btn.active svg{ stroke: var(--accent); }
+
+/* ── Mobile: single column; ring + tiles + streak stack as the header cluster ─ */
+@media (max-width: 680px){
+  #today-section{ padding: 14px 14px calc(var(--tabbar-h) + var(--safe-b) + 20px) !important; }
+  #s1-today{ grid-template-columns: 1fr; }
+  #today-grid{ column-width: auto; column-count: 1; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRACKER SCREEN — HUD language
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Square corners everywhere on this screen's chrome. */
+.progress-card,.card,.habit-section,.kc,.day-tab,.lg,.bonus-card,.ex-card,.hiit-link,
+.manage-btn,.check-link,.kcal-badge,.priv-badge,.check-box,.hbox,.ex-thumb,.yt-thumb,
+.modal,.modal-item .tog{ border-radius: 0 !important; }
+
+/* Cards → HUD surface + hairline. */
+.progress-card,.card,.habit-section,.lg,.bonus-card{ background: var(--bg-raised); border-color: var(--line); }
+.card-title,.habit-head{ background: transparent; border-bottom-color: var(--line); }
+
+/* Progress → thin accent line + mono micro-labels. */
+.progress-card{ padding: 12px 14px 14px; }
+.prog-label{ font-family: var(--font-mono); font-size: 10px; font-weight: 400; letter-spacing: 2px; text-transform: lowercase; color: var(--text-faint); }
+.prog-count{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+.prog-track{ height: 2px; background: var(--line); border-radius: 0; margin-bottom: 14px; }
+.prog-fill{ background: var(--accent); border-radius: 0; box-shadow: 0 0 6px var(--accent-glow); }
+
+/* kcal → large telemetry readouts in a hairline-split strip. */
+.kcal-row{ gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.kc{ background: var(--bg-raised); text-align: left; padding: 12px 12px 10px; }
+.kc-val{ font-family: var(--font-mono); font-weight: 500; font-size: 26px; line-height: 1; color: var(--text-bright); }
+.kc-lbl{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.5px; text-transform: lowercase; color: var(--text-faint); margin-top: 6px; }
+
+/* Day tabs → one segmented mono control; active = the single accent. */
+.day-tabs{ display: inline-flex; gap: 0; flex-wrap: nowrap; border: 1px solid var(--line); width: fit-content; max-width: 100%; overflow: hidden; margin-bottom: 14px; }
+.day-tab{ border: none; border-right: 1px solid var(--line); background: transparent; color: var(--text-faint); padding: 8px 15px; letter-spacing: 1px; }
+.day-tab:last-child{ border-right: none; }
+.day-tab:hover{ color: var(--text-dim); background: var(--surface2); }
+.day-tab.active,.day-tab.active.lift,.day-tab.active.hiit,.day-tab.active.rest{ background: var(--accent2); border-color: var(--line); color: #fff; }
+
+/* Card headers → mono micro-label; fold the inline accent spans to one accent. */
+.card-title{ letter-spacing: 2px; color: var(--text-faint); }
+.card-title span[style]{ color: var(--text-dim) !important; }
+/* Per-card completion readout (n/total), injected by s1TrackerReadouts. */
+.s1-cd-count{ margin-left: auto; font-family: var(--font-mono); font-size: 10px; letter-spacing: .5px; color: var(--text-dim); }
+.s1-cd-count.is-full{ color: var(--accent); }
+.habit-head .s1-cd-count{ margin-left: auto; margin-right: 10px; }
+
+/* Checklist / habit boxes → square; verified hollow-tick already handled. */
+.check-item.done .check-box,.habit-item.done .hbox{ background: var(--accent); border-color: var(--accent); }
+.hbox{ border-color: var(--text-faint); }
+
+/* Exercise / video cards, manage + link chips → HUD. */
+.ex-card,.hiit-link{ background: var(--bg-raised); border-color: var(--line); }
+.ex-name{ color: var(--text-bright); }
+.ex-sets,.hiit-meta{ color: var(--text-dim); }
+.manage-btn{ color: var(--text-dim); border-color: var(--line); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: lowercase; }
+.manage-btn:hover{ border-color: var(--accent); color: var(--accent); }
+.check-link{ border-color: var(--line); color: var(--accent); }
+.check-link:hover{ background: var(--surface2); color: var(--text-bright); }
+.kcal-badge{ color: var(--text-dim); background: transparent; border-color: var(--line); }
+
+/* Plans section → HUD heading + segmented sub-tabs. */
+.plans-section{ border-top-color: var(--line); }
+.plans-title{ font-family: var(--font-mono); font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-bright); }
+.plans-chevron{ color: var(--text-faint); }
+.plans-tabs{ gap: 0; border: 1px solid var(--line); overflow: hidden; }
+.bonus-card,.bonus-grid .bonus-card{ background: var(--bg-raised); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COACH SCREEN — HUD language (chrome only; chat body text stays readable)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Header + action buttons. */
+.coach-head{ background: var(--bg-raised); border-bottom-color: var(--line); }
+.coach-head-title{ font-family: var(--font-mono); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 15px; }
+.coach-head-sub{ color: var(--text-faint); }
+.coach-newbtn,.coach-iconbtn,.coach-close{ border-radius: 0 !important; }
+.coach-newbtn{ font-family: var(--font-mono); letter-spacing: 1px; text-transform: lowercase; border-color: var(--line); color: var(--text-dim); }
+.coach-newbtn:hover{ border-color: var(--accent); color: var(--accent); }
+.coach-iconbtn{ border-color: var(--line); }
+
+/* Coach|Planner segmented control → match the Tracker's segmented control. */
+.coach-seg{ gap: 0; padding: 8px 14px; background: var(--bg-raised); }
+.coach-seg-btn{ border-radius: 0 !important; background: transparent; border: 1px solid var(--line); border-right: none; color: var(--text-faint); text-transform: lowercase; letter-spacing: 1px; }
+.coach-seg-btn:last-child{ border-right: 1px solid var(--line); }
+.coach-seg-btn.active{ background: var(--accent2); border-color: var(--line); color: #fff; }
+
+/* Voice picker row. */
+.coach-voice-row{ background: var(--bg-raised); border-bottom-color: var(--line); }
+.coach-voice-select,.coach-voice-preview{ border-radius: 0 !important; border-color: var(--line); background: var(--surface2); }
+.coach-voice-select{ font-family: var(--font-mono); }
+.coach-voice-preview{ background: transparent; color: var(--text-dim); }
+.coach-voice-preview:hover{ border-color: var(--accent); color: var(--accent); }
+
+/* Commitments panel → HUD card list. */
+.coach-commitments{ background: var(--bg); }
+.coach-commit-head{ letter-spacing: 2px; }
+.coach-commit-btns .coach-cbtn{ border-radius: 0 !important; border-color: var(--line); background: var(--surface2); }
+.coach-cbtn.on-done{ background: var(--accent2); border-color: var(--accent); }
+
+/* Messages: coach = hairline border + faint fill; user = accent left-border.
+   Square corners; body text unchanged (14px) — HUD lives in the chrome. */
+.coach-msg{ border-radius: 0 !important; }
+.coach-msg.assistant{ background: var(--bg-raised); border: 1px solid var(--line); }
+.coach-msg.user{ background: var(--surface2); border: 1px solid var(--line); border-left: 2px solid var(--accent); color: var(--text-bright); }
+.coach-msg.error{ border-radius: 0 !important; }
+.coach-msg.error button{ border-radius: 0; }
+/* mono role/time micro-label above each message */
+.coach-msg-meta{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; text-transform: lowercase; color: var(--text-faint); margin-bottom: 5px; }
+.coach-msg.user .coach-msg-meta{ text-align: right; }
+.coach-typing{ border-radius: 0 !important; background: var(--bg-raised); border-color: var(--line); }
+
+/* History (read-only overlay) → HUD list. */
+.coach-history{ background: var(--bg); }
+.coach-hist-head{ background: var(--bg-raised); letter-spacing: 2px; }
+.coach-hist-back{ border-radius: 0 !important; border-color: var(--line); color: var(--text-dim); }
+.coach-hist-item{ border-bottom-color: var(--line); }
+.coach-hist-item:hover{ background: var(--surface2); }
+.coach-hist-date,.coach-hist-meta{ font-family: var(--font-mono); }
+.coach-hist-commit{ }
+
+/* Input row + mic/send. */
+.coach-foot{ background: var(--bg-raised); border-top-color: var(--line); }
+.coach-input,.coach-send,.coach-mic{ border-radius: 0 !important; }
+.coach-input{ background: var(--bg); border-color: var(--line); }
+.coach-mic{ background: var(--bg); border-color: var(--line); }
+.coach-voice-hint{ border-radius: 0 !important; }
+
+/* Planner plan-approval card is already square HUD; keep the confirm button square. */
+.plan-confirm-btn{ border-radius: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SWEEP — remaining chrome: tab bar, wake button, modal, toast
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Bottom tab bar: square HUD, one accent, no glow (glow lives only on the ring). */
+.tabbar{ background: var(--bg-raised); border-top: 1px solid var(--line); border-radius: 0 !important; box-shadow: none !important; }
+.tab-btn{ border-radius: 0 !important; }
+.tab-btn.active{ color: var(--accent); background: transparent; }
+.tab-btn.active::before{ box-shadow: none; border-radius: 0; }
+.tab-badge{ border-radius: 0 !important; color: #04120a; }
+
+/* Wake start button: square mono, no elevation glow. */
+.wake-start{ border-radius: 0; font-family: var(--font-mono); font-weight: 500; letter-spacing: 1px; box-shadow: none; border: 1px solid var(--accent); }
+.wake-start:hover{ background: var(--accent); }
+.wake-eyebrow{ color: var(--text-faint); }
+
+/* Manage-habits modal → HUD. */
+.modal-overlay{ background: rgba(0,0,0,.78); }
+.modal{ border-color: var(--line); background: var(--bg-raised); }
+.modal-head{ background: var(--bg-raised); border-bottom-color: var(--line); }
+.modal-title{ font-family: var(--font-mono); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; }
+.modal-close{ color: var(--text-dim); }
+.modal-item{ border-bottom-color: var(--line); }
+.modal-hint{ font-style: normal; color: var(--text-faint); font-family: var(--font-mono); font-size: 10px; letter-spacing: .5px; }
+.tog{ border-radius: 0 !important; }
+.tog-knob{ border-radius: 0 !important; }
+
+/* HUD toast (replaces the native token-rejected alert). Amber = advisory. */
+.s1-toast{ position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 20px); transform: translateX(-50%);
+  z-index: 600; background: var(--bg-raised); border: 1px solid var(--wake); color: var(--text-bright);
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .3px; padding: 11px 16px; max-width: 88vw;
+  opacity: 0; transition: opacity .25s ease; pointer-events: none; }
+.s1-toast.show{ opacity: 1; }
+
+/* Planner plan-approval card → square HUD (was rounded from the planner sprint). */
+.plan-card{ border-radius: 0 !important; background: var(--bg-raised); border-color: var(--accent2); }
+.plan-card-head{ letter-spacing: 2px; }
+.plan-badge,.plan-cal,.plan-confirm-btn{ border-radius: 0 !important; }
+
+/* ═══ TRACKER date navigation (primary) + demoted edit-plan (secondary) ═══════ */
+.trk-datebar{ display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.trk-nav{ background: transparent; border: 1px solid var(--line); color: var(--text-dim); font-family: var(--font-mono); font-size: 18px; line-height: 1; width: 32px; height: 32px; cursor: pointer; transition: all .15s; }
+.trk-nav:hover{ border-color: var(--accent); color: var(--accent); }
+.trk-date{ font-family: var(--font-mono); font-weight: 700; font-size: 16px; letter-spacing: 2px; color: var(--text-bright); }
+.trk-today{ background: transparent; border: 1px solid var(--line); color: var(--text-dim); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: lowercase; padding: 6px 10px; cursor: pointer; transition: all .15s; }
+.trk-today:hover{ border-color: var(--accent); color: var(--accent); }
+.trk-plan{ margin-left: auto; font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-faint); }
+
+.plan-edit{ margin-bottom: 14px; }
+.plan-edit-toggle{ background: transparent; border: none; color: var(--text-faint); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: lowercase; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.plan-edit-toggle:hover{ color: var(--text-dim); }
+.plan-edit-chev{ transition: transform .15s; }
+.plan-edit:not(.collapsed) .plan-edit-chev{ transform: rotate(90deg); }
+.plan-edit.collapsed .day-tabs{ display: none; }
+.plan-edit .day-tabs{ margin-top: 8px; margin-bottom: 0; }
+
+/* Collapsed LeetCode/links disclosure — same hairline-mono language as edit-plan. */
+.side-toggle{ background: transparent; border: none; color: var(--text-faint); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: lowercase; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 2px 0; margin: 2px 0 12px; }
+.side-toggle:hover{ color: var(--text-dim); }
+.side-chev{ transition: transform .15s; }
+body.side-open .side-chev{ transform: rotate(90deg); }
+
+/* Real 7-day history strip — hairline cells, completion dot per date, tappable. */
+.trk-hist{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 0 0 14px; }
+.hist-cell{ display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 0 8px; background: transparent; border: 1px solid var(--border); cursor: pointer; transition: border-color .15s, background .15s; }
+.hist-cell:hover{ border-color: var(--text-faint); }
+.hist-cell.cur{ border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.hist-dow{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-faint); }
+.hist-cell.is-today .hist-dow{ color: var(--accent); }
+.hist-day{ font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); line-height: 1; }
+.hist-cell.cur .hist-day{ color: var(--text); }
+.hist-dot{ width: 6px; height: 6px; border-radius: 50%; margin-top: 2px; background: transparent; border: 1px solid var(--border-soft, var(--border)); }
+.hist-dot.partial{ background: color-mix(in srgb, var(--accent) 45%, transparent); border-color: transparent; }
+.hist-dot.full{ background: var(--accent); border-color: transparent; box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 60%, transparent); }
+
+/* Per-habit streak badge (records-derived, shown only for runs ≥ 2). */
+.hstreak{ font-family: var(--font-mono); font-size: 10px; letter-spacing: .5px; color: var(--text-faint); padding: 0 4px; opacity: 0; transition: opacity .15s; align-self: center; }
+.hstreak.on{ opacity: 1; color: var(--accent); }
