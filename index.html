@@ -2949,6 +2949,13 @@ function coachRenderCommitments(){
 // ─── conversation render ──────────────────────────────────────────────────────
 function coachEsc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+// style-1 HUD: mono micro-label above each message (role + time when stored).
+function coachMsgMeta(m){
+  var role = (m.role==='user') ? 'you' : 'coach';
+  var t = '';
+  if(m.t){ var d=new Date(m.t); t = ' · ' + ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+  return '<div class="coach-msg-meta">'+role+t+'</div>';
+}
 function coachRenderMessages(){
   const body = document.getElementById('coach-body');
   if(coachMode==='planner'){ return plannerRenderMessages(body); }
@@ -2960,7 +2967,7 @@ function coachRenderMessages(){
     return;
   }
   body.innerHTML = chat.messages.map(m=>
-    '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>'
+    '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachMsgMeta(m)+coachEsc(m.content)+'</div>'
   ).join('');
   body.scrollTop = body.scrollHeight;
 }
@@ -2975,7 +2982,7 @@ function plannerRenderMessages(body){
     return;
   }
   body.innerHTML = chat.messages.map(function(m, i){
-    var html = '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>';
+    var html = '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachMsgMeta(m)+coachEsc(m.content)+'</div>';
     if(m.role==='assistant' && m.plan && m.plan.length){ html += plannerPlanCardHtml(m, i); }
     return html;
   }).join('');
@@ -3029,7 +3036,7 @@ async function coachSend(){
 
   const chatKey = isPlanner ? PLANNER_CHAT_KEY : COACH_CHAT_KEY;
   const chat = lsGet(chatKey, {messages:[]});
-  chat.messages.push({role:'user', content:text});
+  chat.messages.push({role:'user', content:text, t:Date.now()});
   lsSet(chatKey, chat);
   input.value = '';
   input.style.height = 'auto';
@@ -3056,7 +3063,7 @@ async function coachSend(){
     const chat2 = lsGet(chatKey, {messages:[]});
     if(isPlanner){
       const parsed = plannerParsePlan(data.text || '');
-      const asst = {role:'assistant', content: parsed.cleanText || '(no reply)'};
+      const asst = {role:'assistant', content: parsed.cleanText || '(no reply)', t:Date.now()};
       if(parsed.plan && parsed.plan.length) asst.plan = parsed.plan;
       chat2.messages.push(asst);
       lsSet(chatKey, chat2);
@@ -3065,7 +3072,7 @@ async function coachSend(){
     } else {
       const parsed = coachParseCommitments(data.text || '');
       if(parsed.commitments.length) coachAddCommitments(parsed.commitments);
-      chat2.messages.push({role:'assistant', content: parsed.cleanText || '(no reply)'});
+      chat2.messages.push({role:'assistant', content: parsed.cleanText || '(no reply)', t:Date.now()});
       lsSet(chatKey, chat2);
       coachRenderMessages();
       coachRenderCommitments();
@@ -3162,7 +3169,7 @@ function coachViewSession(origIdx){
   }
   html += '<div class="coach-hist-transcript">';
   (s.messages||[]).forEach(m=>{
-    html += '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachEsc(m.content)+'</div>';
+    html += '<div class="coach-msg '+(m.role==='user'?'user':'assistant')+'">'+coachMsgMeta(m)+coachEsc(m.content)+'</div>';
   });
   if(!(s.messages||[]).length) html += '<div class="coach-empty">Transcript not stored for this session.</div>';
   html += '</div>';

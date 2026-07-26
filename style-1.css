@@ -237,3 +237,66 @@ body[data-tab="today"] header{ display: none !important; }
 .plans-chevron{ color: var(--text-faint); }
 .plans-tabs{ gap: 0; border: 1px solid var(--line); overflow: hidden; }
 .bonus-card,.bonus-grid .bonus-card{ background: var(--bg-raised); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COACH SCREEN — HUD language (chrome only; chat body text stays readable)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Header + action buttons. */
+.coach-head{ background: var(--bg-raised); border-bottom-color: var(--line); }
+.coach-head-title{ font-family: var(--font-mono); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 15px; }
+.coach-head-sub{ color: var(--text-faint); }
+.coach-newbtn,.coach-iconbtn,.coach-close{ border-radius: 0 !important; }
+.coach-newbtn{ font-family: var(--font-mono); letter-spacing: 1px; text-transform: lowercase; border-color: var(--line); color: var(--text-dim); }
+.coach-newbtn:hover{ border-color: var(--accent); color: var(--accent); }
+.coach-iconbtn{ border-color: var(--line); }
+
+/* Coach|Planner segmented control → match the Tracker's segmented control. */
+.coach-seg{ gap: 0; padding: 8px 14px; background: var(--bg-raised); }
+.coach-seg-btn{ border-radius: 0 !important; background: transparent; border: 1px solid var(--line); border-right: none; color: var(--text-faint); text-transform: lowercase; letter-spacing: 1px; }
+.coach-seg-btn:last-child{ border-right: 1px solid var(--line); }
+.coach-seg-btn.active{ background: var(--accent2); border-color: var(--line); color: #fff; }
+
+/* Voice picker row. */
+.coach-voice-row{ background: var(--bg-raised); border-bottom-color: var(--line); }
+.coach-voice-select,.coach-voice-preview{ border-radius: 0 !important; border-color: var(--line); background: var(--surface2); }
+.coach-voice-select{ font-family: var(--font-mono); }
+.coach-voice-preview{ background: transparent; color: var(--text-dim); }
+.coach-voice-preview:hover{ border-color: var(--accent); color: var(--accent); }
+
+/* Commitments panel → HUD card list. */
+.coach-commitments{ background: var(--bg); }
+.coach-commit-head{ letter-spacing: 2px; }
+.coach-commit-btns .coach-cbtn{ border-radius: 0 !important; border-color: var(--line); background: var(--surface2); }
+.coach-cbtn.on-done{ background: var(--accent2); border-color: var(--accent); }
+
+/* Messages: coach = hairline border + faint fill; user = accent left-border.
+   Square corners; body text unchanged (14px) — HUD lives in the chrome. */
+.coach-msg{ border-radius: 0 !important; }
+.coach-msg.assistant{ background: var(--bg-raised); border: 1px solid var(--line); }
+.coach-msg.user{ background: var(--surface2); border: 1px solid var(--line); border-left: 2px solid var(--accent); color: var(--text-bright); }
+.coach-msg.error{ border-radius: 0 !important; }
+.coach-msg.error button{ border-radius: 0; }
+/* mono role/time micro-label above each message */
+.coach-msg-meta{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; text-transform: lowercase; color: var(--text-faint); margin-bottom: 5px; }
+.coach-msg.user .coach-msg-meta{ text-align: right; }
+.coach-typing{ border-radius: 0 !important; background: var(--bg-raised); border-color: var(--line); }
+
+/* History (read-only overlay) → HUD list. */
+.coach-history{ background: var(--bg); }
+.coach-hist-head{ background: var(--bg-raised); letter-spacing: 2px; }
+.coach-hist-back{ border-radius: 0 !important; border-color: var(--line); color: var(--text-dim); }
+.coach-hist-item{ border-bottom-color: var(--line); }
+.coach-hist-item:hover{ background: var(--surface2); }
+.coach-hist-date,.coach-hist-meta{ font-family: var(--font-mono); }
+.coach-hist-commit{ }
+
+/* Input row + mic/send. */
+.coach-foot{ background: var(--bg-raised); border-top-color: var(--line); }
+.coach-input,.coach-send,.coach-mic{ border-radius: 0 !important; }
+.coach-input{ background: var(--bg); border-color: var(--line); }
+.coach-mic{ background: var(--bg); border-color: var(--line); }
+.coach-voice-hint{ border-radius: 0 !important; }
+
+/* Planner plan-approval card is already square HUD; keep the confirm button square. */
+.plan-confirm-btn{ border-radius: 0; }
