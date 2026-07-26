@@ -339,3 +339,20 @@ body[data-tab="today"] header{ display: none !important; }
 .plan-card{ border-radius: 0 !important; background: var(--bg-raised); border-color: var(--accent2); }
 .plan-card-head{ letter-spacing: 2px; }
 .plan-badge,.plan-cal,.plan-confirm-btn{ border-radius: 0 !important; }
+
+/* ═══ TRACKER date navigation (primary) + demoted edit-plan (secondary) ═══════ */
+.trk-datebar{ display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.trk-nav{ background: transparent; border: 1px solid var(--line); color: var(--text-dim); font-family: var(--font-mono); font-size: 18px; line-height: 1; width: 32px; height: 32px; cursor: pointer; transition: all .15s; }
+.trk-nav:hover{ border-color: var(--accent); color: var(--accent); }
+.trk-date{ font-family: var(--font-mono); font-weight: 700; font-size: 16px; letter-spacing: 2px; color: var(--text-bright); }
+.trk-today{ background: transparent; border: 1px solid var(--line); color: var(--text-dim); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: lowercase; padding: 6px 10px; cursor: pointer; transition: all .15s; }
+.trk-today:hover{ border-color: var(--accent); color: var(--accent); }
+.trk-plan{ margin-left: auto; font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-faint); }
+
+.plan-edit{ margin-bottom: 14px; }
+.plan-edit-toggle{ background: transparent; border: none; color: var(--text-faint); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: lowercase; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.plan-edit-toggle:hover{ color: var(--text-dim); }
+.plan-edit-chev{ transition: transform .15s; }
+.plan-edit:not(.collapsed) .plan-edit-chev{ transform: rotate(90deg); }
+.plan-edit.collapsed .day-tabs{ display: none; }
+.plan-edit .day-tabs{ margin-top: 8px; margin-bottom: 0; }

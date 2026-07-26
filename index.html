@@ -1034,14 +1034,28 @@ button.tchk.done{color:#fff;}
   </div>
 </div>
 
-<div class="day-tabs">
-  <button class="day-tab lift active" data-day="0">MON — Lift A</button>
-  <button class="day-tab hiit" data-day="1">TUE — HIIT</button>
-  <button class="day-tab lift" data-day="2">WED — Lift B</button>
-  <button class="day-tab hiit" data-day="3">THU — HIIT</button>
-  <button class="day-tab lift" data-day="4">FRI — Lift C</button>
-  <button class="day-tab hiit" data-day="5">SAT — HIIT</button>
-  <button class="day-tab rest" data-day="6">SUN — Rest</button>
+<!-- style-1: DATE is the primary day navigation (opens on today; prev/next/today). -->
+<div class="trk-datebar" id="trk-datebar">
+  <button class="trk-nav" id="trk-prev" aria-label="Previous day">‹</button>
+  <div class="trk-date" id="trk-date">—</div>
+  <button class="trk-nav" id="trk-next" aria-label="Next day">›</button>
+  <button class="trk-today" id="trk-today">today</button>
+  <span class="trk-plan" id="trk-plan"></span>
+</div>
+
+<!-- Weekday plan tabs demoted to a secondary "edit plan" context (a template
+     selector — jumps to that weekday this week), no longer daily navigation. -->
+<div class="plan-edit collapsed" id="plan-edit">
+  <button class="plan-edit-toggle" id="plan-edit-toggle" aria-expanded="false"><span class="plan-edit-chev">▸</span>edit plan</button>
+  <div class="day-tabs" id="day-tabs">
+    <button class="day-tab lift active" data-day="0">MON — Lift A</button>
+    <button class="day-tab hiit" data-day="1">TUE — HIIT</button>
+    <button class="day-tab lift" data-day="2">WED — Lift B</button>
+    <button class="day-tab hiit" data-day="3">THU — HIIT</button>
+    <button class="day-tab lift" data-day="4">FRI — Lift C</button>
+    <button class="day-tab hiit" data-day="5">SAT — HIIT</button>
+    <button class="day-tab rest" data-day="6">SUN — Rest</button>
+  </div>
 </div>
 
 <div class="progress-card">
@@ -2440,15 +2454,43 @@ function updateProgress(){
 const tabs   = document.querySelectorAll('.day-tab');
 const panels = document.querySelectorAll('.day-panel');
 
-function showDay(i){
-  tabs.forEach((t,j)=>t.classList.toggle('active',j===i));
-  panels.forEach((p,j)=>p.classList.toggle('visible',j===i));
-  currentDay = i;
-  loadChecks(i);
+// Show a specific DATE: pick its weekday plan panel, overlay that date's record.
+const TRK_DOW = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const TRK_MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function applyHabitRecord(){
+  var h = recHabits(currentDate), col = document.getElementById('hcol-'+currentDay);
+  if(col) col.querySelectorAll('.habit-item').forEach(function(el){ el.classList.toggle('done', !!h[el.dataset.id]); });
+}
+function renderDateBar(){
+  var d = parseIso(currentDate);
+  var el = document.getElementById('trk-date'); if(el) el.textContent = TRK_DOW[d.getDay()]+' · '+TRK_MON[d.getMonth()]+' '+d.getDate();
+  var pl = document.getElementById('trk-plan'); if(pl) pl.textContent = WEEKDAY_PLAN[weekdayOfIso(currentDate)];
+  var tb = document.getElementById('trk-today'); if(tb) tb.style.visibility = (currentDate===todayIso()) ? 'hidden' : 'visible';
+  document.querySelectorAll('.day-tab').forEach(function(t,j){ t.classList.toggle('active', j===currentDay); });
+}
+function showDate(dateStr){
+  currentDate = dateStr;
+  currentDay = weekdayOfIso(dateStr);
+  panels.forEach((p,j)=>p.classList.toggle('visible', j===currentDay));
+  loadChecks(currentDay);      // applies currentDate's checks to panel
+  applyHabitRecord();          // applies currentDate's habits to the visible column
+  renderDateBar();
+  if(typeof healthVerifyChecks==='function'){ /* health is today-only; re-render marks if viewing today */ }
   updateProgress();
 }
+function trkShift(days){ var d=parseIso(currentDate); d.setDate(d.getDate()+days); showDate(isoLocal(d)); }
+// Back-compat: an "edit plan" weekday tab jumps to that weekday's date this week.
+function showDay(i){ showDate(dateForWeekdayThisWeek(i)); }
 
 tabs.forEach((t,i)=>t.addEventListener('click',()=>showDay(i)));
+(function wireDateNav(){
+  var prev=document.getElementById('trk-prev'), next=document.getElementById('trk-next'),
+      td=document.getElementById('trk-today'), pe=document.getElementById('plan-edit-toggle'), peSec=document.getElementById('plan-edit');
+  if(prev) prev.onclick=function(){ trkShift(-1); };
+  if(next) next.onclick=function(){ trkShift(1); };
+  if(td) td.onclick=function(){ showDate(todayIso()); };
+  if(pe) pe.onclick=function(){ var c=peSec.classList.toggle('collapsed'); pe.setAttribute('aria-expanded', String(!c)); };
+})();
 
 // ─── MODAL ────────────────────────────────────────────────────────────────────
 function openModal(e){ if(e) e.stopPropagation();
@@ -2526,7 +2568,7 @@ tick(); setInterval(tick,1000);
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 buildHabits();
-showDay([6,0,1,2,3,4,5][new Date().getDay()]);
+showDate(todayIso());   // always open on today's actual date
 
 // PLANS
 const PLANS_KEY = 'plans_data_v1';
