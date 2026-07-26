@@ -334,3 +334,8 @@ body[data-tab="today"] header{ display: none !important; }
   font-family: var(--font-mono); font-size: 12px; letter-spacing: .3px; padding: 11px 16px; max-width: 88vw;
   opacity: 0; transition: opacity .25s ease; pointer-events: none; }
 .s1-toast.show{ opacity: 1; }
+
+/* Planner plan-approval card → square HUD (was rounded from the planner sprint). */
+.plan-card{ border-radius: 0 !important; background: var(--bg-raised); border-color: var(--accent2); }
+.plan-card-head{ letter-spacing: 2px; }
+.plan-badge,.plan-cal,.plan-confirm-btn{ border-radius: 0 !important; }
