@@ -454,21 +454,23 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 .coach-voice-preview:hover{border-color:var(--accent);color:var(--accent);}
 
 /* ─── Wake briefing overlay ──────────────────────────────────────────────────── */
-.wake-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:32px;
+/* Scrollable: display:flex + margin:auto on the child centers it AND lets tall
+   content scroll (align-items:center would clip the top, hiding the controls). */
+.wake-overlay{position:fixed;inset:0;z-index:500;display:flex;overflow-y:auto;overflow-x:hidden;padding:32px;
   background:radial-gradient(ellipse at 50% 25%, rgba(76,175,125,.14), transparent 60%), var(--bg);
-  opacity:1;transition:opacity .4s ease;}
+  opacity:1;transition:opacity .4s ease;-webkit-overflow-scrolling:touch;}
 .wake-overlay[hidden]{display:none;}
 .wake-overlay.closing{opacity:0;}
-.wake-inner{width:100%;max-width:640px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;
+.wake-inner{margin:auto;width:100%;max-width:640px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;
   animation:wakeIn .5s cubic-bezier(.22,.61,.36,1);}
 @keyframes wakeIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
 .wake-eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
-.wake-greeting{font-family:var(--serif);font-size:clamp(2.4rem,6vw,3.6rem);color:var(--white);line-height:1.05;margin-bottom:10px;}
+.wake-greeting{font-family:var(--serif);font-size:clamp(2rem,5vw,3rem);color:var(--white);line-height:1.05;margin-bottom:6px;}
 .wake-brief{display:flex;flex-direction:column;gap:9px;max-width:520px;margin:4px auto 0;}
 .wake-brief .wl{font-size:clamp(15px,2.4vw,18px);line-height:1.5;color:var(--sub);padding-bottom:9px;border-bottom:1px solid rgba(42,63,45,.5);}
 .wake-brief .wl:last-child{border-bottom:none;}
 .wake-brief .wl b{color:var(--white);font-weight:600;}
-.wake-start{margin-top:26px;background:var(--accent2);border:none;border-radius:16px;color:#fff;font-family:var(--serif);font-size:clamp(1.3rem,3.5vw,1.7rem);padding:18px 40px;cursor:pointer;box-shadow:0 10px 34px rgba(76,175,125,.3);transition:transform .15s,background .15s;}
+.wake-start{margin-top:18px;background:var(--accent2);border:none;border-radius:16px;color:#fff;font-family:var(--serif);font-size:clamp(1.2rem,3vw,1.5rem);padding:14px 34px;cursor:pointer;box-shadow:0 10px 34px rgba(76,175,125,.3);transition:transform .15s,background .15s;}
 .wake-start:hover{background:var(--accent);transform:translateY(-1px);}
 .wake-start[hidden]{display:none;}
 .wake-speaking{margin-top:26px;display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
@@ -4177,10 +4179,13 @@ function wakeInit(){
   });
 }
 
+var WAKE_BRIEF_MAX = 5;   // on-screen lines; the full briefing is still spoken
 function wakeSpeakBriefing(d){
   var brief = voiceComposeBriefing(d);
-  document.getElementById('wake-brief').innerHTML =
-    brief.lines.map(function(l){ return '<div class="wl">' + l + '</div>'; }).join('');
+  var shown = brief.lines.slice(0, WAKE_BRIEF_MAX).map(function(l){ return '<div class="wl">' + l + '</div>'; });
+  if(brief.lines.length > WAKE_BRIEF_MAX) shown.push('<div class="wl wl-more">+' + (brief.lines.length - WAKE_BRIEF_MAX) + ' more · spoken in full</div>');
+  document.getElementById('wake-brief').innerHTML = shown.join('');
+
   var startBtn = document.getElementById('wake-start');
   var speaking = document.getElementById('wake-speaking');
   var tod = voiceTimeOfDay();
@@ -4188,24 +4193,31 @@ function wakeSpeakBriefing(d){
 
   function onStart(){ started = true; startBtn.hidden = true; speaking.hidden = false; }
   function onEnd(){ if(ended) return; ended = true; speaking.hidden = true; wakeDismiss(); }
-  function showButton(label){ speaking.hidden = true; startBtn.textContent = label; startBtn.hidden = false; }
+  // Reveal the tap-to-start button (no-op once real playback has begun/ended).
+  function showButton(){ if(started || ended) return; speaking.hidden = true; startBtn.textContent = '▶ Good ' + tod; startBtn.hidden = false; }
 
   if(!TTS_OK){
-    // No speech engine: show the written brief and a plain continue button.
-    showButton('Continue →');
-    startBtn.onclick = wakeDismiss;
-    return;
+    startBtn.textContent = 'Continue →'; startBtn.hidden = false; startBtn.onclick = wakeDismiss; return;
   }
+  // The tap is a real user gesture — unblocks autoplay + the audio context, so the
+  // full router (cloud → native) can play with the ring's voice envelope.
   startBtn.onclick = function(){
-    startBtn.hidden = true;
-    voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:onEnd });
+    startBtn.hidden = true; ended = false;
+    voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:function(){ showButton(); } });
   };
-  // Attempt to speak on load; iOS/Safari usually block until a gesture, so if it
-  // hasn't begun shortly, reveal the big tap-to-start button.
-  voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:function(){ if(!started) showButton('▶ Good ' + tod); } });
-  // Cloud synthesis adds a beat before audio starts; if nothing has begun by then,
-  // assume a gesture is required (iOS/Safari) and reveal the tap-to-start button.
-  setTimeout(function(){ if(!started && !ended) showButton('▶ Good ' + tod); }, 1600);
+
+  // Auto-attempt. Prefer cloud DIRECTLY: a blocked autoplay fires onplayfail and we
+  // reveal the button at once. (Going through voiceSpeak would silently fall back to
+  // a gesture-blocked speechSynthesis, which could mask the block and never surface
+  // the button — the reported bug.) onStart only fires on real cloud playback.
+  var auto = false;
+  if(typeof voiceUseCloud === 'function' && voiceUseCloud() && typeof voiceSpeakCloud === 'function'){
+    auto = voiceSpeakCloud(brief.speech, { onstart:onStart, onend:onEnd, onfail:showButton, onplayfail:showButton });
+  } else {
+    auto = voiceSpeak(brief.speech, { onstart:onStart, onend:onEnd, onerror:showButton });
+  }
+  if(!auto) showButton();
+  setTimeout(showButton, 1600);   // backstop if nothing has begun
 }
 
 function wakeDismiss(){
