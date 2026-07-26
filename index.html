@@ -3387,6 +3387,19 @@ function tLink(url, inner){
   if(!url || url==='#'){ return '<div class="trow trow-disabled" aria-disabled="true" title="No link yet">'+inner+'</div>'; }
   return '<a class="trow" href="'+tEsc(url)+'" target="_blank" rel="noopener">'+inner+'</a>';
 }
+// Whole days from today to a deadline given as day + 3-letter month (no year, as
+// stored on override-added deadlines). Picks the next occurrence (rolls to next
+// year if the date already passed); returns null when unparseable (e.g. undated).
+var DEADLINE_MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+function deadlineDaysFromDate(dayStr, monStr){
+  var day = parseInt(dayStr, 10);
+  var mi = DEADLINE_MONTHS.indexOf(String(monStr||'').slice(0,3).toLowerCase());
+  if(!(day>=1 && day<=31) || mi<0) return null;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var target = new Date(today.getFullYear(), mi, day); target.setHours(0,0,0,0);
+  if(target < today) target = new Date(today.getFullYear()+1, mi, day);
+  return Math.round((target - today) / 86400000);
+}
 function tCard(ic,title,tag,body,foot,wide){
   return '<div class="tcard'+(wide?' wide':'')+'"><div class="tcard-head"><div class="tc-ttl"><span class="tc-ic">'+ic+'</span>'+title+'</div><span class="tc-tag">● '+tag+'</span></div><div class="tc-body">'+body+'</div>'+(foot?'<div class="tc-foot">'+foot+'</div>':'')+'</div>';
 }
@@ -3421,8 +3434,12 @@ function renderToday(data){
   var dl = '';
   (data.deadlines||[]).forEach(function(d){
     var k = tEsc(d.key||d.n);
-    var b = (d.days!=null && d.days<=14)?'soon':'ok';
-    var lbl = (d.days!=null)?((d.days===0)?'today':(d.days+'d')):'set';
+    // Generated deadlines carry `days` (computed by the pipeline); override-added
+    // ones don't, so compute the count client-side from their date at render time
+    // (so it's always current). Undated added deadlines stay 'set'.
+    var days = (d.days!=null) ? d.days : (d.added ? deadlineDaysFromDate(d.d, d.m) : null);
+    var b = (days!=null && days<=14)?'soon':'ok';
+    var lbl = (days!=null)?((days===0)?'today':(days+'d')):'set';
     dl += '<div class="trow dl-row" data-key="'+k+'">'+
       '<div class="tdate'+(d.added?' dl-date':'')+'"'+(d.added?' data-act="dl-date" title="Edit date"':'')+'><div class="d">'+tEsc(d.d)+'</div><div class="m">'+tEsc(d.m)+'</div></div>'+
       '<div class="tn dl-name" data-act="dl-rename">'+tEsc(d.n)+'</div>'+
@@ -3472,14 +3489,10 @@ function renderToday(data){
   // a labelled group (name links to its Doc) with an open-task count and compact
   // task rows. Canonical order Ph.D. / APEX / IRIS / Finance; missing categories
   // are simply skipped, unknown ones appended. Editing happens in the Docs.
+  // Render categories in the payload's array order as-is — the pipeline owns
+  // ordering now (no client-side canonical sort).
   var projects = Array.isArray(data.projects) ? data.projects.filter(function(p){ return p && p.name; }) : [];
   if(projects.length){
-    var PJ_ORDER = ['Ph.D.','APEX','IRIS','Finance'];
-    projects = projects.slice().sort(function(a,b){
-      var ia=PJ_ORDER.indexOf(a.name), ib=PJ_ORDER.indexOf(b.name);
-      if(ia<0) ia=99; if(ib<0) ib=99;
-      return ia-ib;
-    });
     var pj = '';
     projects.forEach(function(p){
       var tasks = Array.isArray(p.tasks) ? p.tasks : [];
