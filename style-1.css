@@ -362,3 +362,20 @@ body[data-tab="today"] header{ display: none !important; }
 .side-toggle:hover{ color: var(--text-dim); }
 .side-chev{ transition: transform .15s; }
 body.side-open .side-chev{ transform: rotate(90deg); }
+
+/* Real 7-day history strip — hairline cells, completion dot per date, tappable. */
+.trk-hist{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 0 0 14px; }
+.hist-cell{ display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 0 8px; background: transparent; border: 1px solid var(--border); cursor: pointer; transition: border-color .15s, background .15s; }
+.hist-cell:hover{ border-color: var(--text-faint); }
+.hist-cell.cur{ border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.hist-dow{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-faint); }
+.hist-cell.is-today .hist-dow{ color: var(--accent); }
+.hist-day{ font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); line-height: 1; }
+.hist-cell.cur .hist-day{ color: var(--text); }
+.hist-dot{ width: 6px; height: 6px; border-radius: 50%; margin-top: 2px; background: transparent; border: 1px solid var(--border-soft, var(--border)); }
+.hist-dot.partial{ background: color-mix(in srgb, var(--accent) 45%, transparent); border-color: transparent; }
+.hist-dot.full{ background: var(--accent); border-color: transparent; box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 60%, transparent); }
+
+/* Per-habit streak badge (records-derived, shown only for runs ≥ 2). */
+.hstreak{ font-family: var(--font-mono); font-size: 10px; letter-spacing: .5px; color: var(--text-faint); padding: 0 4px; opacity: 0; transition: opacity .15s; align-self: center; }
+.hstreak.on{ opacity: 1; color: var(--accent); }

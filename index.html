@@ -53,9 +53,9 @@ body::after{content:'';position:fixed;top:0;left:0;right:0;height:340px;backgrou
 header{position:sticky;top:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);margin-bottom:14px;}
 
 /* screens: show only the active tab's content (screens, not sections) */
-body[data-tab="today"]   :is(.trk-datebar,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="today"]   :is(.trk-datebar,.trk-hist,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
 body[data-tab="tracker"] #today-section{display:none!important;}
-body[data-tab="coach"]   :is(#today-section,.trk-datebar,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="coach"]   :is(#today-section,.trk-datebar,.trk-hist,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
 /* coach is a focused full-screen chat — hide the app bar behind it */
 body[data-tab="coach"] header{display:none!important;}
 
@@ -1046,6 +1046,10 @@ button.tchk.done{color:#fff;}
   <button class="trk-today" id="trk-today">today</button>
   <span class="trk-plan" id="trk-plan"></span>
 </div>
+
+<!-- style-1: real history — last 7 days from the date-record store; each cell's
+     dot reflects that date's habit completion, tap to open that date. -->
+<div class="trk-hist" id="trk-hist"></div>
 
 <!-- Weekday plan tabs demoted to a secondary "edit plan" context (a template
      selector — jumps to that weekday this week), no longer daily navigation. -->
@@ -2319,6 +2323,7 @@ function buildHabits(){
       el.innerHTML = `<div class="hbox"><svg class="htick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
         <span class="hicon">${h.icon}</span>
         <div style="flex:1"><div class="hlabel">${h.label}${h.private?'<span class="priv-badge">private</span>':''}</div>${h.sub?`<div class="hsub">${h.sub}</div>`:''}</div>
+        <span class="hstreak" data-streak-for="${h.id}" title="consecutive days"></span>
         <div class="habit-move-btns" onclick="event.stopPropagation()">
           <button class="hmove-btn" onclick="moveHabit('${h.id}',-1)" title="Move up">▲</button>
           <button class="hmove-btn" onclick="moveHabit('${h.id}',1)" title="Move down">▼</button>
@@ -2384,6 +2389,8 @@ function toggleHabit(el){
     var vb = el.querySelector('.habit-verified-badge'); if(vb) vb.remove();
   }
   updateProgress();
+  if(typeof renderHistStrip==='function') renderHistStrip();   // completion dot for this date
+  if(typeof updateHabitStreaks==='function') updateHabitStreaks();
   // Ring: flare on completion (micro-reward), and refresh charge/stats/streak.
   if(el.classList.contains('done') && window.s1RingFlare) s1RingFlare();
   if(window.s1RenderAll) s1RenderAll();
@@ -2473,6 +2480,52 @@ function renderDateBar(){
   var tb = document.getElementById('trk-today'); if(tb) tb.style.visibility = (currentDate===todayIso()) ? 'hidden' : 'visible';
   document.querySelectorAll('.day-tab').forEach(function(t,j){ t.classList.toggle('active', j===currentDay); });
 }
+// ─── REAL HISTORY (from the date-record store) ────────────────────────────────
+// Fraction of visible daily habits completed on a given date (0–1). Undefined
+// records (days never touched) read as 0, which is correct — nothing was logged.
+function dayCompletion(iso){
+  var h = recHabits(iso);
+  var vh = (typeof HABITS!=='undefined') ? HABITS.filter(function(x){ return vis[x.id]; }) : [];
+  if(!vh.length) return 0;
+  var done = vh.filter(function(x){ return h[x.id]; }).length;
+  return done / vh.length;
+}
+// Per-habit streak: consecutive days (ending today, or yesterday if today isn't
+// yet ticked) that this habit was done. Records only exist from migration onward,
+// so streaks build forward — a day with no record breaks the run.
+function habitStreak(habitId){
+  var d = new Date(); d.setHours(0,0,0,0);
+  if(!recHabits(isoLocal(d))[habitId]) d.setDate(d.getDate()-1);  // today incomplete ≠ broken
+  var n = 0;
+  for(var i=0;i<400;i++){ if(recHabits(isoLocal(d))[habitId]){ n++; d.setDate(d.getDate()-1); } else break; }
+  return n;
+}
+function updateHabitStreaks(){
+  document.querySelectorAll('.hstreak').forEach(function(s){
+    var n = habitStreak(s.dataset.streakFor);
+    s.textContent = n>1 ? ('×'+n) : '';
+    s.classList.toggle('on', n>1);
+  });
+}
+function renderHistStrip(){
+  var el = document.getElementById('trk-hist'); if(!el) return;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var html = '';
+  for(var i=6;i>=0;i--){
+    var d = new Date(today); d.setDate(today.getDate()-i);
+    var iso = isoLocal(d), ratio = dayCompletion(iso);
+    var lvl = ratio>=1 ? 'full' : (ratio>0 ? 'partial' : 'none');
+    var cur = (iso===currentDate) ? ' cur' : '';
+    var tod = (iso===todayIso()) ? ' is-today' : '';
+    html += '<button class="hist-cell'+cur+tod+'" data-date="'+iso+'">'
+          +   '<span class="hist-dow">'+TRK_DOW[d.getDay()].charAt(0)+'</span>'
+          +   '<span class="hist-day">'+d.getDate()+'</span>'
+          +   '<span class="hist-dot '+lvl+'"></span>'
+          + '</button>';
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.hist-cell').forEach(function(c){ c.onclick = function(){ showDate(c.dataset.date); }; });
+}
 function showDate(dateStr){
   currentDate = dateStr;
   currentDay = weekdayOfIso(dateStr);
@@ -2480,6 +2533,8 @@ function showDate(dateStr){
   loadChecks(currentDay);      // applies currentDate's checks to panel
   applyHabitRecord();          // applies currentDate's habits to the visible column
   renderDateBar();
+  renderHistStrip();           // real 7-day history + current-day highlight
+  updateHabitStreaks();        // per-habit streaks from records
   if(typeof healthVerifyChecks==='function'){ /* health is today-only; re-render marks if viewing today */ }
   updateProgress();
 }
