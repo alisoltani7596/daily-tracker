@@ -2178,6 +2178,64 @@ HABITS.forEach(h=>{ if(!(h.id in vis)) vis[h.id] = !h.private; });
 let currentDay = [6,0,1,2,3,4,5][new Date().getDay()];
 let weekKcal   = lsGet(WEEK_KEY, {});
 
+/* ═══ DATE-KEYED DAY RECORDS (style-1) ═══════════════════════════════════════
+ * Daily records keyed by ISO date: { v, date, weekday(0=Mon..6=Sun), plan,
+ * habits:{id:bool}, checks:[bool], kcal }. The weekday plan (Lift A / HIIT /
+ * Rest) is a template stamped onto each date. Shape is sync-ready; local for now.
+ * The legacy weekday-keyed keys (habit_done_v3_N, chk_state_v3_N, week_kcal_v3)
+ * are NEVER deleted — the migration copies from them and the UI stops writing
+ * them once redirected (a later checkpoint). */
+const RECORDS_KEY = 'day_records_v1';
+const RECORDS_MIGRATED = 'records_migrated_v1';
+const WEEKDAY_PLAN = ['Lift A','HIIT','Lift B','HIIT','Lift C','HIIT','Rest']; // 0=Mon..6=Sun
+
+function isoLocal(d){ function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function todayIso(){ return isoLocal(new Date()); }
+function parseIso(s){ var a=String(s).split('-').map(Number); return new Date(a[0], (a[1]||1)-1, a[2]||1); }
+function weekdayIdxOf(d){ return [6,0,1,2,3,4,5][d.getDay()]; }   // JS getDay (0=Sun) → app idx (0=Mon)
+function weekdayOfIso(s){ return weekdayIdxOf(parseIso(s)); }
+function dateForWeekdayThisWeek(wd){
+  var t=new Date(); t.setHours(0,0,0,0);
+  var d=new Date(t); d.setDate(t.getDate() + (wd - weekdayIdxOf(t)));
+  return isoLocal(d);
+}
+
+function dayRecords(){ return lsGet(RECORDS_KEY, {}) || {}; }
+function dayRecordsSet(m){ lsSet(RECORDS_KEY, m); }
+function dayRec(dateStr){
+  var r = dayRecords()[dateStr];
+  if(r && typeof r==='object') return r;
+  var wd = weekdayOfIso(dateStr);
+  return { v:1, date:dateStr, weekday:wd, plan:WEEKDAY_PLAN[wd], habits:{}, checks:[], kcal:0 };
+}
+function dayRecSave(rec){ var m=dayRecords(); m[rec.date]=rec; dayRecordsSet(m); }
+function recHabits(dateStr){ return dayRec(dateStr).habits || {}; }
+function recSetHabit(dateStr, id, on){ var r=dayRec(dateStr); if(!r.habits) r.habits={}; r.habits[id]=!!on; dayRecSave(r); }
+function recChecks(dateStr){ return dayRec(dateStr).checks || []; }
+function recSetChecks(dateStr, checks, kcal){ var r=dayRec(dateStr); r.checks=checks; if(kcal!=null) r.kcal=+kcal; dayRecSave(r); }
+function recKcal(dateStr){ return +(dayRec(dateStr).kcal||0); }
+
+// One-time migration: stamp this week's dates from the weekday-keyed data. Past +
+// today only (future weekday slots can hold stale prior-cycle ticks). Never
+// clobbers an existing record; never deletes the old keys.
+function migrateToRecords(){
+  try{
+    if(localStorage.getItem(RECORDS_MIGRATED)) return;
+    var m = dayRecords(), wk = lsGet(WEEK_KEY, {}) || {}, todayWd = weekdayIdxOf(new Date());
+    for(var wd=0; wd<=todayWd; wd++){
+      var date = dateForWeekdayThisWeek(wd);
+      if(m[date]) continue;
+      var habits = lsGet(DONE_KEY+wd, {}) || {}, checks = lsGet(CHK_KEY+wd, []) || [], kcal = +(wk[wd]||0);
+      var hasData = Object.keys(habits).length || checks.some(Boolean) || kcal>0;
+      if(!hasData && wd !== todayWd) continue;   // only stamp past days that actually have data; always stamp today
+      m[date] = { v:1, date:date, weekday:wd, plan:WEEKDAY_PLAN[wd], habits:habits, checks:checks, kcal:kcal };
+    }
+    dayRecordsSet(m);
+    localStorage.setItem(RECORDS_MIGRATED, new Date().toISOString());
+  }catch(e){ /* never break boot on migration */ }
+}
+migrateToRecords();
+
 // ─── SIDE LINKS (inject into each day's side col) ─────────────────────────────
 const SIDE_HTML = `
 <div class="lg"><div class="lgt">LeetCode · Month 1</div>
