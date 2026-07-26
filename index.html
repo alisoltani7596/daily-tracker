@@ -53,9 +53,9 @@ body::after{content:'';position:fixed;top:0;left:0;right:0;height:340px;backgrou
 header{position:sticky;top:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);margin-bottom:14px;}
 
 /* screens: show only the active tab's content (screens, not sections) */
-body[data-tab="today"]   :is(.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="today"]   :is(.trk-datebar,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
 body[data-tab="tracker"] #today-section{display:none!important;}
-body[data-tab="coach"]   :is(#today-section,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="coach"]   :is(#today-section,.trk-datebar,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
 /* coach is a focused full-screen chat — hide the app bar behind it */
 body[data-tab="coach"] header{display:none!important;}
 
@@ -134,10 +134,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:18p
 
 .main-grid{display:block;margin-bottom:18px;}
 .day-panel{display:none;}
-.day-panel.visible{display:grid;grid-template-columns:280px 1fr 290px;gap:14px;}
-.day-left{display:flex;flex-direction:column;gap:12px;}
-.day-middle{display:flex;flex-direction:column;gap:12px;}
-.day-right{display:flex;flex-direction:column;gap:10px;}
+/* Hierarchy: Daily Habits is the hero (dominant left column), workout/routine
+   checklists next, and the LeetCode/links column collapses to a full-width row
+   below — hidden by default, revealed by the #side-toggle disclosure. */
+.day-panel.visible{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;align-items:start;}
+.day-left{display:flex;flex-direction:column;gap:12px;grid-column:1;}
+.day-middle{display:flex;flex-direction:column;gap:12px;grid-column:2;}
+.day-right{flex-direction:column;gap:10px;grid-column:1 / -1;display:none;}
+body.side-open .day-right{display:flex;}
 
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
 .card-title{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:9px 14px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;}
@@ -485,9 +489,9 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 /* day panel: 3-col on desktop → stack on tablet/phone, habits+workout before links */
 @media (max-width:900px){
   .day-panel.visible{grid-template-columns:1fr;}
-  .day-left{order:1;}
-  .day-middle{order:2;}
-  .day-right{order:3;}
+  .day-left{order:1;grid-column:auto;}
+  .day-middle{order:2;grid-column:auto;}
+  .day-right{order:3;grid-column:auto;}
 }
 @media (max-width:640px){
   .coach-drawer{width:100%;border-left:none;}
@@ -597,7 +601,7 @@ button.tchk.done{color:#fff;}
 </svg>
 
 <header>
-  <div class="logo"><h1>Daily Tracker</h1><span>96 kg → 88 kg · 12-week program</span></div>
+  <div class="logo"><h1>Daily Tracker</h1></div>
   <div class="header-right">
     <div id="clock">18:08:29</div>
     <div class="hstats">
@@ -1065,9 +1069,12 @@ button.tchk.done{color:#fff;}
     <div class="kc"><div class="kc-val" id="kc-burn">0</div><div class="kc-lbl">kcal burned</div></div>
     <div class="kc"><div class="kc-val">2,200</div><div class="kc-lbl">kcal target</div></div>
     <div class="kc"><div class="kc-val" id="kc-net">–600</div><div class="kc-lbl">deficit</div></div>
-    <div class="kc"><div class="kc-val" id="kc-week">694</div><div class="kc-lbl">week total</div></div>
   </div>
 </div>
+
+<!-- LeetCode / stretch / HIIT / link column — collapsed by default, revealed as a
+     full-width row below the habits+checklists so it doesn't crowd the daily view. -->
+<button class="side-toggle" id="side-toggle" aria-expanded="false"><span class="side-chev">▸</span>LeetCode &amp; links</button>
 
 <div class="main-grid">
 <div id="days-container">
@@ -2436,14 +2443,12 @@ function updateProgress(){
   const doneTotal = doneChecks.length + doneHabits.length;
   const pct = total>0 ? Math.round(doneTotal/total*100) : 0;
 
-  let totalWeek = 0; for(let wd=0;wd<7;wd++){ totalWeek += recKcal(dateForWeekdayThisWeek(wd)); }
   const deficit = 600 + kcal;
 
   document.getElementById('prog-fill').style.width = pct+'%';
   document.getElementById('prog-txt').textContent = doneTotal+' of '+total+' ('+pct+'%)';
   document.getElementById('kc-burn').textContent = kcal;
   document.getElementById('kc-net').textContent = '–'+deficit;
-  document.getElementById('kc-week').textContent = totalWeek;
   document.getElementById('hdr-kcal').textContent = kcal;
   document.getElementById('hdr-done').textContent = doneTotal+'/'+total;
   document.getElementById('hdr-pct').textContent = pct+'%';
@@ -2490,6 +2495,8 @@ tabs.forEach((t,i)=>t.addEventListener('click',()=>showDay(i)));
   if(next) next.onclick=function(){ trkShift(1); };
   if(td) td.onclick=function(){ showDate(todayIso()); };
   if(pe) pe.onclick=function(){ var c=peSec.classList.toggle('collapsed'); pe.setAttribute('aria-expanded', String(!c)); };
+  var st=document.getElementById('side-toggle');
+  if(st) st.onclick=function(){ var open=document.body.classList.toggle('side-open'); st.setAttribute('aria-expanded', String(open)); };
 })();
 
 // ─── MODAL ────────────────────────────────────────────────────────────────────
