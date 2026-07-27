@@ -69,8 +69,26 @@ body[data-tab="today"] header{ display: none !important; }
 }
 
 /* ── Instrument cluster: IRIS header + ring / telemetry / streak in a top row ─ */
-#s1-today{ display: grid; grid-template-columns: 190px 1.4fr 1.2fr; gap: 10px; margin-bottom: 10px; }
-.s1-head{ grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 2px 2px; }
+#s1-today{ display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+.s1-head{ display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 2px 2px; }
+
+/* ── Instrument cluster: three rings (charge larger) as one row + readouts ── */
+.s1-instr{ border: 1px solid var(--line); background: var(--bg-raised); display: flex; align-items: center; gap: 18px; padding: 14px 16px; flex-wrap: wrap; }
+.s1-rings{ display: flex; align-items: center; gap: 16px; flex: 1 1 auto; min-width: 0; }
+.s1-rings .s1-ring-wrap.s1-ring-charge{ width: 104px; height: 104px; margin: 0; flex: 0 0 auto; }
+.s1-rings .s1-ring-charge .s1-charge{ font-size: 25px; }
+/* rings sit inline with the charge ring — drop the telemetry-card framing */
+.s1-rings .s1-hrings{ border-top: none; margin-top: 0; padding: 0; gap: 14px; flex: 1 1 auto; }
+.s1-readouts{ display: flex; flex-direction: column; gap: 7px; flex: 0 0 auto; border-left: 1px solid var(--line); padding-left: 18px; align-self: stretch; justify-content: center; }
+.s1-ro{ display: flex; align-items: baseline; gap: 8px; }
+.s1-ro-val{ font-family: var(--font-mono); font-weight: 500; font-size: 19px; line-height: 1; color: var(--text-bright); min-width: 46px; }
+.s1-ro-lbl{ font-size: 9px; letter-spacing: 1.5px; text-transform: lowercase; color: var(--text-faint); }
+
+/* ── Streak: slim full-width band ── */
+.s1-streak-band{ border: 1px solid var(--line); background: var(--bg-raised); display: flex; align-items: center; gap: 14px; padding: 9px 14px; }
+.s1-streak-tag{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-faint); flex: 0 0 auto; }
+.s1-streak-band .s1-seg-row{ flex: 1; max-width: none; }
+.s1-streak-band .s1-streak-label{ flex: 0 0 auto; }
 .s1-wordmark{ font-family: var(--font-mono); font-weight: 700; font-size: 17px; letter-spacing: 5px; color: var(--text-bright); }
 .s1-clock{ font-size: 11px; letter-spacing: 1.5px; color: var(--text-faint); text-transform: lowercase; white-space: nowrap; }
 
@@ -427,8 +445,6 @@ body.side-open .side-chev{ transform: rotate(90deg); }
 .s1-sc-leg{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.5px; text-transform: lowercase; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
 .s1-sc-dot{ width: 7px; height: 7px; display: inline-block; }
 
-/* Reflow: give the telemetry column room for readouts + two rings. */
-#s1-today{ grid-template-columns: 180px 1.5fr 1fr; }
 @media (max-width: 680px){
   .s1-hrings, .trk-hrings{ justify-content: flex-start; }
 }

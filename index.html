@@ -626,42 +626,38 @@ button.tchk.done{color:#fff;}
       <div class="s1-clock"><span id="s1-date">—</span> · <span id="s1-time">—</span></div>
     </div>
 
-    <!-- CORE: charge ring (tile-scale) -->
-    <div class="s1-card s1-ring-card">
-      <div class="s1-card-tag">core</div>
-      <div class="s1-ring-wrap">
-        <svg class="s1-ring-svg" viewBox="0 0 240 240" aria-hidden="true">
-          <g class="s1-ring-ticks"></g>
-          <circle class="s1-ring-dash" cx="120" cy="120" r="72"/>
-          <path class="s1-ring-blob" d=""/>
-          <circle class="s1-ring-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"/>
-        </svg>
-        <div class="s1-ring-center">
-          <div class="s1-charge" id="s1-charge">0<span class="s1-charge-pct">%</span></div>
-          <div class="s1-ring-label" id="s1-ring-label">charge</div>
+    <!-- INSTRUMENTS: charge + sleep + steps rings as a rhythm of three (charge
+         slightly larger), with the kcal/done/tasks readouts as a compact stack
+         beside them. One coherent instrument row at every width. -->
+    <div class="s1-instr">
+      <div class="s1-rings">
+        <div class="s1-ring-wrap s1-ring-charge" title="charge — today's habit completion">
+          <svg class="s1-ring-svg" viewBox="0 0 240 240" aria-hidden="true">
+            <g class="s1-ring-ticks"></g>
+            <circle class="s1-ring-dash" cx="120" cy="120" r="72"/>
+            <path class="s1-ring-blob" d=""/>
+            <circle class="s1-ring-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"/>
+          </svg>
+          <div class="s1-ring-center">
+            <div class="s1-charge" id="s1-charge">0<span class="s1-charge-pct">%</span></div>
+            <div class="s1-ring-label" id="s1-ring-label">charge</div>
+          </div>
         </div>
+        <!-- sleep + steps rings (built by JS into #s1-hrings; today's health) -->
+        <div class="s1-hrings" id="s1-hrings"></div>
+      </div>
+      <div class="s1-readouts">
+        <div class="s1-ro"><span class="s1-ro-val" id="s1-kcal">0</span><span class="s1-ro-lbl">kcal</span></div>
+        <div class="s1-ro"><span class="s1-ro-val" id="s1-done">0/0</span><span class="s1-ro-lbl">done</span></div>
+        <div class="s1-ro"><span class="s1-ro-val" id="s1-tasks-n">0</span><span class="s1-ro-lbl">tasks</span></div>
       </div>
     </div>
 
-    <!-- TELEMETRY: live readouts (kcal/done/tasks) + the sleep & steps HUD rings
-         (built by JS into #s1-hrings; render today's health here). -->
-    <div class="s1-card s1-tiles-card">
-      <div class="s1-card-tag">telemetry</div>
-      <div class="s1-tiles">
-        <div class="s1-tile"><div class="s1-tile-val" id="s1-kcal">0</div><div class="s1-tile-lbl">kcal</div></div>
-        <div class="s1-tile"><div class="s1-tile-val" id="s1-done">0/0</div><div class="s1-tile-lbl">done</div></div>
-        <div class="s1-tile"><div class="s1-tile-val" id="s1-tasks-n">0</div><div class="s1-tile-lbl">tasks</div></div>
-      </div>
-      <div class="s1-hrings" id="s1-hrings"></div>
-    </div>
-
-    <!-- STREAK -->
-    <div class="s1-card s1-streak-card">
-      <div class="s1-card-tag">streak</div>
-      <div class="s1-streak">
-        <div class="s1-seg-row" id="s1-segs" aria-hidden="true"></div>
-        <div class="s1-streak-label"><span id="s1-streak-n">streak 0</span> · <span id="s1-core-v">core v1</span></div>
-      </div>
+    <!-- STREAK: slim full-width band -->
+    <div class="s1-streak-band">
+      <span class="s1-streak-tag">streak</span>
+      <div class="s1-seg-row" id="s1-segs" aria-hidden="true"></div>
+      <div class="s1-streak-label"><span id="s1-streak-n">streak 0</span> · <span id="s1-core-v">core v1</span></div>
     </div>
   </div>
 
