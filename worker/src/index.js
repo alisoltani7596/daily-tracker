@@ -278,13 +278,40 @@ export default {
       const err = validateHealthFields(payload, entry);
       if (err) return json({ error: err }, 400, corsHeaders(allowOrigin));
 
+      // Rich sleep: parse Apple Health's raw stage samples into sleep_hours,
+      // per-stage minutes, bed_time, wake_time. Computed fields only fill slots an
+      // explicit field in THIS push didn't already set (explicit wins).
+      if (payload.sleep_raw !== undefined && payload.sleep_raw !== null) {
+        if (typeof payload.sleep_raw !== "string") {
+          return json({ error: "`sleep_raw` must be a newline-separated string" }, 400, corsHeaders(allowOrigin));
+        }
+        const computed = parseSleepRaw(payload.sleep_raw);
+        if (computed) {
+          for (const k of ["sleep_hours", "bed_time", "wake_time", "sleep_stages"]) {
+            if (computed[k] !== undefined && entry[k] === undefined) entry[k] = computed[k];
+          }
+        }
+      }
+
       // Merge into the existing per-date key so partial pushes accumulate.
       const key = "health:" + date;
       const existing = safeParse(await env.TODAY_KV.get(key)) || {};
       const merged = { ...existing, ...entry };
+
+      // Iris sleep score: whenever the merged record has a sleep duration, compute
+      // an Apple-rubric-modelled score (duration/consistency/interruptions) against
+      // a rolling bed_time average from prior days. Stored separately from any
+      // explicitly pushed sleep_score; the frontend prefers pushed > computed.
+      if (typeof merged.sleep_hours === "number") {
+        try {
+          const priorBeds = await priorBedTimes(env, date, 14);
+          merged.sleep_score_computed = computeSleepScore(merged, priorBeds);
+        } catch { /* score is best-effort, never fails the push */ }
+      }
+
       // Self-pruning: expire a day's key ~60 days out so old samples don't pile up.
       await env.TODAY_KV.put(key, JSON.stringify(merged), { expirationTtl: 60 * 24 * 3600 });
-      return json({ ok: true, date, fields: Object.keys(entry) }, 200, corsHeaders(allowOrigin));
+      return json({ ok: true, date, fields: Object.keys(entry), sleep_score_computed: merged.sleep_score_computed }, 200, corsHeaders(allowOrigin));
     }
 
     // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
@@ -532,6 +559,120 @@ function validateHealthFields(payload, out) {
   return "";
 }
 
+// ─── Rich sleep parsing ────────────────────────────────────────────────────────
+// Parse Apple Health raw sleep samples — a newline-separated string of
+// `value|startISO|endISO` lines — into a compact record. Values are matched
+// case-insensitively (Core/Deep/REM/Awake/Asleep/InBed and Asleep* variants);
+// junk lines and unknown values are tolerated (skipped). Overlapping samples are
+// merged per stage (Garmin/Apple double-write the same span), and total sleep is
+// the merged union of the asleep-type stages only (excludes Awake and InBed).
+function parseSleepRaw(raw) {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const byStage = { deep: [], core: [], rem: [], awake: [], asleep: [] };
+  let earliestStart = null, latestEnd = null, bedStr = null, wakeStr = null;
+  const lines = raw.split(/\r?\n/).slice(0, 2000); // sanity cap
+  for (const line of lines) {
+    const parts = line.split("|");
+    if (parts.length < 3) continue;                 // not a sample line → junk
+    const val = parts[0].trim().toLowerCase();
+    const startStr = parts[1].trim(), endStr = parts[2].trim();
+    const s = Date.parse(startStr), e = Date.parse(endStr);
+    if (!isFinite(s) || !isFinite(e) || e <= s) continue; // unparseable / zero-length
+    let stage;
+    if (val.includes("deep")) stage = "deep";
+    else if (val.includes("rem")) stage = "rem";
+    else if (val.includes("core")) stage = "core";
+    else if (val.includes("awake") || val.includes("wake")) stage = "awake";
+    else if (val.includes("inbed") || val.includes("in bed")) stage = "inbed";
+    else if (val.includes("asleep") || val.includes("sleep")) stage = "asleep";
+    else continue;                                  // unrecognised value → junk
+    // bed/wake span across every recognised sample (incl. InBed / Awake).
+    if (earliestStart === null || s < earliestStart) { earliestStart = s; bedStr = startStr; }
+    if (latestEnd === null || e > latestEnd) { latestEnd = e; wakeStr = endStr; }
+    if (stage === "inbed") continue;                // spans the night; not a stage bucket
+    byStage[stage].push([s, e]);
+  }
+  const dur = (iv) => Math.round(mergeIntervals(iv).reduce((sum, [a, b]) => sum + (b - a), 0) / 60000);
+  const stages = { deep: dur(byStage.deep), core: dur(byStage.core), rem: dur(byStage.rem), awake: dur(byStage.awake) };
+  const totalMin = dur([].concat(byStage.deep, byStage.core, byStage.rem, byStage.asleep));
+  if (totalMin <= 0 && bedStr === null) return null; // nothing usable
+  const out = {};
+  if (totalMin > 0) out.sleep_hours = Math.round((totalMin / 60) * 10) / 10;
+  if (stages.deep || stages.core || stages.rem || stages.awake) out.sleep_stages = stages;
+  if (bedStr) out.bed_time = sleepHHMM(bedStr);
+  if (wakeStr) out.wake_time = sleepHHMM(wakeStr);
+  return out;
+}
+
+// Merge a list of [start,end] epoch-ms intervals into non-overlapping spans.
+function mergeIntervals(arr) {
+  if (!arr.length) return [];
+  const sorted = arr.slice().sort((a, b) => a[0] - b[0]);
+  const out = [sorted[0].slice()];
+  for (let i = 1; i < sorted.length; i++) {
+    const last = out[out.length - 1];
+    if (sorted[i][0] <= last[1]) last[1] = Math.max(last[1], sorted[i][1]);
+    else out.push(sorted[i].slice());
+  }
+  return out;
+}
+
+// "HH:MM" wall-clock from an ISO timestamp's local time part (Apple writes the
+// offset, so the time portion is already the user's local clock).
+function sleepHHMM(iso) {
+  const m = String(iso).match(/T(\d{2}):(\d{2})/);
+  return m ? m[1] + ":" + m[2] : undefined;
+}
+
+// A bed_time "HH:MM" → minutes, normalised so late-evening times stay continuous
+// across midnight (00:00–11:59 treated as after-midnight, +24h). Used for
+// averaging and comparing bedtimes without a midnight discontinuity.
+function bedMinutes(hhmm) {
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm || "");
+  if (!m) return null;
+  let v = (+m[1]) * 60 + (+m[2]);
+  if (v < 12 * 60) v += 24 * 60;
+  return v;
+}
+
+// Prior days' normalised bed_times (excluding `date`), most recent `n`.
+async function priorBedTimes(env, date, n) {
+  const map = await recentHealth(env, n + 6);
+  const out = [];
+  for (const d of Object.keys(map)) {
+    if (d >= date) continue;
+    const bm = bedMinutes(map[d] && map[d].bed_time);
+    if (bm != null) out.push(bm);
+  }
+  return out.slice(-n);
+}
+
+// Iris sleep score (0–100), modelled on Apple's published rubric:
+//   • Duration      (max 50): linear against an 8h target.
+//   • Consistency   (max 30): vs the rolling average bed_time — full marks within
+//                             +30min or earlier, decaying as the night runs later.
+//   • Interruptions (max 20): full unless awake-stage minutes exceed the first 10,
+//                             then deduct ½ point per extra awake minute.
+// Components whose inputs are missing default to full (don't punish sparse data).
+function computeSleepScore(entry, priorBeds) {
+  const hrs = typeof entry.sleep_hours === "number" ? entry.sleep_hours : 0;
+  const duration = Math.max(0, Math.min(50, (hrs / 8) * 50));
+
+  let consistency = 30;
+  const bm = bedMinutes(entry.bed_time);
+  if (bm != null && Array.isArray(priorBeds) && priorBeds.length >= 3) {
+    const avg = priorBeds.reduce((a, b) => a + b, 0) / priorBeds.length;
+    const late = bm - avg;                       // positive = later than usual
+    consistency = late <= 30 ? 30 : Math.max(0, 30 - (late - 30) / 6);
+  }
+
+  let interruptions = 20;
+  const awake = entry.sleep_stages && typeof entry.sleep_stages.awake === "number" ? entry.sleep_stages.awake : null;
+  if (awake != null) interruptions = Math.max(0, 20 - Math.max(0, awake - 10) / 2);
+
+  return Math.round(duration + consistency + interruptions);
+}
+
 // Read the last `n` per-date health keys (health:<date>) as { date: entry }.
 // KV list returns names sorted ascending, so the tail is the most recent days.
 async function recentHealth(env, n) {
@@ -566,7 +707,12 @@ function formatHealthForContext(h) {
     let s = "  sleep: " + h.sleep_hours + "h";
     if (h.bed_time && h.wake_time) s += " (" + h.bed_time + " → " + h.wake_time + ")";
     lines.push(s);
-    if (typeof h.sleep_score === "number") lines.push("  sleep score: " + h.sleep_score);
+    if (typeof h.sleep_score === "number") lines.push("  sleep score: " + h.sleep_score + " (apple)");
+    else if (typeof h.sleep_score_computed === "number") lines.push("  sleep score: " + h.sleep_score_computed + " (iris)");
+    if (h.sleep_stages) {
+      const st = h.sleep_stages;
+      lines.push("  stages (min): deep " + (st.deep || 0) + ", core " + (st.core || 0) + ", rem " + (st.rem || 0) + ", awake " + (st.awake || 0));
+    }
   } else if (h.bed_time && h.wake_time) {
     lines.push("  sleep: " + h.bed_time + " → " + h.wake_time);
   }
