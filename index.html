@@ -53,9 +53,9 @@ body::after{content:'';position:fixed;top:0;left:0;right:0;height:340px;backgrou
 header{position:sticky;top:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);margin-bottom:14px;}
 
 /* screens: show only the active tab's content (screens, not sections) */
-body[data-tab="today"]   :is(.trk-datebar,.trk-hist,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="today"]   :is(.trk-datebar,.trk-hist,.trk-hrings,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
 body[data-tab="tracker"] #today-section{display:none!important;}
-body[data-tab="coach"]   :is(#today-section,.trk-datebar,.trk-hist,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
+body[data-tab="coach"]   :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
 /* coach is a focused full-screen chat — hide the app bar behind it */
 body[data-tab="coach"] header{display:none!important;}
 
@@ -643,18 +643,16 @@ button.tchk.done{color:#fff;}
       </div>
     </div>
 
-    <!-- TELEMETRY: live stats (kcal/done/tasks) + Health tiles awaiting the bridge -->
+    <!-- TELEMETRY: live readouts (kcal/done/tasks) + the sleep & steps HUD rings
+         (built by JS into #s1-hrings; render today's health here). -->
     <div class="s1-card s1-tiles-card">
       <div class="s1-card-tag">telemetry</div>
       <div class="s1-tiles">
         <div class="s1-tile"><div class="s1-tile-val" id="s1-kcal">0</div><div class="s1-tile-lbl">kcal</div></div>
         <div class="s1-tile"><div class="s1-tile-val" id="s1-done">0/0</div><div class="s1-tile-lbl">done</div></div>
         <div class="s1-tile"><div class="s1-tile-val" id="s1-tasks-n">0</div><div class="s1-tile-lbl">tasks</div></div>
-        <!-- steps/sleep await the Apple Health bridge; JS fills the value + drops
-             .is-awaiting when data lands — no layout change. -->
-        <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-steps">—</div><div class="s1-tile-lbl">steps</div><div class="s1-tile-note">awaiting link</div></div>
-        <div class="s1-tile is-awaiting"><div class="s1-tile-val" id="s1-sleep">—</div><div class="s1-tile-lbl">sleep</div><div class="s1-tile-note">awaiting link</div></div>
       </div>
+      <div class="s1-hrings" id="s1-hrings"></div>
     </div>
 
     <!-- STREAK -->
@@ -1075,6 +1073,10 @@ button.tchk.done{color:#fff;}
     <div class="kc"><div class="kc-val" id="kc-net">–600</div><div class="kc-lbl">deficit</div></div>
   </div>
 </div>
+
+<!-- Sleep + steps HUD rings for the VIEWED date (historical for past days). Built
+     by JS; re-rendered from showDate against currentDate's health record. -->
+<div class="trk-hrings" id="trk-hrings"></div>
 
 <!-- LeetCode / stretch / HIIT / link column — collapsed by default, revealed as a
      full-width row below the habits+checklists so it doesn't crowd the daily view. -->
@@ -2554,6 +2556,7 @@ function showDate(dateStr){
   renderDateBar();
   renderHistStrip();           // real 7-day history + current-day highlight
   updateHabitStreaks();        // per-habit streaks from records
+  if(typeof window.refreshTrackerRings==='function') window.refreshTrackerRings(currentDate);  // sleep/steps rings for this date
   updateProgress();
 }
 function trkShift(days){ var d=parseIso(currentDate); d.setDate(d.getDate()+days); showDate(isoLocal(d)); }
@@ -4665,29 +4668,14 @@ function voiceMaybeSpeakReply(rawText){
       });
 
       healthApplyMarks(day, verified, suggest);
-      healthRenderTiles();   // Today tiles reflect today's steps/sleep
+      healthRenderTiles();   // refresh the sleep/steps HUD rings
       if(typeof updateProgress==='function') updateProgress();
     }catch(e){ /* health verification is best-effort; never break the tracker */ }
   };
 
-  // Today dashboard tiles (steps / sleep): show real values from today's health
-  // entry, replacing the "awaiting link" placeholder. Today-scoped (not the
-  // viewed tracker date), since the ring/tiles are always about today.
-  function healthRenderTiles(){
-    var health = window.__health;
-    var entry = (health && typeof health==='object') ? health[healthTodayDate()] : null;
-    var stepsEl = document.getElementById('s1-steps'), sleepEl = document.getElementById('s1-sleep');
-    if(stepsEl && entry && typeof entry.steps==='number'){
-      stepsEl.textContent = entry.steps.toLocaleString();
-      var t1 = stepsEl.closest('.s1-tile'); if(t1){ t1.classList.remove('is-awaiting'); var n1=t1.querySelector('.s1-tile-note'); if(n1) n1.textContent='today'; }
-    }
-    var sh = entry ? (typeof entry.sleep_hours==='number' ? entry.sleep_hours
-                     : (typeof entry.sleep_minutes==='number' ? Math.round(entry.sleep_minutes/6)/10 : null)) : null;
-    if(sleepEl && sh!=null){
-      sleepEl.textContent = sh + 'h';
-      var t2 = sleepEl.closest('.s1-tile'); if(t2){ t2.classList.remove('is-awaiting'); var n2=t2.querySelector('.s1-tile-note'); if(n2) n2.textContent = (typeof entry.sleep_score==='number' ? ('score '+entry.sleep_score) : 'last night'); }
-    }
-  }
+  // Health arrived / changed → refresh the sleep & steps rings (Today + Tracker).
+  // The old steps/sleep tiles are now the ring instruments (see the rings block).
+  function healthRenderTiles(){ if(typeof window.refreshHealthRings==='function') window.refreshHealthRings(); }
   window.healthRenderTiles = healthRenderTiles;
 
   // ── Check-item sections: Morning Routine + workout (same rule engine) ────────
@@ -5033,6 +5021,172 @@ function voiceMaybeSpeakReply(rawText){
   start();
   // push the current charge (and stable/streak) into the ring now that hooks exist
   if(typeof s1RenderAll==='function') s1RenderAll();
+})();
+</script>
+
+<!-- ─── HEALTH RINGS (sleep + steps) + sleep detail card ────────────────────────
+ * Two static HUD rings in the charge ring's family (smaller, no living wobble):
+ *   • Sleep ring  — fills to sleep_score/100; source order pushed(apple) >
+ *     computed(iris) > absent(dim "—"); tapping it expands a sleep detail card
+ *     (total hours, deep/core/rem/awake stage bar, bed → wake).
+ *   • Steps ring  — fills to steps/goal (goal in localStorage, default 6000,
+ *     tap to edit inline); over-goal caps the arc full, real number still shown.
+ * Rendered per-date: Today's cluster reads today's record; the Tracker cluster
+ * reads the viewed date's record (historical rings for past days).
+-->
+<script>
+(function(){
+  var RING_C = 2 * Math.PI * 96;                 // arc circumference (r=96 in the 240 viewBox)
+  var STEPS_GOAL_KEY = 'steps_goal_v1', STEPS_GOAL_DEFAULT = 6000;
+  function stepsGoal(){ var v = parseInt(localStorage.getItem(STEPS_GOAL_KEY), 10); return (v && v > 0) ? v : STEPS_GOAL_DEFAULT; }
+  function setStepsGoal(v){ v = parseInt(v, 10); if(v && v > 0){ localStorage.setItem(STEPS_GOAL_KEY, String(v)); } }
+
+  function fmtSteps(n){ n = +n || 0; return n >= 10000 ? (Math.round(n/100)/10) + 'k' : String(n); }
+  function fmtHours(h){ return (Math.round(h*10)/10) + 'h'; }
+  function fmtMin(m){ m = Math.round(+m||0); return m >= 60 ? (Math.floor(m/60) + 'h ' + ('0'+(m%60)).slice(-2) + 'm') : (m + 'm'); }
+  function setArc(el, frac){ if(!el) return; frac = Math.max(0, Math.min(1, frac||0)); el.style.strokeDasharray = RING_C; el.style.strokeDashoffset = RING_C * (1 - frac); }
+
+  function ringSvg(){
+    return '<svg viewBox="0 0 240 240" aria-hidden="true">'
+         +   '<circle class="s1-hr-track" cx="120" cy="120" r="96"></circle>'
+         +   '<circle class="s1-hr-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"></circle>'
+         + '</svg>';
+  }
+  // Build the two rings + a hidden sleep detail card into a scope container.
+  function buildHealthRings(container){
+    if(!container || container.dataset.built) return;
+    container.dataset.built = '1';
+    container.innerHTML =
+      '<div class="s1-hr-ring s1-hr-sleep is-dim" role="button" tabindex="0" aria-label="Sleep — tap for detail">'
+      +   ringSvg()
+      +   '<div class="s1-hr-center"><div class="s1-hr-val s1-hr-sleep-val">—</div><div class="s1-hr-lbl">sleep</div><div class="s1-hr-tag s1-hr-sleep-tag"></div></div>'
+      + '</div>'
+      + '<div class="s1-hr-ring s1-hr-steps is-dim" role="button" tabindex="0" aria-label="Steps — tap to set goal">'
+      +   ringSvg()
+      +   '<div class="s1-hr-center"><div class="s1-hr-val s1-hr-steps-val">—</div><div class="s1-hr-lbl">steps</div><div class="s1-hr-tag s1-hr-steps-tag"></div></div>'
+      + '</div>'
+      + '<div class="s1-sleepcard" hidden>'
+      +   '<div class="s1-sc-top"><div class="s1-sc-total"><span class="s1-sc-h">—</span></div><div class="s1-sc-times">— → —</div></div>'
+      +   '<div class="s1-sc-bar"></div>'
+      +   '<div class="s1-sc-legend"></div>'
+      + '</div>';
+
+    var sleepRing = container.querySelector('.s1-hr-sleep');
+    var stepsRing = container.querySelector('.s1-hr-steps');
+    // Tap sleep → toggle the detail card.
+    sleepRing.addEventListener('click', function(){
+      var card = container.querySelector('.s1-sleepcard');
+      if(card) card.hidden = !card.hidden;
+    });
+    sleepRing.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); sleepRing.click(); } });
+    // Tap steps → inline goal editor (HUD number input, not window.prompt).
+    stepsRing.addEventListener('click', function(){ editStepsGoal(stepsRing); });
+    stepsRing.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); stepsRing.click(); } });
+  }
+
+  function editStepsGoal(ring){
+    var center = ring.querySelector('.s1-hr-center');
+    if(!center || center.querySelector('.s1-hr-goal-input')) return;   // already editing
+    var saved = center.innerHTML;
+    center.classList.add('is-editing');
+    center.innerHTML = '<input class="s1-hr-goal-input" type="number" min="1000" step="500" value="' + stepsGoal() + '" aria-label="Steps goal"><div class="s1-hr-lbl">goal</div>';
+    var inp = center.querySelector('.s1-hr-goal-input');
+    inp.focus(); inp.select();
+    var done = false;
+    function commit(save){
+      if(done) return; done = true;
+      if(save){ setStepsGoal(inp.value); }
+      center.classList.remove('is-editing');
+      center.innerHTML = saved;
+      refreshAll();   // reflect the new goal in every ring
+    }
+    inp.addEventListener('keydown', function(e){
+      e.stopPropagation();
+      if(e.key === 'Enter'){ e.preventDefault(); commit(true); }
+      else if(e.key === 'Escape'){ e.preventDefault(); commit(false); }
+    });
+    inp.addEventListener('blur', function(){ commit(true); });
+    inp.addEventListener('click', function(e){ e.stopPropagation(); });
+  }
+
+  function renderSleepCard(container, entry){
+    var hEl = container.querySelector('.s1-sc-h'),
+        bar = container.querySelector('.s1-sc-bar'),
+        times = container.querySelector('.s1-sc-times'),
+        legend = container.querySelector('.s1-sc-legend');
+    if(!hEl) return;
+    var hasSleep = entry && (typeof entry.sleep_hours === 'number' || entry.bed_time);
+    if(!hasSleep){ hEl.textContent = '—'; if(bar) bar.innerHTML = ''; if(times) times.textContent = 'no sleep data'; if(legend) legend.innerHTML = ''; return; }
+    hEl.textContent = (typeof entry.sleep_hours === 'number') ? fmtHours(entry.sleep_hours) : '—';
+    if(times) times.textContent = (entry.bed_time || '—') + ' → ' + (entry.wake_time || '—');
+    var st = entry.sleep_stages;
+    if(st && (st.deep || st.core || st.rem || st.awake)){
+      var order = [['deep', st.deep||0], ['core', st.core||0], ['rem', st.rem||0], ['awake', st.awake||0]];
+      if(bar) bar.innerHTML = order.map(function(x){ return x[1] > 0 ? '<span class="s1-sc-seg s1-sc-' + x[0] + '" style="flex:' + x[1] + '"></span>' : ''; }).join('');
+      if(legend) legend.innerHTML = order.map(function(x){ return '<span class="s1-sc-leg"><i class="s1-sc-dot s1-sc-' + x[0] + '"></i>' + x[0] + ' ' + fmtMin(x[1]) + '</span>'; }).join('');
+    } else {
+      // Total-only: a single full-width accent segment, no per-stage legend.
+      if(bar) bar.innerHTML = '<span class="s1-sc-seg s1-sc-total" style="flex:1"></span>';
+      if(legend) legend.innerHTML = '';
+    }
+  }
+
+  function renderHealthRings(container, date){
+    if(!container) return;
+    if(!container.dataset.built) buildHealthRings(container);
+    var entry = (window.__health && typeof window.__health === 'object') ? window.__health[date] : null;
+
+    // Sleep ring — pushed sleep_score (apple) > sleep_score_computed (iris) > none.
+    var sVal = container.querySelector('.s1-hr-sleep-val'),
+        sTag = container.querySelector('.s1-hr-sleep-tag'),
+        sArc = container.querySelector('.s1-hr-sleep .s1-hr-arc'),
+        sRing = container.querySelector('.s1-hr-sleep');
+    var score = null, src = '';
+    if(entry){
+      if(typeof entry.sleep_score === 'number'){ score = entry.sleep_score; src = 'apple'; }
+      else if(typeof entry.sleep_score_computed === 'number'){ score = entry.sleep_score_computed; src = 'iris'; }
+    }
+    if(score != null){ sVal.textContent = Math.round(score); sTag.textContent = src; setArc(sArc, score/100); sRing.classList.remove('is-dim'); }
+    else { sVal.textContent = '—'; sTag.textContent = ''; setArc(sArc, 0); sRing.classList.add('is-dim'); }
+
+    // Steps ring — steps/goal; over-goal caps the arc but shows the real number.
+    var stVal = container.querySelector('.s1-hr-steps-val'),
+        stTag = container.querySelector('.s1-hr-steps-tag'),
+        stArc = container.querySelector('.s1-hr-steps .s1-hr-arc'),
+        stRing = container.querySelector('.s1-hr-steps');
+    var goal = stepsGoal();
+    if(stTag) stTag.textContent = '/' + fmtSteps(goal);
+    if(entry && typeof entry.steps === 'number'){
+      stVal.textContent = fmtSteps(entry.steps);
+      setArc(stArc, entry.steps / goal);
+      stRing.classList.remove('is-dim');
+      stRing.classList.toggle('is-full', entry.steps >= goal);
+    } else {
+      stVal.textContent = '—'; setArc(stArc, 0); stRing.classList.add('is-dim'); stRing.classList.remove('is-full');
+    }
+
+    renderSleepCard(container, entry);
+  }
+
+  var elToday = null, elTrk = null, trkDate = null;
+  function refreshAll(){
+    if(elToday) renderHealthRings(elToday, todayIso());
+    if(elTrk) renderHealthRings(elTrk, trkDate || todayIso());
+  }
+  // Public hooks used by the health-load path and showDate.
+  window.refreshHealthRings = refreshAll;
+  window.refreshTrackerRings = function(date){ trkDate = date; if(elTrk) renderHealthRings(elTrk, date); };
+
+  function init(){
+    elToday = document.getElementById('s1-hrings');
+    elTrk = document.getElementById('trk-hrings');
+    if(elToday) buildHealthRings(elToday);
+    if(elTrk) buildHealthRings(elTrk);
+    refreshAll();
+    if(window.todayReady && window.todayReady.then){ window.todayReady.then(refreshAll); }
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 
