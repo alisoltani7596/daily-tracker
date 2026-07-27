@@ -3655,13 +3655,15 @@ function renderToday(data){
     var days = (d.days!=null) ? d.days : (d.added ? deadlineDaysFromDate(d.d, d.m) : null);
     var b = (days!=null && days<=14)?'soon':'ok';
     var lbl = (days!=null)?((days===0)?'today':(days+'d')):'set';
-    dl += '<div class="trow dl-row" data-key="'+k+'">'+
+    dl += '<div class="trow dl-row" data-key="'+k+'" data-name="'+tEsc(d.n)+'">'+
+      '<span class="row-grip" data-grip title="Drag to reorder">⠿</span>'+
       '<div class="tdate'+(d.added?' dl-date':'')+'"'+(d.added?' data-act="dl-date" title="Edit date"':'')+'><div class="d">'+tEsc(d.d)+'</div><div class="m">'+tEsc(d.m)+'</div></div>'+
       '<div class="tn dl-name" data-act="dl-rename">'+tEsc(d.n)+'</div>'+
       '<span class="tbadge '+b+'">'+lbl+'</span>'+
       '<button class="task-del" title="Delete" data-act="dl-del">✕</button>'+
     '</div>';
   });
+  dl = '<div class="t-list" data-sort="deadlines">'+dl+'</div>';
   dl += '<button class="task-add" data-act="dl-add">＋ Add deadline</button>';
   cards.push(tCard('deadlines','🎯','Deadlines','editable',dl,'Tap a deadline to rename, its date to change it, ✕ to remove. Edits survive the morning refresh.',false));
 
@@ -3669,13 +3671,15 @@ function renderToday(data){
   var tk = '';
   (data.tasks||[]).forEach(function(t){
     var k = tEsc(t.key||t.n);
-    tk += '<div class="trow task-row'+(t.done?' done':'')+'" data-key="'+k+'">'+
+    tk += '<div class="trow task-row'+(t.done?' done':'')+'" data-key="'+k+'" data-name="'+tEsc(t.n)+'">'+
+      '<span class="row-grip" data-grip title="Drag to reorder">⠿</span>'+
       '<button class="tchk'+(t.done?' done':'')+'" title="Toggle done" data-act="task-toggle">'+(t.done?'✓':'')+'</button>'+
       '<div class="tn task-name" data-act="task-edit">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</div>'+
       '<button class="task-star'+(t.hi?' on':'')+'" title="High priority" data-act="task-hi">!</button>'+
       '<button class="task-del" title="Delete" data-act="task-del">✕</button>'+
     '</div>';
   });
+  tk = '<div class="t-list" data-sort="tasks">'+tk+'</div>';
   tk += '<button class="task-add" data-act="task-add">＋ Add task</button>';
   cards.push(tCard('tasks','✅','Tasks','editable',tk,'Tap a task to rename, ✓ to check off, ! for high priority. Your edits are saved and survive the morning refresh.',false));
 
@@ -3709,17 +3713,21 @@ function renderToday(data){
   var projects = Array.isArray(data.projects) ? data.projects.filter(function(p){ return p && p.name; }) : [];
   if(projects.length){
     var pj = '';
+    var pjOv = todayNormalizeOverrides(window.__todayOverrides);
+    var pOrder = (pjOv.projectOrder && typeof pjOv.projectOrder==='object') ? pjOv.projectOrder : {};
     projects.forEach(function(p){
-      var tasks = Array.isArray(p.tasks) ? p.tasks : [];
+      var tasks = applyItemOrder(Array.isArray(p.tasks) ? p.tasks : [], pOrder[p.name]);
       var open = tasks.filter(function(t){ return t && !t.done; }).length;
       var nameHtml = (p.url && p.url!=='#')
         ? '<a class="pj-name" href="'+tEsc(p.url)+'" target="_blank" rel="noopener">'+tEsc(p.name)+'</a>'
         : '<span class="pj-name pj-name-off" title="No doc linked yet">'+tEsc(p.name)+'</span>';
       pj += '<div class="pj-group"><div class="pj-head">'+nameHtml+'<span class="pj-count">'+open+' open</span></div>';
       if(tasks.length){
+        pj += '<div class="pj-list" data-sort="proj" data-proj="'+tEsc(p.name)+'">';
         tasks.forEach(function(t){
-          pj += '<div class="pj-task'+(t.done?' done':'')+'"><span class="pj-dot"></span><span class="pj-tn">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</span></div>';
+          pj += '<div class="pj-task'+(t.done?' done':'')+'" data-name="'+tEsc(t.n)+'"><span class="row-grip" data-grip title="Drag to reorder">⠿</span><span class="pj-dot"></span><span class="pj-tn">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</span></div>';
         });
+        pj += '</div>';
       } else {
         pj += '<div class="pj-empty">no open tasks</div>';
       }
@@ -3810,6 +3818,18 @@ function todayApply(raw){
   renderToday(todayMerged());
 }
 
+// Apply a user-defined item order (array of display names) to a list of items.
+// Items whose name is in the order follow it; items not named keep their pipeline
+// order and are appended after (new pipeline items append in pipeline position).
+function applyItemOrder(items, orderArr){
+  if(!Array.isArray(orderArr) || !orderArr.length || !Array.isArray(items)) return items;
+  var pos = {}; orderArr.forEach(function(n,i){ if(pos[n]==null) pos[n]=i; });
+  var known = [], unknown = [];
+  items.forEach(function(it){ (it && pos[it.n]!=null ? known : unknown).push(it); });
+  known.sort(function(a,b){ return pos[a.n]-pos[b.n]; });
+  return known.concat(unknown);
+}
+
 function todayMergeTasks(){
   var gen = (window.__todayGenerated && window.__todayGenerated.tasks) || [];
   var ov = todayNormalizeOverrides(window.__todayOverrides);
@@ -3823,7 +3843,7 @@ function todayMergeTasks(){
   ov.added.forEach(function(a,i){
     out.push({ key:'a'+i, added:true, idx:i, n:a.n||'', hi:!!a.hi, done:!!a.done });
   });
-  return out;
+  return applyItemOrder(out, ov.taskOrder);
 }
 
 function todayMergeDeadlines(){
@@ -3838,7 +3858,7 @@ function todayMergeDeadlines(){
   ov.deadlinesAdded.forEach(function(a,i){
     out.push({ key:'da'+i, added:true, idx:i, d:a.d||'—', m:a.m||'', days:null, n:a.n||'' });
   });
-  return out;
+  return applyItemOrder(out, ov.deadlineOrder);
 }
 
 function todayMerged(){
@@ -4147,6 +4167,32 @@ function todayPushOverrides(base){
     var grid = document.getElementById('today-grid'); if(!grid) return;
     makeSortable(grid, { itemSelector: '.tcard', handleSelector: '.tc-grip', axis: 'x', onDrop: saveCardOrder });
   })();
+
+  // ── In-card item reorder (Tasks / Deadlines / Projects) ─────────────────────
+  // Persisted in the overrides object (keyed by display name) so it ships through
+  // /today-overrides and survives the morning refresh. Full order is saved on each
+  // drop, so untouched items stay put and only new pipeline items append.
+  function patchOverrides(fn){
+    var ov = todayNormalizeOverrides(window.__todayOverrides);
+    fn(ov);
+    window.__todayOverrides = ov;
+    todaySave();   // local mirror + debounced Worker POST; DOM already reordered, no re-render
+  }
+  function namesOf(items){ return items.map(function(r){ return r.getAttribute('data-name'); }).filter(function(x){ return x != null; }); }
+
+  function setupItemSortables(){
+    document.querySelectorAll('#today-grid [data-sort]').forEach(function(list){
+      var kind = list.getAttribute('data-sort');
+      var sel = kind === 'tasks' ? '.task-row' : (kind === 'deadlines' ? '.dl-row' : '.pj-task');
+      makeSortable(list, { itemSelector: sel, handleSelector: '.row-grip', axis: 'y', onDrop: function(items){
+        var names = namesOf(items);
+        if(kind === 'tasks')      patchOverrides(function(ov){ ov.taskOrder = names; });
+        else if(kind === 'deadlines') patchOverrides(function(ov){ ov.deadlineOrder = names; });
+        else if(kind === 'proj'){ var proj = list.getAttribute('data-proj'); patchOverrides(function(ov){ if(!ov.projectOrder || typeof ov.projectOrder!=='object') ov.projectOrder = {}; ov.projectOrder[proj] = names; }); }
+      }});
+    });
+  }
+  window.todaySetupItemSortables = setupItemSortables;
 
   // Re-apply order when the breakpoint-class changes on resize.
   var _rz = null, _bp = bpClass();
