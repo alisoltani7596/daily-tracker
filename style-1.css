@@ -78,11 +78,18 @@ body[data-tab="today"] header{ display: none !important; }
 .s1-card{ border: 1px solid var(--line); background: var(--bg-raised); display: flex; flex-direction: column; overflow: hidden; }
 .s1-card-tag{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-faint); padding: 9px 11px 4px; }
 
-/* ── Data dashboard: CSS multi-column masonry so column heights self-balance
-      (a strict grid leaves short cards' columns half-empty; this flows the tall
-      Schedule/Tasks/Projects cards alongside the short Deadlines/Slack/Inbox). ─ */
-#today-grid{ display: block; column-width: 300px; column-gap: 10px; }
-#today-grid > .tcard{ width: 100%; margin: 0 0 10px; break-inside: avoid; -webkit-column-break-inside: avoid; }
+/* ── Data dashboard: explicit responsive grid (4 / 2 / 1 columns), so cards
+      distribute across the row and can be user-reordered by drag. Cards align to
+      the top of their row (no stretch); order persists per breakpoint-class. ─ */
+#today-grid{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: start; }
+#today-grid > .tcard{ width: auto; margin: 0; min-width: 0; }
+@media (max-width: 1000px){ #today-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px){ #today-grid{ grid-template-columns: 1fr; } }
+/* Dragging affordance + state */
+.tc-grip{ cursor: grab; color: var(--text-faint); font-size: 13px; line-height: 1; padding: 0 6px 0 0; letter-spacing: -2px; user-select: none; touch-action: none; }
+.tc-grip:hover{ color: var(--text-dim); }
+.tcard.s1-drag{ opacity: 0.4; }
+.tcard.s1-dragging{ cursor: grabbing; box-shadow: 0 0 0 1px var(--accent); z-index: 5; }
 
 /* ── Living ring instrument — tile-scale (also used large in the wake overlay) ─ */
 .s1-ring-wrap{ position: relative; width: 128px; height: 128px; margin: 2px auto 14px; }
@@ -172,7 +179,6 @@ body[data-tab="today"] header{ display: none !important; }
 @media (max-width: 680px){
   #today-section{ padding: 14px 14px calc(var(--tabbar-h) + var(--safe-b) + 20px) !important; }
   #s1-today{ grid-template-columns: 1fr; }
-  #today-grid{ column-width: auto; column-count: 1; }
 }
 
 

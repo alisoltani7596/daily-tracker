@@ -3615,8 +3615,8 @@ function deadlineDaysFromDate(dayStr, monStr){
   if(target < today) target = new Date(today.getFullYear()+1, mi, day);
   return Math.round((target - today) / 86400000);
 }
-function tCard(ic,title,tag,body,foot,wide){
-  return '<div class="tcard'+(wide?' wide':'')+'"><div class="tcard-head"><div class="tc-ttl"><span class="tc-ic">'+ic+'</span>'+title+'</div><span class="tc-tag">● '+tag+'</span></div><div class="tc-body">'+body+'</div>'+(foot?'<div class="tc-foot">'+foot+'</div>':'')+'</div>';
+function tCard(id,ic,title,tag,body,foot,wide){
+  return '<div class="tcard'+(wide?' wide':'')+'" data-card="'+id+'"><div class="tcard-head"><span class="tc-grip" data-grip title="Drag to reorder">⠿</span><div class="tc-ttl"><span class="tc-ic">'+ic+'</span>'+title+'</div><span class="tc-tag">● '+tag+'</span></div><div class="tc-body">'+body+'</div>'+(foot?'<div class="tc-foot">'+foot+'</div>':'')+'</div>';
 }
 function renderToday(data){
   window.__todayData = data;
@@ -3643,7 +3643,7 @@ function renderToday(data){
     sc += '<button class="sched-toggle" data-act="sched-toggle">'+
       (schedExpanded ? '▴ Show today only' : '▾ '+days.length+' days')+'</button>';
   }
-  cards.push(tCard('📅','Schedule','Calendar',sc,'Your routine plus any one-off meetings from Google Calendar.',true));
+  cards.push(tCard('schedule','📅','Schedule','Calendar',sc,'Your routine plus any one-off meetings from Google Calendar.',true));
 
   // Deadlines (editable, same overrides treatment as tasks)
   var dl = '';
@@ -3663,7 +3663,7 @@ function renderToday(data){
     '</div>';
   });
   dl += '<button class="task-add" data-act="dl-add">＋ Add deadline</button>';
-  cards.push(tCard('🎯','Deadlines','editable',dl,'Tap a deadline to rename, its date to change it, ✕ to remove. Edits survive the morning refresh.',false));
+  cards.push(tCard('deadlines','🎯','Deadlines','editable',dl,'Tap a deadline to rename, its date to change it, ✕ to remove. Edits survive the morning refresh.',false));
 
   // Tasks
   var tk = '';
@@ -3677,7 +3677,7 @@ function renderToday(data){
     '</div>';
   });
   tk += '<button class="task-add" data-act="task-add">＋ Add task</button>';
-  cards.push(tCard('✅','Tasks','editable',tk,'Tap a task to rename, ✓ to check off, ! for high priority. Your edits are saved and survive the morning refresh.',false));
+  cards.push(tCard('tasks','✅','Tasks','editable',tk,'Tap a task to rename, ✓ to check off, ! for high priority. Your edits are saved and survive the morning refresh.',false));
 
   // Slack — mentions, DMs, things assigned to you
   var sk = '';
@@ -3687,7 +3687,7 @@ function renderToday(data){
     sk += tLink(m.url, '<span class="tbadge '+kc+'" style="min-width:32px;text-align:center;">'+label+'</span><div class="tn">'+tEsc(m.who||'')+(m.text?'<small>'+tEsc(m.text)+'</small>':'')+'</div><div class="tt" style="min-width:auto;">'+tEsc(m.where||'')+'</div>');
   });
   if(!(data.slack && data.slack.length)) sk = '<div class="tc-empty">All clear — no mentions, DMs, or asks.</div>';
-  cards.push(tCard('💬','Slack','Slack',sk,'Mentions, DMs, and messages assigning you things.',true));
+  cards.push(tCard('slack','💬','Slack','Slack',sk,'Mentions, DMs, and messages assigning you things.',true));
 
   // Inbox
   if(data.inbox && data.inbox.length){
@@ -3695,9 +3695,9 @@ function renderToday(data){
     data.inbox.forEach(function(m){
       ib += tLink(m.url, '<div class="tn">'+tEsc(m.from)+'<small>'+tEsc(m.subject)+'</small></div><div class="tt" style="min-width:auto;">'+tEsc(m.when||'')+'</div>');
     });
-    cards.push(tCard('✉️','Inbox','Gmail',ib,'Recent unread &amp; important threads.',true));
+    cards.push(tCard('inbox','✉️','Inbox','Gmail',ib,'Recent unread &amp; important threads.',true));
   } else {
-    cards.push('<div class="tcard wide"><div class="tcard-head"><div class="tc-ttl"><span class="tc-ic">✉️</span>Inbox</div><span class="tc-tag setup">◆ Needs setup</span></div><div class="tc-body"><div class="tc-empty"><div class="big">✉️</div>Connect <b>Gmail</b> on claude.ai, then ask Claude to switch this on and it will show unread &amp; important threads here.</div></div></div>');
+    cards.push('<div class="tcard wide" data-card="inbox"><div class="tcard-head"><span class="tc-grip" data-grip title="Drag to reorder">⠿</span><div class="tc-ttl"><span class="tc-ic">✉️</span>Inbox</div><span class="tc-tag setup">◆ Needs setup</span></div><div class="tc-body"><div class="tc-empty"><div class="big">✉️</div>Connect <b>Gmail</b> on claude.ai, then ask Claude to switch this on and it will show unread &amp; important threads here.</div></div></div>');
   }
 
   // Projects — read-only mirror of the per-category Google Docs. Each category is
@@ -3725,10 +3725,12 @@ function renderToday(data){
       }
       pj += '</div>';
     });
-    cards.push(tCard('🗂','Projects','Docs',pj,'Read-only — edit in the linked Google Docs.',true));
+    cards.push(tCard('projects','🗂','Projects','Docs',pj,'Read-only — edit in the linked Google Docs.',true));
   }
 
   grid.innerHTML = cards.join('');
+  if(typeof window.todayApplyCardOrder==='function') window.todayApplyCardOrder();   // user card arrangement
+  if(typeof window.todaySetupItemSortables==='function') window.todaySetupItemSortables();  // per-list item drag
 
   var stamp = document.getElementById('today-stamp');
   if(stamp){
@@ -4044,6 +4046,113 @@ function todayPushOverrides(base){
       case 'dl-add':      todayDlAdd(); break;
       case 'sched-toggle': todayScheduleToggle(); break;
     }
+  });
+})();
+</script>
+
+<!-- ─── Drag-to-reorder: cards (per breakpoint) + items (persisted in overrides) ──
+ * makeSortable is a small pointer-based engine shared by the card grid and the
+ * in-card task lists: mouse drags from a grip immediately; touch requires a
+ * long-press (so vertical scrolling still works) and cancels if the finger moves
+ * before the hold fires. It reorders the DOM live and calls onDrop with the new
+ * element order. Editing (rename/check/delete) is untouched — those live on
+ * separate controls; only the grip starts a drag. -->
+<script>
+(function(){
+  // ── Generic pointer sortable ────────────────────────────────────────────────
+  function makeSortable(container, opts){
+    if(!container || container.__sortable) return;   // bind once per element
+    container.__sortable = true;
+    var itemSel = opts.itemSelector, handleSel = opts.handleSelector || null,
+        axis = opts.axis || 'y', LONG = 300, CANCEL = 8, DRAGCLS = opts.draggingClass || 's1-dragging';
+    var drag = null, sx = 0, sy = 0, lp = null, active = false, pid = null;
+
+    container.addEventListener('pointerdown', function(e){
+      if(e.button && e.button !== 0) return;
+      var start = handleSel ? e.target.closest(handleSel) : e.target.closest(itemSel);
+      if(!start || !container.contains(start)) return;
+      var item = start.closest(itemSel);
+      if(!item || item.parentNode !== container) return;
+      drag = item; pid = e.pointerId; sx = e.clientX; sy = e.clientY; active = false;
+      if(e.pointerType === 'touch'){ lp = setTimeout(function(){ begin(); }, LONG); }
+      else { begin(); }
+      window.addEventListener('pointermove', onMove, { passive:false });
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+    });
+
+    function begin(){ active = true; try{ drag.setPointerCapture(pid); }catch(_){ } drag.classList.add(DRAGCLS); }
+    function onMove(e){
+      if(e.pointerId !== pid) return;
+      if(!active){
+        if(lp && (Math.abs(e.clientX-sx) > CANCEL || Math.abs(e.clientY-sy) > CANCEL)){ clearTimeout(lp); lp = null; cleanup(); }
+        return;
+      }
+      e.preventDefault();
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      var over = el ? el.closest(itemSel) : null;
+      if(over && over !== drag && over.parentNode === container){
+        var r = over.getBoundingClientRect();
+        var after = axis === 'x' ? (e.clientX > r.left + r.width/2) : (e.clientY > r.top + r.height/2);
+        container.insertBefore(drag, after ? over.nextElementSibling : over);
+      }
+    }
+    function onUp(e){
+      if(e.pointerId !== pid) return;
+      if(lp){ clearTimeout(lp); lp = null; }
+      var wasActive = active;
+      var moved = drag;
+      cleanup();
+      if(wasActive && opts.onDrop){
+        var items = Array.prototype.filter.call(container.children, function(c){ return c.matches(itemSel); });
+        opts.onDrop(items, moved);
+      }
+    }
+    function cleanup(){
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      if(drag) drag.classList.remove(DRAGCLS);
+      drag = null; active = false; pid = null;
+    }
+  }
+  window.makeSortable = makeSortable;
+
+  // ── Card arrangement (per breakpoint-class) ─────────────────────────────────
+  var CARD_ORDER_KEY = 'today_card_order_v1';
+  var DEFAULT_CARD_ORDER = ['schedule','tasks','deadlines','projects','inbox','slack'];
+  function bpClass(){ var w = window.innerWidth; return w > 1000 ? '4' : (w > 560 ? '2' : '1'); }
+  function readOrders(){ try{ var o = JSON.parse(localStorage.getItem(CARD_ORDER_KEY)); return (o && typeof o==='object') ? o : {}; }catch(e){ return {}; } }
+  function savedOrder(){ var o = readOrders()[bpClass()]; return Array.isArray(o) ? o : null; }
+
+  function applyCardOrder(){
+    var grid = document.getElementById('today-grid'); if(!grid) return;
+    var order = savedOrder() || DEFAULT_CARD_ORDER;
+    var byId = {};
+    Array.prototype.forEach.call(grid.querySelectorAll(':scope > .tcard'), function(c){ byId[c.getAttribute('data-card')] = c; });
+    var placed = {};
+    order.forEach(function(id){ if(byId[id]){ grid.appendChild(byId[id]); placed[id] = true; } });
+    // Any card not named in the saved order keeps its render position, appended after.
+    Array.prototype.forEach.call(grid.querySelectorAll(':scope > .tcard'), function(c){ var id=c.getAttribute('data-card'); if(!placed[id]) grid.appendChild(c); });
+  }
+  function saveCardOrder(items){
+    var ids = items.map(function(c){ return c.getAttribute('data-card'); }).filter(Boolean);
+    var all = readOrders(); all[bpClass()] = ids;
+    try{ localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(all)); }catch(e){}
+  }
+  window.todayApplyCardOrder = applyCardOrder;
+
+  // Bind the card sortable once (the grid element persists across re-renders).
+  (function(){
+    var grid = document.getElementById('today-grid'); if(!grid) return;
+    makeSortable(grid, { itemSelector: '.tcard', handleSelector: '.tc-grip', axis: 'x', onDrop: saveCardOrder });
+  })();
+
+  // Re-apply order when the breakpoint-class changes on resize.
+  var _rz = null, _bp = bpClass();
+  window.addEventListener('resize', function(){
+    clearTimeout(_rz);
+    _rz = setTimeout(function(){ var b = bpClass(); if(b !== _bp){ _bp = b; applyCardOrder(); } }, 200);
   });
 })();
 </script>
