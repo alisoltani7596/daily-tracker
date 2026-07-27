@@ -2219,7 +2219,20 @@ const RECORDS_MIGRATED = 'records_migrated_v1';
 const WEEKDAY_PLAN = ['Lift A','HIIT','Lift B','HIIT','Lift C','HIIT','Rest']; // 0=Mon..6=Sun
 
 function isoLocal(d){ function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
-function todayIso(){ return isoLocal(new Date()); }
+// "Today" is pinned to America/Vancouver so record + health dates stay consistent
+// regardless of the device's timezone — and match the Vancouver date the health
+// push keys by (health:<date>). In the evening, device-local/UTC can already be
+// on the next day; this keeps both sides on the same Vancouver calendar day.
+// Falls back to device-local only if Intl time zones are unavailable.
+const APP_TZ = 'America/Vancouver';
+function todayIso(){
+  try{
+    var parts = new Intl.DateTimeFormat('en-CA', { timeZone: APP_TZ, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date());
+    var o = {}; parts.forEach(function(x){ o[x.type] = x.value; });
+    if(o.year && o.month && o.day) return o.year + '-' + o.month + '-' + o.day;
+  }catch(e){}
+  return isoLocal(new Date());
+}
 function parseIso(s){ var a=String(s).split('-').map(Number); return new Date(a[0], (a[1]||1)-1, a[2]||1); }
 function weekdayIdxOf(d){ return [6,0,1,2,3,4,5][d.getDay()]; }   // JS getDay (0=Sun) → app idx (0=Mon)
 function weekdayOfIso(s){ return weekdayIdxOf(parseIso(s)); }
@@ -4556,9 +4569,10 @@ function voiceMaybeSpeakReply(rawText){
 -->
 <script>
 (function(){
-  // Today's ISO date — the health tiles/ring are always today-scoped, while the
-  // verify functions take an explicit date so past days can auto-verify too.
-  function healthTodayDate(){ var d=new Date(); function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+  // Today's ISO date — the health tiles/ring are always today-scoped. Delegates to
+  // the Vancouver-pinned todayIso() so the tile lookup uses the SAME calendar day
+  // the push keyed by (no device-timezone / evening-UTC drift).
+  function healthTodayDate(){ return todayIso(); }
 
   // Parse "HH:MM" or an ISO datetime's time part → minutes since midnight, else null.
   function healthMins(str){
