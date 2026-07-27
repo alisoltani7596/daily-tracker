@@ -2532,10 +2532,15 @@ function showDate(dateStr){
   panels.forEach((p,j)=>p.classList.toggle('visible', j===currentDay));
   loadChecks(currentDay);      // applies currentDate's checks to panel
   applyHabitRecord();          // applies currentDate's habits to the visible column
+  // If a health sample exists for the viewed date, auto-verify it (tick-only) so
+  // past days with Garmin data light up too — not just today.
+  if(window.__health && window.__health[currentDate] && typeof window.healthVerify==='function'){
+    window.healthVerify(currentDate);
+    applyHabitRecord();        // re-sync the column from the record verify may have updated
+  }
   renderDateBar();
   renderHistStrip();           // real 7-day history + current-day highlight
   updateHabitStreaks();        // per-habit streaks from records
-  if(typeof healthVerifyChecks==='function'){ /* health is today-only; re-render marks if viewing today */ }
   updateProgress();
 }
 function trkShift(days){ var d=parseIso(currentDate); d.setDate(d.getDate()+days); showDate(isoLocal(d)); }
@@ -4551,9 +4556,8 @@ function voiceMaybeSpeakReply(rawText){
 -->
 <script>
 (function(){
-  // Fixed to *today's* weekday slot (not the mutable currentDay), since the health
-  // entry is keyed by today's actual date.
-  var HEALTH_TODAY_IDX = [6,0,1,2,3,4,5][new Date().getDay()];
+  // Today's ISO date — the health tiles/ring are always today-scoped, while the
+  // verify functions take an explicit date so past days can auto-verify too.
   function healthTodayDate(){ var d=new Date(); function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
 
   // Parse "HH:MM" or an ISO datetime's time part → minutes since midnight, else null.
@@ -4566,12 +4570,23 @@ function voiceMaybeSpeakReply(rawText){
     return h*60+mi;
   }
 
+  // Field accessors tolerant of both the current /health-push schema
+  // (wake_time / bed_time / workouts[]) and any older stored samples
+  // (sleep_end / sleep_start / workout_minutes) so nothing regresses.
+  function healthWakeTime(e){ return e.wake_time || e.sleep_end; }
+  function healthBedTime(e){ return e.bed_time || e.sleep_start; }
+  function healthWorkoutMinutes(e){
+    if(Array.isArray(e.workouts)) return e.workouts.reduce(function(s,w){ return s + (w && typeof w.minutes==='number' ? w.minutes : 0); }, 0);
+    if(typeof e.workout_minutes==='number') return e.workout_minutes;
+    return null;
+  }
+
   // Each test returns true (fires), false (condition not met), or undefined (field
   // missing → no action). Never throws on absent fields.
   var HEALTH_AUTOTICK = [
-    { id:'wake',         test:function(e){ var m=healthMins(e.sleep_end);   return m==null?undefined:(m<=8*60); } },      // woke ≤ 08:00
+    { id:'wake',         test:function(e){ var m=healthMins(healthWakeTime(e)); return m==null?undefined:(m<=8*60); } },      // woke ≤ 08:00
     // "in bed by midnight": bedtime in the evening (≥12:00) counts, or exactly 00:00; 00:01–11:59 does not.
-    { id:'sleep',        test:function(e){ var m=healthMins(e.sleep_start); return m==null?undefined:(m>=12*60 || m===0); } },
+    { id:'sleep',        test:function(e){ var m=healthMins(healthBedTime(e));  return m==null?undefined:(m>=12*60 || m===0); } },
     { id:'steps',        test:function(e){ return typeof e.steps==='number' ? (e.steps>=8000) : undefined; } },
     { id:'garmin_sleep', test:function(e){ return typeof e.sleep_score==='number' ? (e.sleep_score>90) : undefined; } },
     { id:'garmin_wake',  test:function(e){ return typeof e.body_battery_wake==='number' ? (e.body_battery_wake>=100) : undefined; } },
@@ -4608,16 +4623,19 @@ function voiceMaybeSpeakReply(rawText){
     });
   }
 
-  // Runs on load (once health arrives) and after any habit rebuild. Idempotent.
-  window.healthVerifyHabits = function(){
+  // Runs on load for today, and from showDate for the viewed date, so a date with
+  // a health sample auto-verifies its own record — not just today's. Idempotent,
+  // tick-only. dateStr defaults to today.
+  window.healthVerifyHabits = function(dateStr){
     try{
       var health = window.__health;
       if(!health || typeof health!=='object') return;
-      var entry = health[healthTodayDate()];
-      if(!entry || typeof entry!=='object') return;    // no entry for today → no action
+      var date = dateStr || todayIso();
+      var entry = health[date];
+      if(!entry || typeof entry!=='object') return;    // no entry for that date → no action
 
-      var day = HEALTH_TODAY_IDX, today = todayIso();
-      var done = recHabits(today);
+      var day = weekdayOfIso(date);
+      var done = recHabits(date);
       var verified = {}, changed = false;
       HEALTH_AUTOTICK.forEach(function(r){
         if(r.test(entry) === true){
@@ -4625,7 +4643,7 @@ function voiceMaybeSpeakReply(rawText){
           if(!done[r.id]){ done[r.id] = true; changed = true; }   // tick only
         }
       });
-      if(changed){ var rr=dayRec(today); rr.habits=done; dayRecSave(rr); }
+      if(changed){ var rr=dayRec(date); rr.habits=done; dayRecSave(rr); }
 
       var suggest = {};
       HEALTH_SUGGEST.forEach(function(r){
@@ -4633,9 +4651,30 @@ function voiceMaybeSpeakReply(rawText){
       });
 
       healthApplyMarks(day, verified, suggest);
+      healthRenderTiles();   // Today tiles reflect today's steps/sleep
       if(typeof updateProgress==='function') updateProgress();
     }catch(e){ /* health verification is best-effort; never break the tracker */ }
   };
+
+  // Today dashboard tiles (steps / sleep): show real values from today's health
+  // entry, replacing the "awaiting link" placeholder. Today-scoped (not the
+  // viewed tracker date), since the ring/tiles are always about today.
+  function healthRenderTiles(){
+    var health = window.__health;
+    var entry = (health && typeof health==='object') ? health[healthTodayDate()] : null;
+    var stepsEl = document.getElementById('s1-steps'), sleepEl = document.getElementById('s1-sleep');
+    if(stepsEl && entry && typeof entry.steps==='number'){
+      stepsEl.textContent = entry.steps.toLocaleString();
+      var t1 = stepsEl.closest('.s1-tile'); if(t1){ t1.classList.remove('is-awaiting'); var n1=t1.querySelector('.s1-tile-note'); if(n1) n1.textContent='today'; }
+    }
+    var sh = entry ? (typeof entry.sleep_hours==='number' ? entry.sleep_hours
+                     : (typeof entry.sleep_minutes==='number' ? Math.round(entry.sleep_minutes/6)/10 : null)) : null;
+    if(sleepEl && sh!=null){
+      sleepEl.textContent = sh + 'h';
+      var t2 = sleepEl.closest('.s1-tile'); if(t2){ t2.classList.remove('is-awaiting'); var n2=t2.querySelector('.s1-tile-note'); if(n2) n2.textContent = (typeof entry.sleep_score==='number' ? ('score '+entry.sleep_score) : 'last night'); }
+    }
+  }
+  window.healthRenderTiles = healthRenderTiles;
 
   // ── Check-item sections: Morning Routine + workout (same rule engine) ────────
   function healthMarkCheckVerified(el){
@@ -4653,25 +4692,27 @@ function voiceMaybeSpeakReply(rawText){
     else { var s=document.createElement('span'); s.className='kcal-actual-badge'; s.textContent=txt; badge.insertAdjacentElement('afterend', s); }
   }
   // Persist one day's check panel (panel-targeted mirror of saveChecks, so it
-  // works even when that day isn't the visible panel).
-  function healthSaveCheckPanel(panel, day){
+  // works even when that day isn't the visible panel). Targets the date whose
+  // health entry we just verified.
+  function healthSaveCheckPanel(panel, dateStr){
     var state = Array.prototype.map.call(panel.querySelectorAll('.check-item'), function(i){ return i.classList.contains('done'); });
     var kcal = 0; panel.querySelectorAll('.check-item.done').forEach(function(el){ kcal += +(el.dataset.kcal||0); });
-    recSetChecks(todayIso(), state, kcal);   // health verify always targets today's record
+    recSetChecks(dateStr || todayIso(), state, kcal);
   }
-  function healthVerifyChecks(){
+  function healthVerifyChecks(dateStr){
     try{
       var health = window.__health;
       if(!health || typeof health!=='object') return;
-      var entry = health[healthTodayDate()];
-      if(!entry || typeof entry!=='object') return;       // no entry for today → no action
-      var day = HEALTH_TODAY_IDX;
+      var date = dateStr || todayIso();
+      var entry = health[date];
+      if(!entry || typeof entry!=='object') return;       // no entry for that date → no action
+      var day = weekdayOfIso(date);
       var panel = document.querySelector('.day-panel[data-panel="'+day+'"]');
       if(!panel) return;
       var changed = false;
 
-      // Morning Routine "Wake up at 8:00 am" ← sleep_end ≤ 08:00 (same as habit).
-      var wm = healthMins(entry.sleep_end);
+      // Morning Routine "Wake up at 8:00 am" ← wake_time ≤ 08:00 (same as habit).
+      var wm = healthMins(healthWakeTime(entry));
       if(wm!=null && wm <= 8*60){
         panel.querySelectorAll('.check-item[data-section="morning"] .check-label').forEach(function(lbl){
           // Prefix match: a "verified · Garmin" badge appended into the label
@@ -4683,9 +4724,11 @@ function voiceMaybeSpeakReply(rawText){
         });
       }
 
-      // Workout completion (a "Complete …" row carrying a kcal badge) ←
-      // workout_minutes ≥ 25. Actual workout_kcal is shown whenever present.
-      var wkOk = (typeof entry.workout_minutes==='number') && (entry.workout_minutes >= 25);
+      // Workout completion (a "Complete …" row carrying a kcal badge) ← total
+      // workout minutes ≥ 25 (summed across the day's workouts[]). Legacy
+      // workout_kcal is still shown as an actual-burn badge when present.
+      var wmin = healthWorkoutMinutes(entry);
+      var wkOk = (wmin!=null) && (wmin >= 25);
       var hasKcal = (typeof entry.workout_kcal==='number');
       panel.querySelectorAll('.check-item').forEach(function(el){
         var lbl = el.querySelector('.check-label');
@@ -4695,18 +4738,20 @@ function voiceMaybeSpeakReply(rawText){
         if(hasKcal){ healthMarkWorkoutKcal(el, entry.workout_kcal); }
       });
 
-      if(changed) healthSaveCheckPanel(panel, day);
+      if(changed) healthSaveCheckPanel(panel, date);
       if(panel.classList.contains('visible') && typeof updateProgress==='function') updateProgress();
     }catch(e){ /* best-effort; never break the tracker */ }
   }
 
-  // Habits (per-column) + check sections (Morning Routine / workout) together.
-  window.healthVerify = function(){ window.healthVerifyHabits(); healthVerifyChecks(); };
+  // Habits (per-column) + check sections (Morning Routine / workout) together,
+  // for a given date (default today).
+  window.healthVerify = function(dateStr){ window.healthVerifyHabits(dateStr); healthVerifyChecks(dateStr); };
 
   // Fire once health data is available (captured in todayApply), plus a direct
-  // attempt in case it's already loaded from cache.
-  if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ window.healthVerify(); }); }
+  // attempt in case it's already loaded from cache. Also paint the Today tiles.
+  if(window.todayReady && window.todayReady.then){ window.todayReady.then(function(){ window.healthVerify(); if(window.healthRenderTiles) window.healthRenderTiles(); }); }
   window.healthVerify();
+  if(window.healthRenderTiles) window.healthRenderTiles();
 })();
 </script>
 

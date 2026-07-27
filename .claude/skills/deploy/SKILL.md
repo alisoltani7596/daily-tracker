@@ -59,13 +59,16 @@ npx wrangler deploy
 - Tell the user the Pages URL and (if deployed) the Worker URL.
 - Suggest running `/coach-smoke-test` to confirm the live coach reply end-to-end.
 - If the Worker's `/health-push` route changed, smoke-test it (needs the
-  `EDIT_TOKEN` value; server-to-server, no Origin required). Expect `{"ok":true}`:
+  `EDIT_TOKEN` value; server-to-server, no Origin required). Body fields are all
+  optional except `date`; a push MERGES into the `health:<date>` key. Expect
+  `{"ok":true,"date":...,"fields":[...]}`:
   ```bash
   WORKER=https://daily-tracker-coach.alisoltani75.workers.dev
   curl -s -X POST "$WORKER/health-push" \
     -H "content-type: application/json" -H "x-edit-token: $EDIT_TOKEN" \
-    -d '{"date":"2026-07-24","sleep_start":"23:15","sleep_end":"06:47","sleep_minutes":452,"steps":8241}'
-  # → {"ok":true}   (403 = bad token, 400 = bad JSON / missing date)
-  # Then confirm it surfaces in /today (browser Origin required):
-  curl -s "$WORKER/today" -H "Origin: https://alisoltani7596.github.io" | grep -o '"health":[^}]*}[^}]*}'
+    -d '{"date":"2026-07-24","steps":8241,"sleep_hours":7.5,"sleep_score":88,"wake_time":"06:47","bed_time":"23:15","workouts":[{"type":"Lift A","minutes":50}]}'
+  # → {"ok":true,...}   (403 = bad token, 400 = missing date / junk field type)
+  # A partial re-push (e.g. just steps) merges — it won't erase sleep/workouts.
+  # Then confirm it surfaces in /today (browser Origin required; last 2 days only):
+  curl -s "$WORKER/today" -H "Origin: https://alisoltani7596.github.io" | grep -o '"health":{.*}'
   ```

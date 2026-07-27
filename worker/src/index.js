@@ -132,19 +132,20 @@ export default {
       if (!env.TODAY_KV) {
         return json({ error: "today store not configured" }, 500, corsHeaders(allowOrigin));
       }
-      const [genStr, ovrStr, healthStr] = await Promise.all([
+      const [genStr, ovrStr, health] = await Promise.all([
         env.TODAY_KV.get("today"),
         env.TODAY_KV.get("today_overrides"),
-        env.TODAY_KV.get("health_data"),
+        recentHealth(env, 2),   // last 2 days of health:<date> keys, as { date: entry }
       ]);
       if (genStr == null && ovrStr == null) {
         return json({ error: "not found" }, 404, corsHeaders(allowOrigin));
       }
-      // `health` is the full per-date map (≤30 days); the app can render it later.
+      // `health` is a small per-date map of the last 2 days so the frontend can
+      // read today's + yesterday's sample without an extra request.
       const payload = {
         generated: genStr ? safeParse(genStr) : null,
         overrides: ovrStr ? safeParse(ovrStr) : null,
-        health: healthStr ? safeParse(healthStr) : null,
+        health: (health && Object.keys(health).length) ? health : null,
       };
       return new Response(JSON.stringify(payload), {
         status: 200,
@@ -240,10 +241,12 @@ export default {
     // POST /health-push — store a day's Apple Health / Garmin sample (pushed by an
     // iOS Shortcut). Server-to-server like /task-add: gated purely by the shared
     // EDIT_TOKEN in x-edit-token (same blast radius, one fewer secret), NOT CORS.
-    // Body: {date (required, YYYY-MM-DD), sleep_start, sleep_end, sleep_minutes,
-    // steps} — all but date optional, since Health samples can be patchy. KV key
-    // `health_data` is a per-date map, pruned to the last 30 days; a repeat POST
-    // for the same date overwrites (idempotent — the shortcut may re-run).
+    // Body: {date (required, YYYY-MM-DD), steps, sleep_hours, sleep_score?,
+    // wake_time?"HH:MM", bed_time?"HH:MM", workouts?[{type,minutes}]} — all but
+    // date optional, since Health samples arrive in patchy, partial pushes.
+    // Each day is its own KV key `health:<date>`, and a push MERGES field-by-field
+    // into any existing key — so a later partial push (say just steps) never
+    // erases fields an earlier push wrote (sleep, workouts). Idempotent per field.
     if (request.method === "POST" && url.pathname === "/health-push") {
       if (!env.TODAY_KV) {
         return json({ error: "health store not configured" }, 500, corsHeaders(allowOrigin));
@@ -261,30 +264,27 @@ export default {
       } catch {
         return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin));
       }
-      const date = (payload && typeof payload.date === "string") ? payload.date.trim() : "";
+      if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+        return json({ error: "body must be a JSON object" }, 400, corsHeaders(allowOrigin));
+      }
+      const date = (typeof payload.date === "string") ? payload.date.trim() : "";
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return json({ error: "`date` (YYYY-MM-DD) is required" }, 400, corsHeaders(allowOrigin));
       }
 
-      // Keep only the recognised fields that are present (all optional).
+      // Validate every provided field strictly; a present-but-wrong-typed field is
+      // a 400 (reject junk) rather than a silent drop. Absent fields are fine.
       const entry = {};
-      if (typeof payload.sleep_start === "string" && payload.sleep_start) entry.sleep_start = payload.sleep_start.slice(0, 40);
-      if (typeof payload.sleep_end === "string" && payload.sleep_end) entry.sleep_end = payload.sleep_end.slice(0, 40);
-      // Non-negative, finite, rounded integers for every numeric metric.
-      const numFields = ["sleep_minutes", "steps", "protein_g", "water_ml", "sleep_score", "body_battery_wake", "body_battery_bed", "workout_minutes", "workout_kcal"];
-      for (const f of numFields) {
-        if (typeof payload[f] === "number" && isFinite(payload[f])) entry[f] = Math.max(0, Math.round(payload[f]));
-      }
+      const err = validateHealthFields(payload, entry);
+      if (err) return json({ error: err }, 400, corsHeaders(allowOrigin));
 
-      const map = safeParse(await env.TODAY_KV.get("health_data")) || {};
-      map[date] = entry;  // overwrite → idempotent per date
-
-      // Prune to the most recent 30 dates (ISO date strings sort chronologically).
-      const dates = Object.keys(map).sort();
-      while (dates.length > 30) { delete map[dates.shift()]; }
-
-      await env.TODAY_KV.put("health_data", JSON.stringify(map));
-      return json({ ok: true }, 200, corsHeaders(allowOrigin));
+      // Merge into the existing per-date key so partial pushes accumulate.
+      const key = "health:" + date;
+      const existing = safeParse(await env.TODAY_KV.get(key)) || {};
+      const merged = { ...existing, ...entry };
+      // Self-pruning: expire a day's key ~60 days out so old samples don't pile up.
+      await env.TODAY_KV.put(key, JSON.stringify(merged), { expirationTtl: 60 * 24 * 3600 });
+      return json({ ok: true, date, fields: Object.keys(entry) }, 200, corsHeaders(allowOrigin));
     }
 
     // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
@@ -417,7 +417,7 @@ async function handleChat(request, env, allowOrigin, systemPrompt, maxTokens, in
   // block after the cache breakpoint — best-effort, never fails the request.
   if (injectHealth && env.TODAY_KV) {
     try {
-      const block = formatHealthForContext(latestHealthEntry(safeParse(await env.TODAY_KV.get("health_data"))));
+      const block = formatHealthForContext(await latestHealth(env));
       if (block) system.push({ type: "text", text: block });
     } catch { /* health context is optional */ }
   }
@@ -486,27 +486,94 @@ function safeParse(str) {
   try { return JSON.parse(str); } catch { return null; }
 }
 
-// The most recent health entry from the per-date map (ISO dates sort by string).
-function latestHealthEntry(map) {
-  if (!map || typeof map !== "object") return null;
-  const dates = Object.keys(map).sort();
+// Validate the recognised health fields on an incoming push, copying the valid
+// ones into `out`. Returns an error string on the first junk field, else "".
+// Absent fields are skipped; a present field of the wrong type/shape is rejected.
+function validateHealthFields(payload, out) {
+  // steps, sleep_score → non-negative finite integers.
+  for (const f of ["steps", "sleep_score"]) {
+    if (payload[f] === undefined || payload[f] === null) continue;
+    if (typeof payload[f] !== "number" || !isFinite(payload[f]) || payload[f] < 0) {
+      return "`" + f + "` must be a non-negative number";
+    }
+    out[f] = Math.round(payload[f]);
+  }
+  // sleep_hours → non-negative finite number ≤ 24, one decimal.
+  if (payload.sleep_hours !== undefined && payload.sleep_hours !== null) {
+    const v = payload.sleep_hours;
+    if (typeof v !== "number" || !isFinite(v) || v < 0 || v > 24) {
+      return "`sleep_hours` must be a number between 0 and 24";
+    }
+    out.sleep_hours = Math.round(v * 10) / 10;
+  }
+  // wake_time, bed_time → "HH:MM" 24-hour clock strings.
+  for (const f of ["wake_time", "bed_time"]) {
+    if (payload[f] === undefined || payload[f] === null) continue;
+    if (typeof payload[f] !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(payload[f])) {
+      return "`" + f + "` must be a 'HH:MM' time string";
+    }
+    out[f] = payload[f];
+  }
+  // workouts → array of { type: non-empty string, minutes: non-negative int }.
+  if (payload.workouts !== undefined && payload.workouts !== null) {
+    if (!Array.isArray(payload.workouts)) return "`workouts` must be an array";
+    if (payload.workouts.length > 20) return "`workouts` has too many entries";
+    const list = [];
+    for (const w of payload.workouts) {
+      if (!w || typeof w !== "object" || Array.isArray(w)) return "each workout must be an object";
+      if (typeof w.type !== "string" || !w.type.trim()) return "each workout needs a non-empty `type`";
+      if (typeof w.minutes !== "number" || !isFinite(w.minutes) || w.minutes < 0) {
+        return "each workout needs a non-negative `minutes`";
+      }
+      list.push({ type: w.type.trim().slice(0, 60), minutes: Math.round(w.minutes) });
+    }
+    out.workouts = list;
+  }
+  return "";
+}
+
+// Read the last `n` per-date health keys (health:<date>) as { date: entry }.
+// KV list returns names sorted ascending, so the tail is the most recent days.
+async function recentHealth(env, n) {
+  try {
+    const listed = await env.TODAY_KV.list({ prefix: "health:" });
+    const names = (listed.keys || []).map((k) => k.name).sort();
+    const recent = names.slice(-n);
+    const out = {};
+    await Promise.all(recent.map(async (name) => {
+      const v = safeParse(await env.TODAY_KV.get(name));
+      if (v) out[name.slice("health:".length)] = v;
+    }));
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+// The single most recent health entry (for coach context), as { date, ...entry }.
+async function latestHealth(env) {
+  const map = await recentHealth(env, 1);
+  const dates = Object.keys(map);
   if (!dates.length) return null;
-  const date = dates[dates.length - 1];
-  return { date, ...map[date] };
+  return { date: dates[0], ...map[dates[0]] };
 }
 
 // Format the latest health entry as a compact context block for the coach.
 function formatHealthForContext(h) {
   if (!h) return "";
   const lines = ["health_data (Apple Health / Garmin, latest available):", "  date: " + h.date];
-  if (typeof h.sleep_minutes === "number") {
-    let s = "  sleep: " + Math.floor(h.sleep_minutes / 60) + "h " + (h.sleep_minutes % 60) + "m";
-    if (h.sleep_start && h.sleep_end) s += " (" + h.sleep_start + " → " + h.sleep_end + ")";
+  if (typeof h.sleep_hours === "number") {
+    let s = "  sleep: " + h.sleep_hours + "h";
+    if (h.bed_time && h.wake_time) s += " (" + h.bed_time + " → " + h.wake_time + ")";
     lines.push(s);
-  } else if (h.sleep_start && h.sleep_end) {
-    lines.push("  sleep: " + h.sleep_start + " → " + h.sleep_end);
+    if (typeof h.sleep_score === "number") lines.push("  sleep score: " + h.sleep_score);
+  } else if (h.bed_time && h.wake_time) {
+    lines.push("  sleep: " + h.bed_time + " → " + h.wake_time);
   }
   if (typeof h.steps === "number") lines.push("  steps: " + h.steps);
+  if (Array.isArray(h.workouts) && h.workouts.length) {
+    lines.push("  workouts: " + h.workouts.map((w) => w.type + " " + w.minutes + "m").join(", "));
+  }
   return lines.join("\n") + "\n";
 }
 
