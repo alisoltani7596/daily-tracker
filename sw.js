@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION whenever the shell changes to force a clean re-cache.
  */
 
-const CACHE_VERSION = 'daily-tracker-v43';
+const CACHE_VERSION = 'daily-tracker-v44';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const FONT_CACHE  = `${CACHE_VERSION}-fonts`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;

@@ -102,7 +102,7 @@ body[data-tab="today"] header{ display: none !important; }
 #today-grid{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: start; }
 #today-grid > .tcard{ width: auto; margin: 0; min-width: 0; }
 @media (max-width: 1000px){ #today-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px){ #today-grid{ grid-template-columns: 1fr; } }
+@media (max-width: 560px){ #today-grid{ grid-template-columns: 1fr; } #today-grid > .tcard.wide{ grid-column: auto; } }
 /* Dragging affordance + state */
 .tc-grip{ cursor: grab; color: var(--text-faint); font-size: 13px; line-height: 1; padding: 0 6px 0 0; letter-spacing: -2px; user-select: none; touch-action: none; }
 .tc-grip:hover{ color: var(--text-dim); }
@@ -193,10 +193,27 @@ body[data-tab="today"] header{ display: none !important; }
 .tab-btn.active{ color: var(--accent); }
 .tab-btn.active svg{ stroke: var(--accent); }
 
-/* ── Mobile: single column; ring + tiles + streak stack as the header cluster ─ */
+/* ── Mobile: restack the instrument cluster — compact CORE+rings row, readouts
+      strip under it, streak as a slim full-width band; audit cards at 390px. ── */
 @media (max-width: 680px){
-  #today-section{ padding: 14px 14px calc(var(--tabbar-h) + var(--safe-b) + 20px) !important; }
-  #s1-today{ grid-template-columns: 1fr; }
+  #today-section{ padding: calc(14px + var(--safe-t)) 14px calc(var(--tabbar-h) + var(--safe-b) + 20px) !important; }
+  /* rings row: charge + sleep + steps centered, wrapping if truly tiny */
+  .s1-instr{ gap: 12px; padding: 12px; }
+  .s1-rings{ width: 100%; justify-content: center; gap: 12px; }
+  .s1-rings .s1-ring-wrap.s1-ring-charge{ width: 90px; height: 90px; }
+  .s1-rings .s1-ring-charge .s1-charge{ font-size: 22px; }
+  /* readouts become a horizontal strip below the rings */
+  .s1-readouts{ flex-direction: row; width: 100%; border-left: none; border-top: 1px solid var(--line); padding-left: 0; padding-top: 10px; justify-content: space-around; }
+  .s1-ro{ flex-direction: column; align-items: center; gap: 3px; }
+  .s1-ro-val{ min-width: 0; }
+}
+@media (max-width: 400px){
+  /* 390px audit: tighten card padding + keep the rings comfortable */
+  #today-section{ padding-left: 10px !important; padding-right: 10px !important; }
+  .s1-instr{ padding: 10px; }
+  .s1-rings{ gap: 10px; }
+  .s1-rings .s1-hrings{ gap: 10px; }
+  .s1-hr-ring{ width: 66px; height: 66px; }
 }
 
 

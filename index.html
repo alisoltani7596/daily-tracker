@@ -46,11 +46,13 @@ body::after{content:'';position:fixed;top:0;left:0;right:0;height:340px;backgrou
 .page>.day-tabs{order:2;}
 .page>.plans-section{order:5;}
 /* ═══ NATIVE APP SHELL ════════════════════════════════════════════════════════ */
-:root{ --tabbar-h:66px; --safe-b:env(safe-area-inset-bottom,0px); }
-.page{ padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 28px); }
+:root{ --tabbar-h:66px; --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px); }
+/* Keep content clear of the iOS status bar (black-translucent status bar draws
+   over the web view; without this the IRIS header / app bar collide with it). */
+.page{ padding-top: var(--safe-t); padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 28px); }
 
 /* app bar: header becomes a sticky top bar shown on every screen */
-header{position:sticky;top:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);margin-bottom:14px;}
+header{position:sticky;top:var(--safe-t);z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);margin-bottom:14px;}
 
 /* screens: show only the active tab's content (screens, not sections) */
 body[data-tab="today"]   :is(.trk-datebar,.trk-hist,.trk-hrings,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
