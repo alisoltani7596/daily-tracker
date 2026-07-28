@@ -3614,7 +3614,7 @@ function deadlineDaysFromDate(dayStr, monStr){
   return Math.round((target - today) / 86400000);
 }
 function tCard(id,ic,title,tag,body,foot,wide){
-  return '<div class="tcard'+(wide?' wide':'')+'" data-card="'+id+'"><div class="tcard-head"><span class="tc-grip" data-grip title="Drag to reorder">⠿</span><div class="tc-ttl"><span class="tc-ic">'+ic+'</span>'+title+'</div><span class="tc-tag">● '+tag+'</span></div><div class="tc-body">'+body+'</div>'+(foot?'<div class="tc-foot">'+foot+'</div>':'')+'</div>';
+  return '<div class="tcard'+(wide?' wide':'')+'" data-card="'+id+'"><div class="tcard-head"><span class="tc-grip" data-grip title="Drag to reorder">⠿</span><div class="tc-ttl"><span class="tc-ic">'+ic+'</span>'+title+'</div><button class="tc-span" data-span-toggle type="button" title="Width">▢</button><span class="tc-tag">● '+tag+'</span></div><div class="tc-body">'+body+'</div>'+(foot?'<div class="tc-foot">'+foot+'</div>':'')+'</div>';
 }
 function renderToday(data){
   window.__todayData = data;
@@ -3699,7 +3699,7 @@ function renderToday(data){
     });
     cards.push(tCard('inbox','✉️','Inbox','Gmail',ib,'Recent unread &amp; important threads.',true));
   } else {
-    cards.push('<div class="tcard wide" data-card="inbox"><div class="tcard-head"><span class="tc-grip" data-grip title="Drag to reorder">⠿</span><div class="tc-ttl"><span class="tc-ic">✉️</span>Inbox</div><span class="tc-tag setup">◆ Needs setup</span></div><div class="tc-body"><div class="tc-empty"><div class="big">✉️</div>Connect <b>Gmail</b> on claude.ai, then ask Claude to switch this on and it will show unread &amp; important threads here.</div></div></div>');
+    cards.push('<div class="tcard wide" data-card="inbox"><div class="tcard-head"><span class="tc-grip" data-grip title="Drag to reorder">⠿</span><div class="tc-ttl"><span class="tc-ic">✉️</span>Inbox</div><button class="tc-span" data-span-toggle type="button" title="Width">▢</button><span class="tc-tag setup">◆ Needs setup</span></div><div class="tc-body"><div class="tc-empty"><div class="big">✉️</div>Connect <b>Gmail</b> on claude.ai, then ask Claude to switch this on and it will show unread &amp; important threads here.</div></div></div>');
   }
 
   // Projects — read-only mirror of the per-category Google Docs. Each category is
@@ -3710,16 +3710,18 @@ function renderToday(data){
   // ordering now (no client-side canonical sort).
   var projects = Array.isArray(data.projects) ? data.projects.filter(function(p){ return p && p.name; }) : [];
   if(projects.length){
-    var pj = '';
     var pjOv = todayNormalizeOverrides(window.__todayOverrides);
     var pOrder = (pjOv.projectOrder && typeof pjOv.projectOrder==='object') ? pjOv.projectOrder : {};
+    // Whole-category order (drag a category header); new pipeline categories append.
+    projects = applyItemOrder(projects, pjOv.projectGroupOrder, function(p){ return p.name; });
+    var pj = '<div class="pj-groups" data-sort="projgroups">';
     projects.forEach(function(p){
       var tasks = applyItemOrder(Array.isArray(p.tasks) ? p.tasks : [], pOrder[p.name]);
       var open = tasks.filter(function(t){ return t && !t.done; }).length;
       var nameHtml = (p.url && p.url!=='#')
         ? '<a class="pj-name" href="'+tEsc(p.url)+'" target="_blank" rel="noopener">'+tEsc(p.name)+'</a>'
         : '<span class="pj-name pj-name-off" title="No doc linked yet">'+tEsc(p.name)+'</span>';
-      pj += '<div class="pj-group"><div class="pj-head">'+nameHtml+'<span class="pj-count">'+open+' open</span></div>';
+      pj += '<div class="pj-group" data-name="'+tEsc(p.name)+'"><div class="pj-head"><span class="pj-grip" data-grip title="Drag category">⠿</span>'+nameHtml+'<span class="pj-count">'+open+' open</span></div>';
       if(tasks.length){
         pj += '<div class="pj-list" data-sort="proj" data-proj="'+tEsc(p.name)+'">';
         tasks.forEach(function(t){
@@ -3731,7 +3733,8 @@ function renderToday(data){
       }
       pj += '</div>';
     });
-    cards.push(tCard('projects','🗂','Projects','Docs',pj,'Read-only — edit in the linked Google Docs.',true));
+    pj += '</div>';
+    cards.push(tCard('projects','🗂','Projects','Docs',pj,'Read-only — edit in the linked Google Docs. Drag ⠿ on a category to reorder groups.',true));
   }
 
   grid.innerHTML = cards.join('');
@@ -3819,12 +3822,13 @@ function todayApply(raw){
 // Apply a user-defined item order (array of display names) to a list of items.
 // Items whose name is in the order follow it; items not named keep their pipeline
 // order and are appended after (new pipeline items append in pipeline position).
-function applyItemOrder(items, orderArr){
+function applyItemOrder(items, orderArr, nameOf){
   if(!Array.isArray(orderArr) || !orderArr.length || !Array.isArray(items)) return items;
+  nameOf = nameOf || function(it){ return it && it.n; };
   var pos = {}; orderArr.forEach(function(n,i){ if(pos[n]==null) pos[n]=i; });
   var known = [], unknown = [];
-  items.forEach(function(it){ (it && pos[it.n]!=null ? known : unknown).push(it); });
-  known.sort(function(a,b){ return pos[a.n]-pos[b.n]; });
+  items.forEach(function(it){ (it && pos[nameOf(it)]!=null ? known : unknown).push(it); });
+  known.sort(function(a,b){ return pos[nameOf(a)]-pos[nameOf(b)]; });
   return known.concat(unknown);
 }
 
@@ -4136,34 +4140,144 @@ function todayPushOverrides(base){
   }
   window.makeSortable = makeSortable;
 
-  // ── Card arrangement (per breakpoint-class) ─────────────────────────────────
-  var CARD_ORDER_KEY = 'today_card_order_v1';
+  // ── Card arrangement: JS masonry (column packing) + per-card width span ─────
+  // Each card is placed, in the user's saved order, into the currently-shortest
+  // column (a 2-col card into the shortest adjacent pair), so short cards stack
+  // directly under tall ones with no dead space. Order + spans persist together.
+  var LAYOUT_KEY = 'today_layout_v1';
+  var LEGACY_ORDER_KEY = 'today_card_order_v1';
   var DEFAULT_CARD_ORDER = ['schedule','tasks','deadlines','projects','inbox','slack'];
-  function bpClass(){ var w = window.innerWidth; return w > 1000 ? '4' : (w > 560 ? '2' : '1'); }
-  function readOrders(){ try{ var o = JSON.parse(localStorage.getItem(CARD_ORDER_KEY)); return (o && typeof o==='object') ? o : {}; }catch(e){ return {}; } }
-  function savedOrder(){ var o = readOrders()[bpClass()]; return Array.isArray(o) ? o : null; }
+  var GRID_GAP = 10;
+  function cols(){ var w = window.innerWidth; return w > 1000 ? 4 : (w > 560 ? 2 : 1); }
+  function bpClass(){ return String(cols()); }
+  function readLayout(){
+    var l; try{ l = JSON.parse(localStorage.getItem(LAYOUT_KEY)); }catch(e){}
+    if(!l || typeof l!=='object'){
+      var old; try{ old = JSON.parse(localStorage.getItem(LEGACY_ORDER_KEY)); }catch(e){}  // migrate order-only store
+      l = { order: (old && typeof old==='object') ? old : {}, spans: {} };
+    }
+    if(!l.order || typeof l.order!=='object') l.order = {};
+    if(!l.spans || typeof l.spans!=='object') l.spans = {};
+    return l;
+  }
+  function saveLayout(l){ try{ localStorage.setItem(LAYOUT_KEY, JSON.stringify(l)); }catch(e){} }
+  function savedOrder(){ var o = readLayout().order[bpClass()]; return Array.isArray(o) ? o : null; }
+  function cardSpan(id){ return readLayout().spans[id] === 2 ? 2 : 1; }
 
   function applyCardOrder(){
     var grid = document.getElementById('today-grid'); if(!grid) return;
     var order = savedOrder() || DEFAULT_CARD_ORDER;
     var byId = {};
-    Array.prototype.forEach.call(grid.querySelectorAll(':scope > .tcard'), function(c){ byId[c.getAttribute('data-card')] = c; });
+    grid.querySelectorAll(':scope > .tcard').forEach(function(c){ byId[c.getAttribute('data-card')] = c; });
     var placed = {};
     order.forEach(function(id){ if(byId[id]){ grid.appendChild(byId[id]); placed[id] = true; } });
-    // Any card not named in the saved order keeps its render position, appended after.
-    Array.prototype.forEach.call(grid.querySelectorAll(':scope > .tcard'), function(c){ var id=c.getAttribute('data-card'); if(!placed[id]) grid.appendChild(c); });
-  }
-  function saveCardOrder(items){
-    var ids = items.map(function(c){ return c.getAttribute('data-card'); }).filter(Boolean);
-    var all = readOrders(); all[bpClass()] = ids;
-    try{ localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(all)); }catch(e){}
+    grid.querySelectorAll(':scope > .tcard').forEach(function(c){ if(!placed[c.getAttribute('data-card')]) grid.appendChild(c); });
+    grid.querySelectorAll(':scope > .tcard').forEach(syncSpanBtn);
+    layout();
   }
   window.todayApplyCardOrder = applyCardOrder;
 
-  // Bind the card sortable once (the grid element persists across re-renders).
+  function saveCardOrder(){
+    var grid = document.getElementById('today-grid'); if(!grid) return;
+    var ids = Array.prototype.map.call(grid.querySelectorAll(':scope > .tcard'), function(c){ return c.getAttribute('data-card'); }).filter(Boolean);
+    var l = readLayout(); l.order[bpClass()] = ids; saveLayout(l);
+  }
+  function syncSpanBtn(card){
+    var btn = card.querySelector('.tc-span'); if(!btn) return;
+    var span = cardSpan(card.getAttribute('data-card'));
+    btn.textContent = span === 2 ? '◨' : '▢';
+    btn.title = span === 2 ? 'Width: 2 columns — tap for 1' : 'Width: 1 column — tap for 2';
+    btn.setAttribute('aria-label', btn.title);
+  }
+  function toggleSpan(card){
+    var id = card.getAttribute('data-card'); if(!id) return;
+    var l = readLayout();
+    if(l.spans[id] === 2) delete l.spans[id]; else l.spans[id] = 2;
+    saveLayout(l); syncSpanBtn(card); layout();
+  }
+
+  // Masonry pass. `exclude` (a dragging card) is skipped so it follows the pointer
+  // while the others reflow around the gap it will drop into. At 1 column we clear
+  // all inline positioning and let the CSS single-column flow handle it (mobile).
+  function layout(exclude){
+    var grid = document.getElementById('today-grid'); if(!grid) return;
+    var all = Array.prototype.slice.call(grid.querySelectorAll(':scope > .tcard'));
+    var n = cols();
+    if(n <= 1){
+      grid.classList.remove('masonry'); grid.style.height = '';
+      all.forEach(function(c){ c.style.position=''; c.style.left=''; c.style.top=''; c.style.width=''; });
+      return;
+    }
+    grid.classList.add('masonry');
+    var cw = (grid.clientWidth - (n-1)*GRID_GAP) / n;
+    all.forEach(function(c){
+      var span = Math.min(cardSpan(c.getAttribute('data-card')), n);
+      c.dataset._span = span;
+      c.style.position = 'absolute';
+      c.style.width = (span*cw + (span-1)*GRID_GAP) + 'px';
+    });
+    var heights = []; for(var i=0;i<n;i++) heights.push(0);
+    all.forEach(function(c){
+      if(c === exclude) return;
+      var span = +c.dataset._span, bestI = 0, bestY = Infinity;
+      for(var i=0; i+span<=n; i++){
+        var y = 0; for(var j=i;j<i+span;j++) if(heights[j]>y) y = heights[j];
+        if(y < bestY){ bestY = y; bestI = i; }
+      }
+      c.style.left = (bestI*(cw+GRID_GAP)) + 'px';
+      c.style.top = bestY + 'px';
+      var h = c.offsetHeight;
+      for(var j=bestI;j<bestI+span;j++) heights[j] = bestY + h + GRID_GAP;
+    });
+    var maxH = 0; for(var i=0;i<n;i++) if(heights[i]>maxH) maxH = heights[i];
+    grid.style.height = maxH + 'px';
+  }
+  window.todayLayoutMasonry = layout;
+
+  // Card drag: pointer-follow + live masonry reflow. Order = placement sequence.
   (function(){
     var grid = document.getElementById('today-grid'); if(!grid) return;
-    makeSortable(grid, { itemSelector: '.tcard', handleSelector: '.tc-grip', axis: 'x', onDrop: saveCardOrder });
+    var LONG=300, CANCEL=8, drag=null, pid=null, sx=0, sy=0, ox=0, oy=0, active=false, lp=null;
+    grid.addEventListener('pointerdown', function(e){
+      if(e.button && e.button!==0) return;
+      var grip = e.target.closest('.tc-grip'); if(!grip || !grid.contains(grip)) return;
+      var card = grip.closest('.tcard'); if(!card || card.parentNode!==grid) return;
+      if(cols() <= 1) return;   // no card drag in the mobile single column
+      drag=card; pid=e.pointerId; sx=e.clientX; sy=e.clientY;
+      var r=card.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top;
+      if(e.pointerType==='touch') lp=setTimeout(begin, LONG); else begin();
+      window.addEventListener('pointermove', move, {passive:false});
+      window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+    });
+    function begin(){ active=true; try{drag.setPointerCapture(pid);}catch(_){ } drag.classList.add('s1-dragging'); drag.style.zIndex=50; }
+    function move(e){
+      if(e.pointerId!==pid) return;
+      if(!active){ if(lp && (Math.abs(e.clientX-sx)>CANCEL || Math.abs(e.clientY-sy)>CANCEL)){ clearTimeout(lp); lp=null; cleanup(); } return; }
+      e.preventDefault();
+      var gr = grid.getBoundingClientRect();
+      drag.style.left = (e.clientX-gr.left-ox) + 'px';
+      drag.style.top = (e.clientY-gr.top-oy) + 'px';
+      drag.style.pointerEvents='none';
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      drag.style.pointerEvents='';
+      var over = el ? el.closest('.tcard') : null;
+      if(over && over!==drag && over.parentNode===grid){
+        var r = over.getBoundingClientRect();
+        var after = (e.clientX > r.left + r.width/2) || (e.clientY > r.top + r.height*0.85);
+        grid.insertBefore(drag, after ? over.nextElementSibling : over);
+        layout(drag);
+      }
+    }
+    function up(e){
+      if(e.pointerId!==pid) return;
+      if(lp){ clearTimeout(lp); lp=null; }
+      var was = active;
+      if(drag){ drag.classList.remove('s1-dragging'); drag.style.zIndex=''; drag.style.pointerEvents=''; }
+      if(was){ saveCardOrder(); layout(); }
+      cleanup();
+    }
+    function cleanup(){ window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up); drag=null; active=false; pid=null; }
+    grid.addEventListener('click', function(e){ var b=e.target.closest('.tc-span'); if(b){ var c=b.closest('.tcard'); if(c) toggleSpan(c); } });
   })();
 
   // ── In-card item reorder (Tasks / Deadlines / Projects) ─────────────────────
@@ -4175,12 +4289,22 @@ function todayPushOverrides(base){
     fn(ov);
     window.__todayOverrides = ov;
     todaySave();   // local mirror + debounced Worker POST; DOM already reordered, no re-render
+    layout();      // a reorder can shift the card's height → re-pack the masonry
   }
   function namesOf(items){ return items.map(function(r){ return r.getAttribute('data-name'); }).filter(function(x){ return x != null; }); }
 
   function setupItemSortables(){
     document.querySelectorAll('#today-grid [data-sort]').forEach(function(list){
       var kind = list.getAttribute('data-sort');
+      // Category-group reordering: its own grip (.pj-grip) so a task-row's .row-grip
+      // never triggers a group drag, and vice-versa.
+      if(kind === 'projgroups'){
+        makeSortable(list, { itemSelector: '.pj-group', handleSelector: '.pj-grip', axis: 'y', onDrop: function(items){
+          var names = namesOf(items);
+          patchOverrides(function(ov){ ov.projectGroupOrder = names; });
+        }});
+        return;
+      }
       var sel = kind === 'tasks' ? '.task-row' : (kind === 'deadlines' ? '.dl-row' : '.pj-task');
       makeSortable(list, { itemSelector: sel, handleSelector: '.row-grip', axis: 'y', onDrop: function(items){
         var names = namesOf(items);
@@ -4192,12 +4316,19 @@ function todayPushOverrides(base){
   }
   window.todaySetupItemSortables = setupItemSortables;
 
-  // Re-apply order when the breakpoint-class changes on resize.
+  // Re-pack on resize (re-apply the per-breakpoint order when the column count
+  // changes), on window load (fonts settle → heights shift), and whenever Today
+  // becomes visible again (cards measure 0 while their screen is display:none).
   var _rz = null, _bp = bpClass();
   window.addEventListener('resize', function(){
     clearTimeout(_rz);
-    _rz = setTimeout(function(){ var b = bpClass(); if(b !== _bp){ _bp = b; applyCardOrder(); } }, 200);
+    _rz = setTimeout(function(){ var b = bpClass(); if(b !== _bp){ _bp = b; applyCardOrder(); } else { layout(); } }, 150);
   });
+  window.addEventListener('load', function(){ layout(); });
+  try{
+    var mo = new MutationObserver(function(){ if(document.body.getAttribute('data-tab')==='today') requestAnimationFrame(function(){ layout(); }); });
+    mo.observe(document.body, { attributes:true, attributeFilter:['data-tab'] });
+  }catch(e){}
 })();
 </script>
 

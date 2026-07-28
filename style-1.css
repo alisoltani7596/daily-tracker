@@ -471,3 +471,16 @@ body.side-open .side-chev{ transform: rotate(90deg); }
 .row-grip:hover{ opacity: 1; color: var(--text-dim); }
 .trow.s1-dragging, .pj-task.s1-dragging{ cursor: grabbing; background: var(--bg-raised); box-shadow: inset 0 0 0 1px var(--accent); position: relative; z-index: 3; }
 .pj-task{ display: flex; align-items: center; }
+
+/* ─── JS masonry mode + per-card width toggle ────────────────────────────────── */
+#today-grid.masonry{ position: relative; display: block; }   /* JS positions cards absolutely */
+.tcard-head .tc-ttl{ flex: 1 1 auto; min-width: 0; }
+.tc-span{ flex: 0 0 auto; background: transparent; border: 1px solid var(--line); color: var(--text-faint); font-family: var(--font-mono); font-size: 11px; line-height: 1; padding: 3px 6px; cursor: pointer; }
+.tc-span:hover{ color: var(--text-dim); border-color: var(--text-faint); }
+@media (max-width: 560px){ .tc-span{ display: none; } }   /* single column on phones — width toggle is moot */
+
+/* ─── Reorderable project category groups ────────────────────────────────────── */
+.pj-grip{ cursor: grab; color: var(--text-faint); font-size: 10px; line-height: 1; letter-spacing: -2px; user-select: none; touch-action: none; opacity: .55; flex: 0 0 auto; align-self: center; padding-right: 2px; }
+.pj-grip:hover{ opacity: 1; color: var(--text-dim); }
+.pj-head .pj-name{ margin-right: auto; }
+.pj-group.s1-dragging{ cursor: grabbing; background: var(--bg-raised); box-shadow: inset 0 0 0 1px var(--accent); position: relative; z-index: 3; }
