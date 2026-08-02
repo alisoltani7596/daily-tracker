@@ -314,6 +314,53 @@ export default {
       return json({ ok: true, date, fields: Object.keys(entry), sleep_score_computed: merged.sleep_score_computed }, 200, corsHeaders(allowOrigin));
     }
 
+    // POST /records-sync — cross-device sync for the Tracker's date-keyed records.
+    // Gated by EDIT_TOKEN (x-edit-token), same class as the other write routes.
+    // Body: { records: { "<ISO-date>": {habits,checks,kcal,at:{h,c,k}}, … }, since? }.
+    // Merge is PER-FIELD last-write-wins: each habit/check/kcal carries an updated-at
+    // (in `at`), and only the newer stamp wins — so a device that checked habit 1
+    // never clobbers another device's habit 2 (that whole-record overwrite is the
+    // exact bug this avoids). Returns every records:<date> whose server-merge stamp
+    // is newer than `since` (or all of them, ≤60 days, when since is 0/absent), plus
+    // a fresh `cursor` for the caller to send as `since` next time. 60-day TTL.
+    if (request.method === "POST" && url.pathname === "/records-sync") {
+      if (!env.TODAY_KV) return json({ error: "records store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let payload;
+      try { payload = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        return json({ error: "body must be a JSON object" }, 400, corsHeaders(allowOrigin));
+      }
+      const records = (payload.records && typeof payload.records === "object" && !Array.isArray(payload.records)) ? payload.records : {};
+      const since = (typeof payload.since === "number" && isFinite(payload.since)) ? payload.since : 0;
+      const now = Date.now();
+
+      // Merge each pushed record into its per-date key (per-field LWW).
+      const dates = Object.keys(records).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).slice(0, 400);
+      await Promise.all(dates.map(async (date) => {
+        const inc = records[date];
+        if (!inc || typeof inc !== "object" || Array.isArray(inc)) return;
+        const key = "records:" + date;
+        const existing = safeParse(await env.TODAY_KV.get(key));
+        const merged = mergeRecordServer(existing, inc, date);
+        merged._srv = now;
+        await env.TODAY_KV.put(key, JSON.stringify(merged), { expirationTtl: 60 * 24 * 3600, metadata: { srv: now } });
+      }));
+
+      // Return records changed since `since` (metadata carries the server stamp, so
+      // we only read back the ones that actually changed rather than every key).
+      const out = {};
+      const listed = await env.TODAY_KV.list({ prefix: "records:" });
+      const changed = (listed.keys || []).filter((k) => !since || (k.metadata && typeof k.metadata.srv === "number" && k.metadata.srv > since));
+      await Promise.all(changed.map(async (k) => {
+        const rec = safeParse(await env.TODAY_KV.get(k.name));
+        if (rec) out[k.name.slice("records:".length)] = rec;
+      }));
+      return json({ records: out, cursor: now }, 200, corsHeaders(allowOrigin));
+    }
+
     // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
     // Today data into the TODAY_KV `today` key. This is a server-to-server call
     // (curl, no browser Origin), so it is gated purely by the REFRESH_TOKEN secret
@@ -671,6 +718,44 @@ function computeSleepScore(entry, priorBeds) {
   if (awake != null) interruptions = Math.max(0, 20 - Math.max(0, awake - 10) / 2);
 
   return Math.round(duration + consistency + interruptions);
+}
+
+// ─── Records sync merge (per-field last-write-wins) ────────────────────────────
+// Merge an incoming day-record into the stored one field-by-field, keeping the
+// value with the newer updated-at stamp (in `at`: h=habits, c=checks, k=kcal).
+// `>=` means an incoming stamp wins ties, so the last push to reach the server is
+// authoritative and every client converges once it pulls.
+function mergeRecordServer(existing, inc, date) {
+  const out = (existing && typeof existing === "object" && !Array.isArray(existing))
+    ? existing : { v: 1, date, habits: {}, checks: [], kcal: 0, at: { h: {}, c: {}, k: 0 } };
+  out.habits = (out.habits && typeof out.habits === "object") ? out.habits : {};
+  out.checks = Array.isArray(out.checks) ? out.checks : [];
+  out.at = (out.at && typeof out.at === "object") ? out.at : { h: {}, c: {}, k: 0 };
+  out.at.h = out.at.h || {}; out.at.c = out.at.c || {};
+
+  const iat = (inc.at && typeof inc.at === "object") ? inc.at : { h: {}, c: {}, k: 0 };
+  const ih = iat.h || {}, ic = iat.c || {};
+  const ihab = (inc.habits && typeof inc.habits === "object") ? inc.habits : {};
+  for (const id in ihab) {
+    const t = +ih[id] || 0;
+    if (t >= (+out.at.h[id] || 0)) { out.habits[id] = !!ihab[id]; out.at.h[id] = t; }
+  }
+  const ichk = Array.isArray(inc.checks) ? inc.checks : [];
+  for (const i in ic) {
+    const t = +ic[i] || 0;
+    if (t >= (+out.at.c[i] || 0)) { out.checks[i] = !!ichk[i]; out.at.c[i] = t; }
+  }
+  // Densify the checks array (holes → false) so the client reads a clean bool list.
+  const maxLen = Math.max(out.checks.length, ichk.length);
+  for (let i = 0; i < maxLen; i++) out.checks[i] = !!out.checks[i];
+
+  const kt = +iat.k || 0;
+  if (kt >= (+out.at.k || 0)) { out.kcal = +inc.kcal || 0; out.at.k = kt; }
+
+  if (inc.weekday != null) out.weekday = inc.weekday;
+  if (inc.plan) out.plan = inc.plan;
+  out.date = date; out.v = 1;
+  return out;
 }
 
 // Read the last `n` per-date health keys (health:<date>) as { date: entry }.

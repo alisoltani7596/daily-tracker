@@ -1041,6 +1041,7 @@ button.tchk.done{color:#fff;}
   <button class="trk-nav" id="trk-next" aria-label="Next day">›</button>
   <button class="trk-today" id="trk-today">today</button>
   <span class="trk-plan" id="trk-plan"></span>
+  <span class="trk-sync" id="trk-sync" title=""></span>
 </div>
 
 <!-- style-1: real history — last 7 days from the date-record store; each cell's
@@ -2252,9 +2253,30 @@ function dayRec(dateStr){
 }
 function dayRecSave(rec){ var m=dayRecords(); m[rec.date]=rec; dayRecordsSet(m); }
 function recHabits(dateStr){ return dayRec(dateStr).habits || {}; }
-function recSetHabit(dateStr, id, on){ var r=dayRec(dateStr); if(!r.habits) r.habits={}; r.habits[id]=!!on; dayRecSave(r); }
+// Per-field updated-at stamps (h=habits, c=checks by index, k=kcal) drive the
+// cross-device last-write-wins merge; every toggle stamps only the field it changed.
+function recNow(){ return Date.now(); }
+function recAt(r){ if(!r.at || typeof r.at!=='object') r.at={h:{},c:{},k:0}; if(!r.at.h)r.at.h={}; if(!r.at.c)r.at.c={}; return r.at; }
+function recSetHabit(dateStr, id, on){
+  var r=dayRec(dateStr); if(!r.habits) r.habits={}; on=!!on;
+  if(r.habits[id]!==on){ r.habits[id]=on; recAt(r).h[id]=recNow(); }
+  dayRecSave(r); if(typeof recMarkDirty==='function') recMarkDirty(dateStr);
+}
+// Batch habit set (health auto-verify) — stamps only the habits that actually flip.
+function recSetHabits(dateStr, doneMap){
+  var r=dayRec(dateStr); if(!r.habits) r.habits={}; var now=recNow(), at=recAt(r), changed=false;
+  for(var id in doneMap){ var on=!!doneMap[id]; if(r.habits[id]!==on){ r.habits[id]=on; at.h[id]=now; changed=true; } }
+  if(changed){ dayRecSave(r); if(typeof recMarkDirty==='function') recMarkDirty(dateStr); }
+  return changed;
+}
 function recChecks(dateStr){ return dayRec(dateStr).checks || []; }
-function recSetChecks(dateStr, checks, kcal){ var r=dayRec(dateStr); r.checks=checks; if(kcal!=null) r.kcal=+kcal; dayRecSave(r); }
+function recSetChecks(dateStr, checks, kcal){
+  var r=dayRec(dateStr); var old=r.checks||[], now=recNow(), at=recAt(r), changed=false;
+  for(var i=0;i<checks.length;i++){ if(!!old[i]!==!!checks[i]){ at.c[i]=now; changed=true; } }
+  r.checks=checks.slice ? checks.slice() : checks;
+  if(kcal!=null){ var nk=+kcal; if(nk!==+(r.kcal||0)){ r.kcal=nk; at.k=now; changed=true; } else r.kcal=nk; }
+  dayRecSave(r); if(changed && typeof recMarkDirty==='function') recMarkDirty(dateStr);
+}
 function recKcal(dateStr){ return +(dayRec(dateStr).kcal||0); }
 
 // One-time migration: stamp this week's dates from the weekday-keyed data. Past +
@@ -4745,6 +4767,7 @@ function wakeDismiss(){
   if(!ov || ov.hidden) return;
   ov.classList.add('closing');
   setTimeout(function(){ ov.hidden = true; ov.classList.remove('closing'); }, 420);
+  try{ window.dispatchEvent(new Event('daily-tracker-wake-done')); }catch(e){}   // pull latest records after wake
 }
 
 /* ═══ 2 · VOICE INPUT (tap to talk) ═══════════════════════════════════════════ */
@@ -4944,7 +4967,7 @@ function voiceMaybeSpeakReply(rawText){
           if(!done[r.id]){ done[r.id] = true; changed = true; }   // tick only
         }
       });
-      if(changed){ var rr=dayRec(date); rr.habits=done; dayRecSave(rr); }
+      if(changed){ recSetHabits(date, done); }   // stamps flipped habits → syncs
 
       var suggest = {};
       HEALTH_SUGGEST.forEach(function(r){
@@ -5471,6 +5494,126 @@ function voiceMaybeSpeakReply(rawText){
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+
+<!-- ─── CROSS-DEVICE SYNC for the date-keyed Tracker records ────────────────────
+ * A thin sync engine over the local record store. Every record mutation stamps
+ * per-field updated-at (see recSetHabit/recSetChecks) and marks the day dirty;
+ * a debounced push sends all recent records to POST /records-sync, which merges
+ * them per-field (last-write-wins) and returns everyone's newer records. We pull
+ * on app open / tab focus / after wake, merge remote per the SAME per-field rule,
+ * and recompute the ring / streaks / history. Offline-safe: the local records ARE
+ * the queue — a failed sync just retries on the next trigger or 'online' event, and
+ * because we always push the full recent state, nothing is lost. Reuses the stored
+ * EDIT_TOKEN; with no token the Tracker runs local-only with one subtle hint.
+-->
+<script>
+(function(){
+  var SYNC_CURSOR_KEY = 'records_sync_cursor_v1';
+  var SYNC_WINDOW_DAYS = 45;              // push/keep the most recent N days (server TTL is 60)
+  var _syncInFlight = false, _pending = false, _flushT = null, _lastState = 'init';
+
+  function syncBase(){ return (typeof COACH_WORKER_URL==='string' && COACH_WORKER_URL.indexOf('YOUR-SUBDOMAIN')===-1) ? COACH_WORKER_URL.replace(/\/+$/,'') : null; }
+  function syncToken(){ try{ return localStorage.getItem(TODAY_EDIT_TOKEN_KEY) || null; }catch(e){ return null; } }
+  function syncEnabled(){ return !!(syncBase() && syncToken() && navigator.onLine !== false); }
+  function syncConfigured(){ return !!(syncBase() && syncToken()); }
+  function syncCursor(){ try{ return +localStorage.getItem(SYNC_CURSOR_KEY) || 0; }catch(e){ return 0; } }
+  function syncSetCursor(c){ try{ localStorage.setItem(SYNC_CURSOR_KEY, String(c)); }catch(e){} }
+
+  function recentDates(days){ var out={}; var t=new Date(); t.setHours(0,0,0,0); for(var i=0;i<days;i++){ var d=new Date(t); d.setDate(t.getDate()-i); out[isoLocal(d)]=1; } return out; }
+
+  // Per-field LWW merge of a remote record into local. Returns whether a VALUE changed.
+  function recMerge(local, remote){
+    var out = (local && typeof local==='object') ? local
+      : { v:1, date:remote.date, weekday:remote.weekday, plan:remote.plan, habits:{}, checks:[], kcal:0 };
+    if(!out.habits) out.habits={}; if(!Array.isArray(out.checks)) out.checks=[];
+    var oat = recAt(out);
+    var rat = (remote.at && typeof remote.at==='object') ? remote.at : {h:{},c:{},k:0};
+    var rh = rat.h||{}, rc = rat.c||{}, changed = false;
+    var rHabits = remote.habits||{};
+    for(var id in rHabits){ var t=+rh[id]||0; if(t >= (+oat.h[id]||0)){ var nv=!!rHabits[id]; if(out.habits[id]!==nv) changed=true; out.habits[id]=nv; oat.h[id]=t; } }
+    var rChecks = remote.checks||[];
+    for(var i in rc){ var ct=+rc[i]||0; if(ct >= (+oat.c[i]||0)){ var cv=!!rChecks[i]; if(!!out.checks[i]!==cv) changed=true; out.checks[i]=cv; oat.c[i]=ct; } }
+    var maxLen = Math.max(out.checks.length, rChecks.length);
+    for(var j=0;j<maxLen;j++){ if(out.checks[j]==null) out.checks[j]=false; }
+    var kt=+rat.k||0; if(kt >= (+oat.k||0)){ var nk=+remote.kcal||0; if(+out.kcal!==nk) changed=true; out.kcal=nk; oat.k=kt; }
+    if(remote.weekday!=null) out.weekday=remote.weekday; if(remote.plan) out.plan=remote.plan; if(remote.date) out.date=remote.date;
+    return { rec: out, changed: changed };
+  }
+
+  function applyRemoteRecords(remoteMap){
+    if(!remoteMap || typeof remoteMap!=='object') return false;
+    var m = dayRecords(), changed = false;
+    for(var date in remoteMap){
+      var res = recMerge(m[date], remoteMap[date]);
+      if(res.changed || !m[date]){ m[date] = res.rec; if(res.changed) changed = true; }
+    }
+    dayRecordsSet(m);
+    return changed;
+  }
+
+  function recRecomputeUI(){
+    try{
+      if(typeof showDate==='function' && typeof currentDate!=='undefined' && currentDate) showDate(currentDate);
+      if(window.s1RenderAll) window.s1RenderAll();
+      if(window.refreshHealthRings) window.refreshHealthRings();
+    }catch(e){}
+  }
+
+  function setState(s){ _lastState = s; updateHint(); }
+  function updateHint(){
+    var el = document.getElementById('trk-sync'); if(!el) return;
+    if(!syncConfigured()){ el.textContent = '⊘ local only'; el.className = 'trk-sync off'; el.title = 'Not syncing — no edit token on this device. Habits stay on this device only.'; return; }
+    if(_lastState==='offline'){ el.textContent = '⇅ offline'; el.className='trk-sync off'; el.title='Offline — changes will sync when you reconnect.'; return; }
+    if(_lastState==='syncing'){ el.textContent='⇅ syncing'; el.className='trk-sync busy'; el.title='Syncing…'; return; }
+    if(_lastState==='error'){ el.textContent='⚠ sync error'; el.className='trk-sync off'; el.title='Sync failed — will retry.'; return; }
+    el.textContent='◍ synced'; el.className='trk-sync ok'; el.title='Synced across your devices.';
+  }
+  window.__syncUpdateHint = updateHint;
+
+  function doSync(){
+    if(!syncConfigured()){ setState('local'); return Promise.resolve(); }
+    if(navigator.onLine === false){ setState('offline'); return Promise.resolve(); }
+    if(_syncInFlight){ _pending = true; return Promise.resolve(); }
+    _syncInFlight = true; setState('syncing');
+    var base = syncBase(), token = syncToken();
+    var recs = dayRecords(), win = recentDates(SYNC_WINDOW_DAYS), push = {};
+    Object.keys(recs).forEach(function(d){ if(win[d]) push[d] = recs[d]; });
+    return fetch(base + '/records-sync', {
+      method:'POST', headers:{'content-type':'application/json','x-edit-token':token},
+      body: JSON.stringify({ records: push, since: syncCursor() })
+    }).then(function(r){
+      if(r.status===403){ setState('error'); throw {handled:true}; }
+      if(!r.ok) throw 0;
+      return r.json();
+    }).then(function(data){
+      var applied = applyRemoteRecords(data.records || {});
+      if(typeof data.cursor==='number') syncSetCursor(data.cursor);
+      setState('ok');
+      if(applied) recRecomputeUI();
+    }).catch(function(e){
+      if(!(e && e.handled)) setState(navigator.onLine===false ? 'offline' : 'error');
+    }).then(function(){
+      _syncInFlight = false;
+      if(_pending){ _pending = false; scheduleFlush(60); }
+    });
+  }
+  window.recSyncNow = doSync;
+
+  function scheduleFlush(ms){ if(!syncConfigured()){ updateHint(); return; } clearTimeout(_flushT); _flushT = setTimeout(doSync, ms||900); }
+  // Exposed to the record mutators (they call recMarkDirty on every change).
+  window.recMarkDirty = function(){ scheduleFlush(); };
+
+  // ── Triggers: app open, tab focus/visibility, reconnect, after wake ──────────
+  function pull(){ doSync(); }
+  window.addEventListener('online',  function(){ setState('syncing'); doSync(); });
+  window.addEventListener('offline', function(){ setState('offline'); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') pull(); });
+  window.addEventListener('focus', pull);
+  window.addEventListener('daily-tracker-wake-done', pull);   // dispatched when wake mode finishes
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ updateHint(); pull(); });
+  else { updateHint(); pull(); }
 })();
 </script>
 
