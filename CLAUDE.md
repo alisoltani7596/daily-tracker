@@ -56,7 +56,13 @@ never in `index.html`, the Worker source, or any tracked file. A PreToolUse hook
 
 ## Data / keys (do not rename)
 Existing localStorage keys: `habit_vis_v3`, `habit_order_v1`, `habit_done_v3_<0-6>`,
-`chk_state_v3_<0-6>`, `week_kcal_v3`, `plans_data_v1`. Coach keys: `coach_chat_v1`,
+`chk_state_v3_<0-6>`, `week_kcal_v3`, `plans_data_v1`, `iris_theme_v1` (style-2 theme
+choice — device preference, localStorage only, never KV). Coach keys: `coach_chat_v1`,
 `coach_archive_v1`, `coach_commitments_v1`. The Today dashboard reads `today.json`
 (served with the site) into `window.__todayData`, which the coach injects as
 `today_agenda`.
+
+KV keys owned by **Claude Code** (app code), which the Cowork/Today pipeline must
+never read or write (same rule as the Meals keys): `ui:layout:v1` — the style-2
+canvas card layouts (per tab, per breakpoint). Introduced by the style-2 shell
+redesign; the layout read/write endpoint lands in CP2.

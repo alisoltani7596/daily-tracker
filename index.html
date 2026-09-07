@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html lang="en" data-theme="light"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- style-2: apply the saved theme before first paint (no flash of the default) -->
+<script>try{var t=localStorage.getItem('iris_theme_v1');if(t&&/^(light|dark|iris|dusk)$/.test(t))document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Daily Tracker</title>
@@ -29,6 +31,60 @@
   /* motion */
   --ease:cubic-bezier(.16,1,.3,1);--dur:.2s;
   --shadow:0 12px 30px rgba(0,0,0,.28);
+  /* style-2 canvas + bar tokens (fallback = iris; themes below override) */
+  --dot:#10292e;--on-accent:#04120a;
+  --bar:#0b120d;--bar-fg:#e4f2e8;--bar-muted:#4a6650;--bar-active:#1c2a1e;--bar-border:#294029;
+  --accent-soft:#1c2a1e;--ok:#57c48a;--ok-soft:#12241a;--amber-soft:rgba(212,160,64,.12);
+}
+
+/* ═══ style-2 THEMES ═══════════════════════════════════════════════════════════
+   Four themes remap the SAME semantic vars the whole app already uses, so every
+   screen recolors with no per-component edits. Default is light (set on <html>).
+   Font is a theme token: mono-forward for Iris, system sans elsewhere (--mono
+   stays monospace everywhere to keep numeric readouts + labels aligned). */
+:root[data-theme="light"]{
+  --bg:#f6f6f7;--surface:#ffffff;--surface2:#eeeef1;--border:#e2e2e7;--border-soft:rgba(0,0,0,.06);
+  --accent:#141416;--accent2:#3a3a40;--amber:#b4741b;--purple:#6d5fc4;--blue:#2f7fb8;
+  --white:#141416;--sub:#5c5c66;--muted:#8f8f98;--shadow:0 1px 2px rgba(0,0,0,.05),0 10px 28px rgba(0,0,0,.08);
+  --dot:#cdcdd3;--on-accent:#ffffff;
+  --bar:#0b0b0d;--bar-fg:#f4f4f5;--bar-muted:#a0a0a8;--bar-active:#28282d;--bar-border:transparent;
+  --accent-soft:#e5e5ea;--ok:#2e8b57;--ok-soft:#e2f2e9;--amber-soft:#faefda;
+  --serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,"DM Mono",monospace;
+}
+:root[data-theme="dark"]{
+  --bg:#121214;--surface:#1b1b1f;--surface2:#232329;--border:#2a2a30;--border-soft:rgba(255,255,255,.07);
+  --accent:#ececef;--accent2:#c7c7cd;--amber:#e0a44a;--purple:#a49dea;--blue:#5aacdc;
+  --white:#ececef;--sub:#a0a0a9;--muted:#7c7c85;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.35);
+  --dot:#2d2d33;--on-accent:#111114;
+  --bar:#09090b;--bar-fg:#f4f4f5;--bar-muted:#7f7f88;--bar-active:#232328;--bar-border:transparent;
+  --accent-soft:#2a2a30;--ok:#5cc08a;--ok-soft:#15291e;--amber-soft:#2d2415;
+  --serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,"DM Mono",monospace;
+}
+:root[data-theme="iris"]{
+  --bg:#04080a;--surface:#070f12;--surface2:#0a2a2f;--border:#0f353b;--border-soft:rgba(51,214,224,.10);
+  --accent:#33d6e0;--accent2:#1f9aa2;--amber:#f0b445;--purple:#8b85d4;--blue:#33d6e0;
+  --white:#d2f2f5;--sub:#5f949b;--muted:#3f6b70;--shadow:0 0 0 1px rgba(51,214,224,.05),0 10px 30px rgba(0,0,0,.6);
+  --dot:#10292e;--on-accent:#04120a;
+  --bar:#04080a;--bar-fg:#cdf3f6;--bar-muted:#4f8b92;--bar-active:#0a2a2f;--bar-border:#0f353b;
+  --accent-soft:#0a2a2f;--ok:#3ee0a3;--ok-soft:#062a1f;--amber-soft:#2a2008;
+  --serif:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+:root[data-theme="dusk"]{
+  --bg:#1a1411;--surface:#231b15;--surface2:#2b2019;--border:#3b2e25;--border-soft:rgba(233,162,76,.10);
+  --accent:#e9a24c;--accent2:#c07f2f;--amber:#e9a24c;--purple:#c89ad0;--blue:#7bb0c9;
+  --white:#f3e7d9;--sub:#c2ad97;--muted:#8f7862;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.4);
+  --dot:#3a2d24;--on-accent:#1a1005;
+  --bar:#120d0a;--bar-fg:#f5e9dc;--bar-muted:#9c8672;--bar-active:#2b2019;--bar-border:transparent;
+  --accent-soft:#3a2a17;--ok:#9ccb7a;--ok-soft:#24301a;--amber-soft:#3a2a17;
+  --serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,"DM Mono",monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:16px;overflow-x:hidden;}  /* viewport-level clip: body-only overflow-x:hidden doesn't stop sideways scroll */
@@ -74,7 +130,7 @@ body.tabswitch .coach-body,body.tabswitch .coach-commitments{animation:screenIn 
 .tab-btn.active svg{transform:translateY(-1px) scale(1.06);}
 .tab-btn.active::before{content:'';position:absolute;top:8px;width:26px;height:3px;border-radius:3px;background:var(--accent);box-shadow:0 0 12px rgba(87,196,138,.6);}
 .tab-btn:active{transform:scale(.93);}
-.tab-badge{position:absolute;top:9px;left:calc(50% + 9px);min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--accent);color:#04120a;font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.tab-badge{position:absolute;top:9px;left:calc(50% + 9px);min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
 
 /* coach becomes a full screen instead of a slide-in drawer.
    #coach-drawer (id) beats the original .coach-drawer rule that comes later. */
@@ -155,7 +211,7 @@ body.side-open .day-right{display:flex;}
 .check-item.done .check-sub{color:var(--muted);}
 .check-box{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .15s;}
 .check-item.done .check-box{background:var(--accent);border-color:var(--accent);}
-.check-tick{width:10px;height:10px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
+.check-tick{width:10px;height:10px;stroke:var(--on-accent);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
 .check-item.done .check-tick{opacity:1;}
 .check-label{font-size:14px;font-weight:500;color:var(--white);}
 .check-sub{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4;}
@@ -196,7 +252,7 @@ body.side-open .day-right{display:flex;}
 .habit-item.done .hlabel{text-decoration:line-through;color:var(--muted);}
 .hbox{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
 .habit-item.done .hbox{background:var(--accent);border-color:var(--accent);}
-.htick{width:9px;height:9px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
+.htick{width:9px;height:9px;stroke:var(--on-accent);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
 .habit-item.done .htick{opacity:1;}
 .hicon{font-size:14px;width:20px;text-align:center;flex-shrink:0;}
 .hlabel{font-size:13px;color:var(--white);}
@@ -298,7 +354,7 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 
 .pi-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;cursor:pointer;transition:all .15s;}
 .plan-item.done .pi-check{background:var(--accent);border-color:var(--accent);}
-.pi-tick{width:10px;height:10px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
+.pi-tick{width:10px;height:10px;stroke:var(--on-accent);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
 .plan-item.done .pi-tick{opacity:1;}
 
 .pi-body{flex:1;min-width:0;}
@@ -566,6 +622,15 @@ button.tchk.done{color:#fff;}
 .task-add:hover{border-color:var(--accent2);color:var(--accent);}
 .task-input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--accent2);border-radius:6px;color:var(--white);font-family:var(--sans);font-size:12.5px;padding:4px 7px;outline:none;}
 @media(pointer:coarse){.task-star,.task-del{opacity:.7;}}
+/* editable Projects — checkbox + reveal-on-hover controls (mirrors Tasks) */
+.pj-check{width:15px;height:15px;border-radius:4px;border:2px solid var(--sub);flex:none;display:grid;place-items:center;font-size:9px;line-height:1;color:var(--on-accent);background:transparent;cursor:pointer;padding:0;}
+.pj-check.done{background:var(--accent);border-color:var(--accent);}
+.pj-tn{cursor:text;}
+.pj-task .task-star,.pj-task .task-del{opacity:0;}
+.pj-task:hover .task-star,.pj-task:hover .task-del{opacity:.75;}
+.pj-task .task-star.on{opacity:1;}
+.pj-list+.task-add{margin-top:4px;}
+@media(pointer:coarse){.pj-task .task-star,.pj-task .task-del{opacity:.7;}}
 .sched-toggle{width:100%;text-align:center;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;padding:8px 9px;margin-top:4px;cursor:pointer;border-top:1px solid rgba(42,63,45,.5);transition:color .15s;}
 .sched-toggle:hover{color:var(--accent);}
 .tc-empty{padding:14px 10px;text-align:center;font-size:11.5px;color:var(--sub);line-height:1.5;}
@@ -573,11 +638,117 @@ button.tchk.done{color:#fff;}
 .tc-foot{font-size:10px;color:var(--sub);padding:7px 11px 3px;line-height:1.45;}
 .tc-foot a{color:var(--accent);text-decoration:none;}
 .tc-foot a:hover{text-decoration:underline;}
+
+/* ═══ style-2 SHELL: token bridge + top bar + dot-grid canvas ═══════════════════
+   CP1: shell + themes + existing content. Drag/resize/KV layout is CP2. */
+/* Bridge: make style-1.css's physical tokens follow the active theme, so the
+   Today HUD, rings and history recolor with the rest (specificity 0,2,1 beats
+   style-1.css's plain :root). */
+:root[data-theme]{
+  --text:var(--white);--text-bright:var(--white);--text-dim:var(--sub);--text-faint:var(--muted);
+  --line:var(--border);--line-dim:var(--border-soft);--bg-raised:var(--surface);
+  --accent-glow:color-mix(in srgb,var(--accent) 32%,transparent);--wake:var(--amber);
+  --font-mono:var(--mono);
+}
+:root{ --s2bar-h:52px; }
+
+/* Dot-grid canvas: a fixed backdrop behind the whole app. */
+.s2-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1.5px);
+  background-size:24px 24px;background-position:12px 12px;opacity:.6;}
+/* Retire the legacy green glow (matches no theme); the noise texture stays subtle. */
+body::after{display:none!important;}
+
+/* Retire the old app chrome — replaced by the sticky top bar. */
+.page>header{display:none!important;}
+#tabbar{display:none!important;}
+
+/* ── Top bar: ring + IRIS + tab pills + theme popover ────────────────────────── */
+.s2bar{position:sticky;top:0;z-index:1000;min-height:calc(var(--s2bar-h) + var(--safe-t));
+  display:flex;align-items:center;gap:10px;padding:var(--safe-t) 14px 0;
+  background:var(--bar);color:var(--bar-fg);border-bottom:1px solid var(--bar-border);
+  -webkit-backdrop-filter:saturate(140%) blur(12px);backdrop-filter:saturate(140%) blur(12px);}
+.s2-brand{display:flex;align-items:center;gap:9px;flex:0 0 auto;}
+.s2-ring{width:20px;height:20px;display:block;flex:0 0 auto;overflow:visible;}
+.s2-ring .s1-ring-svg{width:100%;height:100%;display:block;overflow:visible;}
+.s2-word{font-family:var(--mono);font-weight:700;letter-spacing:.22em;font-size:13px;color:var(--bar-fg);}
+.s2-tabs{display:flex;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.s2-tabs::-webkit-scrollbar{display:none;}
+.s2-tab{flex:0 0 auto;border:0;background:transparent;color:var(--bar-muted);font-family:var(--sans);font-size:14px;padding:7px 14px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;-webkit-tap-highlight-color:transparent;}
+.s2-tab:hover{color:var(--bar-fg);}
+.s2-tab.active{background:var(--bar-active);color:var(--bar-fg);font-weight:600;}
+.s2-right{display:flex;align-items:center;gap:4px;margin-left:auto;position:relative;flex:0 0 auto;}
+.s2-theme{display:flex;align-items:center;gap:8px;border:1px solid var(--bar-active);background:transparent;color:var(--bar-fg);font-family:var(--sans);font-size:13px;padding:6px 12px 6px 8px;border-radius:999px;cursor:pointer;}
+.s2-swatch{width:12px;height:12px;border-radius:50%;background:var(--sw,#888);border:1px solid rgba(255,255,255,.25);flex:0 0 auto;}
+.s2-pop{position:absolute;right:0;top:calc(100% + 8px);background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;min-width:172px;color:var(--white);z-index:1001;}
+.s2-pop[hidden]{display:none;}
+.s2-opt{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:inherit;font-family:var(--sans);font-size:14px;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;}
+.s2-opt:hover{background:var(--accent-soft);}
+.s2-opt.on{font-weight:700;}
+.s2-pop hr{border:0;border-top:1px solid var(--border);margin:6px 4px;}
+:root:not([data-theme="iris"]) .s2-word{letter-spacing:.14em;}
+@media (max-width:719px){ .s2-theme-name{display:none;} .s2-theme{padding:6px 8px;} }
+
+/* Coach stays a full-screen chat — sit it below the sticky bar and drop
+   the retired bottom-bar gap. */
+#coach-drawer{top:calc(var(--s2bar-h) + var(--safe-t))!important;bottom:0!important;}
+
+/* ═══ style-2 CP2 — canvas cards (drag / resize / snap) ════════════════════════ */
+.s2-canvas{position:relative;}
+body.s2-canvas-on #today-grid{position:relative;height:auto!important;}
+/* Positioned card — applies to Today's .tcard and the .s2-card shells alike. */
+.s2-card-pos{position:absolute!important;display:flex;flex-direction:column;overflow:hidden;
+  transition:left .12s var(--ease),top .12s var(--ease),width .12s var(--ease),height .12s var(--ease);}
+.s2-card-pos.s2-dragging,.s2-card-pos.s2-resizing{transition:none;}
+.s2-card-pos.s2-dragging{opacity:.96;box-shadow:0 18px 44px rgba(0,0,0,.30);}
+.s2-card-pos.s2-resizing .tc-body,.s2-card-pos.s2-resizing .s2-card-body{pointer-events:none;}
+/* Today .tcard: header is the drag handle, body scrolls, reorder/span retired. */
+body.s2-canvas-on .tcard>.tcard-head{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;}
+body.s2-canvas-on .tcard>.tcard-head:active{cursor:grabbing;}
+body.s2-canvas-on .tcard>.tc-body{flex:1;overflow:auto;}
+body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none!important;}
+/* Resize grip (bottom-right corner). */
+.s2-grip{position:absolute;right:0;bottom:0;width:26px;height:26px;cursor:nwse-resize;touch-action:none;z-index:6;}
+.s2-grip::after{content:"";position:absolute;right:7px;bottom:7px;width:11px;height:11px;
+  border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);border-radius:0 0 4px 0;opacity:.5;}
+.s2-grip:hover::after{opacity:1;}
+/* Generic shell for Tracker/Coach blocks moved onto the canvas. */
+.s2-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);}
+.s2-card>.s2-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);background:var(--surface2);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;}
+.s2-card>.s2-card-head:active{cursor:grabbing;}
+.s2-card>.s2-card-head .s2-card-meta{font-weight:400;letter-spacing:normal;text-transform:none;color:var(--sub);}
+.s2-card>.s2-card-body{flex:1;overflow:auto;padding:2px 0;}
 </style>
 <!-- style-1 experimental redesign: token overrides + Today HUD (loaded last to win) -->
 <link rel="stylesheet" href="style-1.css">
 </head>
 <body>
+<!-- style-2 dot-grid canvas backdrop -->
+<div class="s2-grid" aria-hidden="true"></div>
+
+<!-- ─── style-2 TOP BAR: living ring + IRIS + tab pills + theme popover ───────────
+     The mini ring shares .s1-ring-svg structure, so the existing ring engine
+     (rings()/buildTicks) drives it — breathing, wake, speaking, stable, charge. -->
+<div class="s2bar" id="s2bar">
+  <div class="s2-brand">
+    <span class="s2-ring" title="Iris">
+      <svg class="s1-ring-svg" viewBox="0 0 240 240" aria-hidden="true">
+        <g class="s1-ring-ticks"></g>
+        <circle class="s1-ring-dash" cx="120" cy="120" r="72"></circle>
+        <path class="s1-ring-blob" d=""></path>
+        <circle class="s1-ring-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"></circle>
+      </svg>
+    </span>
+    <span class="s2-word">IRIS</span>
+  </div>
+  <nav class="s2-tabs" id="s2-tabs" aria-label="Sections"></nav>
+  <div class="s2-right">
+    <button class="s2-theme" id="s2-theme-btn" aria-haspopup="menu" aria-expanded="false"><span class="s2-swatch" id="s2-swatch"></span><span class="s2-theme-name" id="s2-theme-name">Light</span></button>
+    <div class="s2-pop" id="s2-pop" hidden role="menu"></div>
+  </div>
+</div>
 
 <!-- ─── WAKE BRIEFING OVERLAY (shown on ?wake=1; speaks the day) ──────────────── -->
 <div id="wake-overlay" class="wake-overlay" hidden>
@@ -3725,39 +3896,36 @@ function renderToday(data){
     cards.push('<div class="tcard wide" data-card="inbox"><div class="tcard-head"><span class="tc-grip" data-grip title="Drag to reorder">⠿</span><div class="tc-ttl"><span class="tc-ic">✉️</span>Inbox</div><button class="tc-span" data-span-toggle type="button" title="Width">▢</button><span class="tc-tag setup">◆ Needs setup</span></div><div class="tc-body"><div class="tc-empty"><div class="big">✉️</div>Connect <b>Gmail</b> on claude.ai, then ask Claude to switch this on and it will show unread &amp; important threads here.</div></div></div>');
   }
 
-  // Projects — read-only mirror of the per-category Google Docs. Each category is
-  // a labelled group (name links to its Doc) with an open-task count and compact
-  // task rows. Canonical order Ph.D. / APEX / IRIS / Finance; missing categories
-  // are simply skipped, unknown ones appended. Editing happens in the Docs.
-  // Render categories in the payload's array order as-is — the pipeline owns
-  // ordering now (no client-side canonical sort).
+  // Projects — editable in-app, per category. todayMergeProjects already applied the
+  // per-category task order + category order, so render as-is. The category name still
+  // links to its Google Doc; edits (check/rename/add/delete) persist via
+  // /today-overrides and are reconciled back into the Docs by the Cowork pipeline.
   var projects = Array.isArray(data.projects) ? data.projects.filter(function(p){ return p && p.name; }) : [];
   if(projects.length){
-    var pjOv = todayNormalizeOverrides(window.__todayOverrides);
-    var pOrder = (pjOv.projectOrder && typeof pjOv.projectOrder==='object') ? pjOv.projectOrder : {};
-    // Whole-category order (drag a category header); new pipeline categories append.
-    projects = applyItemOrder(projects, pjOv.projectGroupOrder, function(p){ return p.name; });
     var pj = '<div class="pj-groups" data-sort="projgroups">';
     projects.forEach(function(p){
-      var tasks = applyItemOrder(Array.isArray(p.tasks) ? p.tasks : [], pOrder[p.name]);
+      var tasks = Array.isArray(p.tasks) ? p.tasks : [];
       var open = tasks.filter(function(t){ return t && !t.done; }).length;
       var nameHtml = (p.url && p.url!=='#')
         ? '<a class="pj-name" href="'+tEsc(p.url)+'" target="_blank" rel="noopener">'+tEsc(p.name)+'</a>'
         : '<span class="pj-name pj-name-off" title="No doc linked yet">'+tEsc(p.name)+'</span>';
       pj += '<div class="pj-group" data-name="'+tEsc(p.name)+'"><div class="pj-head"><span class="pj-grip" data-grip title="Drag category">⠿</span>'+nameHtml+'<span class="pj-count">'+open+' open</span></div>';
-      if(tasks.length){
-        pj += '<div class="pj-list" data-sort="proj" data-proj="'+tEsc(p.name)+'">';
-        tasks.forEach(function(t){
-          pj += '<div class="pj-task'+(t.done?' done':'')+'" data-name="'+tEsc(t.n)+'"><span class="row-grip" data-grip title="Drag to reorder">⠿</span><span class="pj-dot"></span><span class="pj-tn">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</span></div>';
-        });
-        pj += '</div>';
-      } else {
-        pj += '<div class="pj-empty">no open tasks</div>';
-      }
+      pj += '<div class="pj-list" data-sort="proj" data-proj="'+tEsc(p.name)+'">';
+      tasks.forEach(function(t){
+        pj += '<div class="pj-task'+(t.done?' done':'')+'" data-proj="'+tEsc(p.name)+'" data-key="'+tEsc(t.key)+'" data-name="'+tEsc(t.n)+'">'+
+          '<span class="row-grip" data-grip title="Drag to reorder">⠿</span>'+
+          '<button class="pj-check'+(t.done?' done':'')+'" title="Toggle done" data-act="proj-toggle">'+(t.done?'✓':'')+'</button>'+
+          '<span class="pj-tn" data-act="proj-edit">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</span>'+
+          '<button class="task-star'+(t.hi?' on':'')+'" title="High priority" data-act="proj-hi">!</button>'+
+          '<button class="task-del" title="Delete" data-act="proj-del">✕</button>'+
+        '</div>';
+      });
+      pj += '</div>';
+      pj += '<button class="task-add" data-act="proj-add" data-proj="'+tEsc(p.name)+'">＋ Add task</button>';
       pj += '</div>';
     });
     pj += '</div>';
-    cards.push(tCard('projects','🗂','Projects','Docs',pj,'Read-only — edit in the linked Google Docs. Drag ⠿ on a category to reorder groups.',true));
+    cards.push(tCard('projects','🗂','Projects','Docs',pj,'Tap ✓ to check, the name to rename, ✕ to remove, ＋ to add — edits sync back to the Google Docs. Drag ⠿ to reorder.',true));
   }
 
   grid.innerHTML = cards.join('');
@@ -3819,6 +3987,12 @@ function todayNormalizeOverrides(o){
   if(!Array.isArray(o.added)) o.added = [];
   if(!o.deadlineState || typeof o.deadlineState!=='object') o.deadlineState = {};
   if(!Array.isArray(o.deadlinesAdded)) o.deadlinesAdded = [];
+  // Projects are now editable in-app too. Patches to generated project tasks live
+  // in projectTaskState[category][taskName] = {done?,hi?,text?,hidden?}; user-added
+  // project tasks in projectAdded[category] = [{n,hi,done}]. The Cowork/Docs pipeline
+  // reads these back to reconcile the source Google Docs (see PROJECTS-DRIVE-SYNC).
+  if(!o.projectTaskState || typeof o.projectTaskState!=='object') o.projectTaskState = {};
+  if(!o.projectAdded || typeof o.projectAdded!=='object') o.projectAdded = {};
   return o;
 }
 
@@ -3886,11 +4060,39 @@ function todayMergeDeadlines(){
   return applyItemOrder(out, ov.deadlineOrder);
 }
 
+// Merge generated projects (from the Docs pipeline) with the user's in-app edits,
+// per category: hidden/renamed/checked generated tasks + user-added tasks, then the
+// per-category task order and the category order. Mirrors todayMergeTasks.
+function todayMergeProjects(){
+  var gen = (window.__todayGenerated && window.__todayGenerated.projects) || [];
+  if(!Array.isArray(gen)) return gen;
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  var pOrder = (ov.projectOrder && typeof ov.projectOrder==='object') ? ov.projectOrder : {};
+  var out = gen.filter(function(p){ return p && p.name; }).map(function(p){
+    var st = ov.projectTaskState[p.name] || {};
+    var tasks = [];
+    (Array.isArray(p.tasks) ? p.tasks : []).forEach(function(t){
+      if(!t || t.n==null) return;
+      var pt = st[t.n] || {};
+      if(pt.hidden) return;
+      tasks.push({ key:t.n, added:false,
+        n:(pt.text!=null?pt.text:t.n), hi:(pt.hi!=null?!!pt.hi:!!t.hi), done:(pt.done!=null?!!pt.done:!!t.done) });
+    });
+    (ov.projectAdded[p.name] || []).forEach(function(a,i){
+      tasks.push({ key:'pa'+i, added:true, idx:i, n:a.n||'', hi:!!a.hi, done:!!a.done });
+    });
+    tasks = applyItemOrder(tasks, pOrder[p.name]);
+    return { name:p.name, url:p.url, tasks:tasks };
+  });
+  return applyItemOrder(out, ov.projectGroupOrder, function(p){ return p.name; });
+}
+
 function todayMerged(){
   var g = window.__todayGenerated || {};
   var m = {}; for(var k in g){ m[k]=g[k]; }
   m.tasks = todayMergeTasks();
   m.deadlines = todayMergeDeadlines();
+  m.projects = todayMergeProjects();
   return m;
 }
 
@@ -4032,6 +4234,66 @@ function todayDlEditDate(key, row){
   dateEl.replaceWith(input); input.focus(); input.select();
 }
 
+// ─── projects: editable per category (check / rename / add / delete) ──────────
+// Patches to generated project tasks go in projectTaskState[cat][taskName]; added
+// tasks in projectAdded[cat]. Added-task keys are 'pa<idx>'. Persists via todaySave
+// (→ /today-overrides); the Cowork pipeline reconciles these into the Google Docs.
+function todayProjState(cat){
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  if(!ov.projectTaskState[cat]) ov.projectTaskState[cat] = {};
+  if(!Array.isArray(ov.projectAdded[cat])) ov.projectAdded[cat] = [];
+  return ov;
+}
+function todayProjGenTask(cat, key){
+  var p = (window.__todayGenerated.projects||[]).find(function(x){ return x && x.name===cat; }) || {};
+  return (Array.isArray(p.tasks)?p.tasks:[]).find(function(t){ return t && t.n===key; }) || {};
+}
+function todayProjPatch(cat, key, fn){
+  var ov = todayProjState(cat);
+  if(/^pa\d+$/.test(key)){ var i=+key.slice(2); if(ov.projectAdded[cat][i]) fn(ov.projectAdded[cat][i], true); }
+  else { if(!ov.projectTaskState[cat][key]) ov.projectTaskState[cat][key] = {}; fn(ov.projectTaskState[cat][key], false); }
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+}
+function todayProjToggle(cat, key){
+  todayProjPatch(cat, key, function(o, isAdded){
+    if(isAdded){ o.done = !o.done; }
+    else { var cur=(o.done!=null)?o.done:!!todayProjGenTask(cat,key).done; o.done=!cur; }
+  });
+}
+function todayProjToggleHi(cat, key){
+  todayProjPatch(cat, key, function(o, isAdded){
+    if(isAdded){ o.hi = !o.hi; }
+    else { var cur=(o.hi!=null)?o.hi:!!todayProjGenTask(cat,key).hi; o.hi=!cur; }
+  });
+}
+function todayProjDelete(cat, key){
+  var ov = todayProjState(cat);
+  if(/^pa\d+$/.test(key)){ ov.projectAdded[cat].splice(+key.slice(2),1); }
+  else { if(!ov.projectTaskState[cat][key]) ov.projectTaskState[cat][key]={}; ov.projectTaskState[cat][key].hidden=true; }
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+}
+function todayProjAdd(cat){
+  var ov = todayProjState(cat);
+  ov.projectAdded[cat].push({ n:'New task', hi:false, done:false });
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+  setTimeout(function(){ todayProjEdit(cat, 'pa'+(ov.projectAdded[cat].length-1)); }, 30);
+}
+function todayProjEdit(cat, key, row){
+  row = row || document.querySelector('.pj-task[data-proj="'+CSS.escape(cat)+'"][data-key="'+CSS.escape(key)+'"]');
+  if(!row) return;
+  var nameEl = row.querySelector('.pj-tn');
+  if(!nameEl || row.querySelector('.task-input')) return;
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  var current='';
+  if(/^pa\d+$/.test(key)){ current=((ov.projectAdded[cat]||[])[+key.slice(2)]||{}).n||''; }
+  else { var pt=(ov.projectTaskState[cat]||{})[key]||{}; current=(pt.text!=null?pt.text:todayProjGenTask(cat,key).n)||key; }
+  var input=document.createElement('input'); input.className='task-input'; input.value=current;
+  function commit(save){ var val=input.value.trim(); if(save&&val){ todayProjPatch(cat,key,function(o,isAdded){ if(isAdded){o.n=val;}else{o.text=val;} }); } else { todayRerender(); } }
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault();commit(true);} else if(e.key==='Escape'){commit(false);} });
+  input.addEventListener('blur',function(){ commit(true); });
+  nameEl.replaceWith(input); input.focus(); input.select();
+}
+
 // ─── persistence: local mirror + debounced Worker POST ────────────────────────
 var _todaySaveTimer = null;
 function todaySave(){
@@ -4079,6 +4341,8 @@ function todayPushOverrides(base){
     var act = actEl.getAttribute('data-act');
     var row = actEl.closest('[data-key]');
     var key = row ? row.getAttribute('data-key') : null;  // raw, browser-decoded — safe for any character
+    var pcEl = actEl.closest('[data-proj]');
+    var cat = pcEl ? pcEl.getAttribute('data-proj') : null;   // project category for proj-* actions
     switch(act){
       case 'task-toggle': todayToggleTask(key); break;
       case 'task-hi':     todayToggleHi(key); break;
@@ -4089,6 +4353,11 @@ function todayPushOverrides(base){
       case 'dl-del':      todayDlDelete(key); break;
       case 'dl-date':     todayDlEditDate(key, row); break;
       case 'dl-add':      todayDlAdd(); break;
+      case 'proj-toggle': todayProjToggle(cat, key); break;
+      case 'proj-hi':     todayProjToggleHi(cat, key); break;
+      case 'proj-del':    todayProjDelete(cat, key); break;
+      case 'proj-edit':   todayProjEdit(cat, key, row); break;
+      case 'proj-add':    todayProjAdd(cat); break;
       case 'sched-toggle': todayScheduleToggle(); break;
     }
   });
@@ -4223,6 +4492,9 @@ function todayPushOverrides(base){
   // while the others reflow around the gap it will drop into. At 1 column we clear
   // all inline positioning and let the CSS single-column flow handle it (mobile).
   function layout(exclude){
+    // style-2: the free-drag canvas owns Today positioning — reroute every masonry
+    // caller (render, resize, visibility, row-reorder) to the canvas mount instead.
+    if(window.s2CanvasActive){ if(window.s2MountToday) window.s2MountToday(); return; }
     var grid = document.getElementById('today-grid'); if(!grid) return;
     var all = Array.prototype.slice.call(grid.querySelectorAll(':scope > .tcard'));
     var n = cols();
@@ -5627,6 +5899,198 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+</script>
+
+<!-- ─── style-2 shell wiring: tab pills + theme switcher ───────────────────────── -->
+<script>
+(function(){
+  // Tab list is a config array — add ['meals','Meals'] / ['health','Health'] here
+  // once those screens exist. Keeps the bar in sync with the existing setTab().
+  var TABS = [['today','Today'],['tracker','Tracker'],['coach','Coach']];
+  var THEMES = { light:['Light','#f6f6f7'], dark:['Dark','#3a3a40'], iris:['Iris','#33d6e0'], dusk:['Dusk','#e9a24c'] };
+  var THEME_KEY='iris_theme_v1';
+  var BAR_COLOR={light:'#0b0b0d',dark:'#09090b',iris:'#04080a',dusk:'#120d0a'};
+  var tabsEl=document.getElementById('s2-tabs');
+  var pop=document.getElementById('s2-pop');
+  var themeBtn=document.getElementById('s2-theme-btn');
+  var swatch=document.getElementById('s2-swatch');
+  var nameEl=document.getElementById('s2-theme-name');
+  if(!tabsEl||!pop||!themeBtn) return;
+
+  function curTheme(){ var t=document.documentElement.getAttribute('data-theme'); return THEMES[t]?t:'light'; }
+  function applyTheme(t){
+    if(!THEMES[t]) t='light';
+    document.documentElement.setAttribute('data-theme',t);
+    try{ localStorage.setItem(THEME_KEY,t); }catch(e){}
+    nameEl.textContent=THEMES[t][0];
+    swatch.style.setProperty('--sw',THEMES[t][1]);
+    var m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content',BAR_COLOR[t]||BAR_COLOR.light);
+    pop.querySelectorAll('.s2-opt[data-theme]').forEach(function(o){ o.classList.toggle('on',o.getAttribute('data-theme')===t); });
+  }
+
+  // Tab pills → existing setTab(); body[data-tab] stays the source of truth.
+  tabsEl.innerHTML=TABS.map(function(t){ return '<button class="s2-tab" role="tab" data-tab="'+t[0]+'">'+t[1]+'</button>'; }).join('');
+  tabsEl.addEventListener('click',function(e){ var b=e.target.closest('.s2-tab'); if(!b) return; if(typeof setTab==='function') setTab(b.getAttribute('data-tab')); });
+  function syncTabs(){ var cur=document.body.getAttribute('data-tab')||'today'; tabsEl.querySelectorAll('.s2-tab').forEach(function(b){ b.classList.toggle('active',b.getAttribute('data-tab')===cur); }); }
+  new MutationObserver(syncTabs).observe(document.body,{attributes:true,attributeFilter:['data-tab']});
+
+  // Theme popover (four themes + reset-layout, which lands in CP2).
+  pop.innerHTML=Object.keys(THEMES).map(function(k){ return '<button class="s2-opt" role="menuitem" data-theme="'+k+'"><span class="s2-swatch" style="--sw:'+THEMES[k][1]+'"></span>'+THEMES[k][0]+'</button>'; }).join('')
+    +'<hr><button class="s2-opt" role="menuitem" id="s2-reset">Reset this tab’s layout</button>';
+  themeBtn.addEventListener('click',function(e){ e.stopPropagation(); var h=pop.hidden; pop.hidden=!h; themeBtn.setAttribute('aria-expanded',String(h)); });
+  pop.addEventListener('click',function(e){ var o=e.target.closest('.s2-opt'); if(!o) return;
+    if(o.id==='s2-reset'){ if(typeof window.s2ResetLayout==='function') window.s2ResetLayout(); }
+    else applyTheme(o.getAttribute('data-theme'));
+    pop.hidden=true; themeBtn.setAttribute('aria-expanded','false');
+  });
+  document.addEventListener('click',function(){ if(!pop.hidden){ pop.hidden=true; themeBtn.setAttribute('aria-expanded','false'); } });
+
+  applyTheme(curTheme());
+  syncTabs();
+})();
+</script>
+
+<!-- ─── style-2 CP2: free-drag/resize canvas + KV layout persistence ───────────── -->
+<script>
+(function(){
+  var GRID=24, MINW=192, MINH=120, GUTTER=12;
+  var LS_KEY='ui_layout_v1';                 // local mirror
+  function bp(){ return window.innerWidth < 720 ? 'm' : 'd'; }
+  function keyFor(tab){ return bp()+':'+tab; }
+  function snap(v){ return Math.round(v/GRID)*GRID; }
+
+  var layouts={};                            // { "d:today":[{id,x,y,w,h}], ... }  order = z-order
+  var reg={};                                // reg[tab] = {canvas, cards:{id:{el,handle}}, defaults}
+
+  try{ var o=JSON.parse(localStorage.getItem(LS_KEY)); if(o&&typeof o==='object') layouts=o; }catch(e){}
+
+  // ── persistence: local mirror now, one debounced KV write ──────────────────
+  var saveT=null;
+  function save(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(layouts)); }catch(e){}
+    clearTimeout(saveT); saveT=setTimeout(pushKV, 250);
+  }
+  function workerBase(){ return (typeof coachWorkerBase==='function') ? coachWorkerBase() : null; }
+  function editToken(){ try{ return localStorage.getItem('today_edit_token')||''; }catch(e){ return ''; } }
+  function pushKV(){
+    var b=workerBase(), t=editToken(); if(!b||!t) return;   // no token → local-only, like the records engine
+    try{ fetch(b+'/ui-layout',{method:'POST',headers:{'content-type':'application/json','x-edit-token':t},body:JSON.stringify(layouts)}).catch(function(){}); }catch(e){}
+  }
+  window.s2LayoutAdopt=function(remote){
+    if(remote&&typeof remote==='object'){ layouts=remote; try{ localStorage.setItem(LS_KEY, JSON.stringify(layouts)); }catch(e){} }
+    var cur=document.body.getAttribute('data-tab')||'today'; if(reg[cur]) applyTab(cur);
+  };
+
+  // ── layout access ──────────────────────────────────────────────────────────
+  function listFor(tab){
+    var k=keyFor(tab), l=layouts[k];
+    if(!Array.isArray(l)||!l.length){ l=(reg[tab]&&reg[tab].defaults)?reg[tab].defaults(bp()):[]; layouts[k]=l; }
+    return l;
+  }
+  function entry(tab,id){
+    var l=listFor(tab); for(var i=0;i<l.length;i++) if(l[i].id===id) return l[i];
+    var e={id:id,x:GUTTER,y:GUTTER,w:MINW*2,h:MINH*2}; l.push(e); return e;
+  }
+  function place(el,e){ el.style.left=e.x+'px'; el.style.top=e.y+'px'; el.style.width=e.w+'px'; el.style.height=e.h+'px'; }
+  function bringFront(tab,id){
+    var l=listFor(tab), i=-1,k; for(k=0;k<l.length;k++) if(l[k].id===id){ i=k; break; }
+    if(i>-1&&i!==l.length-1){ var e=l.splice(i,1)[0]; l.push(e); }
+    var cards=reg[tab].cards; l.forEach(function(x,idx){ if(cards[x.id]) cards[x.id].el.style.zIndex=10+idx; });
+  }
+  function fit(tab){
+    var canvas=reg[tab]&&reg[tab].canvas; if(!canvas) return;
+    var l=listFor(tab), mh=0,mw=0; l.forEach(function(e){ if(e.y+e.h>mh)mh=e.y+e.h; if(e.x+e.w>mw)mw=e.x+e.w; });
+    canvas.style.minHeight=(mh+GUTTER*3)+'px'; canvas.style.minWidth=(mw+GUTTER)+'px';
+  }
+  function applyTab(tab){
+    var r=reg[tab]; if(!r||!r.canvas) return;
+    Object.keys(r.cards).forEach(function(id){ entry(tab,id); });
+    listFor(tab).forEach(function(e,idx){ var c=r.cards[e.id]; if(!c) return; c.el.classList.add('s2-card-pos'); c.el.style.zIndex=10+idx; place(c.el,e); });
+    fit(tab);
+  }
+  window.s2ApplyTab=applyTab;
+
+  // ── drag / resize (pointer events + setPointerCapture) ───────────────────────
+  function bindOne(handle,el,tab,id,mode){
+    var sx,sy,ox,oy,ow,oh,active=false,pid=null;
+    handle.addEventListener('pointerdown',function(e){
+      if(e.button&&e.button!==0) return;
+      if(mode==='move'&&e.target.closest('button,a,input,textarea,select,[data-grip],.s2-grip,.row-grip,.pj-grip')) return;
+      active=true; pid=e.pointerId; try{ handle.setPointerCapture(pid); }catch(_){}
+      sx=e.clientX; sy=e.clientY; ox=el.offsetLeft; oy=el.offsetTop; ow=el.offsetWidth; oh=el.offsetHeight;
+      el.classList.add(mode==='move'?'s2-dragging':'s2-resizing');
+      bringFront(tab,id); save(); e.preventDefault();
+    });
+    handle.addEventListener('pointermove',function(e){
+      if(!active||e.pointerId!==pid) return; e.preventDefault();
+      var dx=e.clientX-sx, dy=e.clientY-sy;
+      if(mode==='move'){ el.style.left=Math.max(0,ox+dx)+'px'; el.style.top=Math.max(0,oy+dy)+'px'; }
+      else { el.style.width=Math.max(MINW,ow+dx)+'px'; el.style.height=Math.max(MINH,oh+dy)+'px'; }
+    });
+    function endFn(e){
+      if(!active||(e&&e.pointerId!==pid)) return;
+      active=false; el.classList.remove('s2-dragging','s2-resizing');
+      var en=entry(tab,id);
+      en.x=Math.max(0,snap(el.offsetLeft)); en.y=Math.max(0,snap(el.offsetTop));
+      en.w=Math.max(MINW,snap(el.offsetWidth)); en.h=Math.max(MINH,snap(el.offsetHeight));
+      place(el,en); fit(tab); save();
+    }
+    handle.addEventListener('pointerup',endFn); handle.addEventListener('pointercancel',endFn);
+  }
+
+  // ── registration API used by per-tab adapters ────────────────────────────────
+  window.s2RegisterTab=function(tab,canvasEl,defaultsFn){
+    reg[tab]=reg[tab]||{cards:{}}; reg[tab].canvas=canvasEl; reg[tab].defaults=defaultsFn; reg[tab].cards=reg[tab].cards||{};
+    canvasEl.classList.add('s2-canvas');
+  };
+  window.s2RegisterCard=function(tab,id,el,handleEl){
+    if(!reg[tab]) return;
+    if(!el.querySelector(':scope > .s2-grip')){ var g=document.createElement('div'); g.className='s2-grip'; g.title='Resize'; el.appendChild(g); }
+    reg[tab].cards[id]={el:el,handle:handleEl||el};
+    bindOne(handleEl||el,el,tab,id,'move');
+    bindOne(el.querySelector(':scope > .s2-grip'),el,tab,id,'size');
+  };
+  window.s2Reset=function(tab){
+    tab=tab||document.body.getAttribute('data-tab')||'today';
+    delete layouts[keyFor(tab)]; listFor(tab); applyTab(tab); save();
+  };
+  window.s2ResetLayout=function(){ window.s2Reset(); };   // wired to the bar's "Reset this tab's layout"
+
+  var lastBp=bp();
+  window.addEventListener('resize',function(){
+    var cur=document.body.getAttribute('data-tab')||'today';
+    if(bp()!==lastBp){ lastBp=bp(); if(reg[cur]) applyTab(cur); } else if(reg[cur]) fit(cur);
+  });
+
+  // ── Today adapter: the existing .tcard dashboard cards become canvas cards ────
+  function defToday(b){
+    var ids=['schedule','tasks','deadlines','slack','inbox','projects'];
+    if(b==='m'){ var W=Math.max(MINW, Math.floor((window.innerWidth-2*GUTTER)/GRID)*GRID), y=GUTTER, out=[];
+      ids.forEach(function(id){ out.push({id:id,x:GUTTER,y:y,w:W,h:264}); y+=264+GUTTER; }); return out; }
+    var w=336,h=288,gx=360,gy=312,out=[];
+    ids.forEach(function(id,i){ var c=i%3,r=(i/3)|0; out.push({id:id,x:24+c*gx,y:24+r*gy,w:w,h:h}); });
+    return out;
+  }
+  window.s2MountToday=function(){
+    var grid=document.getElementById('today-grid'); if(!grid) return;
+    s2RegisterTab('today',grid,defToday);
+    grid.querySelectorAll(':scope > .tcard').forEach(function(c){
+      var id=c.getAttribute('data-card'); if(!id) return;
+      s2RegisterCard('today',id,c,c.querySelector(':scope > .tcard-head'));
+    });
+    applyTab('today');
+  };
+
+  // Activate canvas mode, convert whatever's on screen now, then pull authoritative
+  // layout from KV (cross-device) and re-apply.
+  window.s2CanvasActive=true;
+  document.body.classList.add('s2-canvas-on');
+  s2MountToday();
+  (function(){ var b=workerBase(); if(!b) return;
+    try{ fetch(b+'/ui-layout',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(d){ if(d&&d.layout&&typeof d.layout==='object'&&Object.keys(d.layout).length) window.s2LayoutAdopt(d.layout); }).catch(function(){}); }catch(e){}
+  })();
+})();
 </script>
 
 </body></html>
