@@ -680,9 +680,37 @@ body::after{display:none!important;}
 :root:not([data-theme="iris"]) .s2-word{letter-spacing:.14em;}
 @media (max-width:719px){ .s2-theme-name{display:none;} .s2-theme{padding:6px 8px;} }
 
-/* Coach stays a full-screen chat for CP1 — sit it below the sticky bar and drop
+/* Coach stays a full-screen chat — sit it below the sticky bar and drop
    the retired bottom-bar gap. */
 #coach-drawer{top:calc(var(--s2bar-h) + var(--safe-t))!important;bottom:0!important;}
+
+/* ═══ style-2 CP2 — canvas cards (drag / resize / snap) ════════════════════════ */
+.s2-canvas{position:relative;}
+body.s2-canvas-on #today-grid{position:relative;height:auto!important;}
+/* Positioned card — applies to Today's .tcard and the .s2-card shells alike. */
+.s2-card-pos{position:absolute!important;display:flex;flex-direction:column;overflow:hidden;
+  transition:left .12s var(--ease),top .12s var(--ease),width .12s var(--ease),height .12s var(--ease);}
+.s2-card-pos.s2-dragging,.s2-card-pos.s2-resizing{transition:none;}
+.s2-card-pos.s2-dragging{opacity:.96;box-shadow:0 18px 44px rgba(0,0,0,.30);}
+.s2-card-pos.s2-resizing .tc-body,.s2-card-pos.s2-resizing .s2-card-body{pointer-events:none;}
+/* Today .tcard: header is the drag handle, body scrolls, reorder/span retired. */
+body.s2-canvas-on .tcard>.tcard-head{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;}
+body.s2-canvas-on .tcard>.tcard-head:active{cursor:grabbing;}
+body.s2-canvas-on .tcard>.tc-body{flex:1;overflow:auto;}
+body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none!important;}
+/* Resize grip (bottom-right corner). */
+.s2-grip{position:absolute;right:0;bottom:0;width:26px;height:26px;cursor:nwse-resize;touch-action:none;z-index:6;}
+.s2-grip::after{content:"";position:absolute;right:7px;bottom:7px;width:11px;height:11px;
+  border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);border-radius:0 0 4px 0;opacity:.5;}
+.s2-grip:hover::after{opacity:1;}
+/* Generic shell for Tracker/Coach blocks moved onto the canvas. */
+.s2-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);}
+.s2-card>.s2-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);background:var(--surface2);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;}
+.s2-card>.s2-card-head:active{cursor:grabbing;}
+.s2-card>.s2-card-head .s2-card-meta{font-weight:400;letter-spacing:normal;text-transform:none;color:var(--sub);}
+.s2-card>.s2-card-body{flex:1;overflow:auto;padding:2px 0;}
 </style>
 <!-- style-1 experimental redesign: token overrides + Today HUD (loaded last to win) -->
 <link rel="stylesheet" href="style-1.css">
@@ -4357,6 +4385,9 @@ function todayPushOverrides(base){
   // while the others reflow around the gap it will drop into. At 1 column we clear
   // all inline positioning and let the CSS single-column flow handle it (mobile).
   function layout(exclude){
+    // style-2: the free-drag canvas owns Today positioning — reroute every masonry
+    // caller (render, resize, visibility, row-reorder) to the canvas mount instead.
+    if(window.s2CanvasActive){ if(window.s2MountToday) window.s2MountToday(); return; }
     var grid = document.getElementById('today-grid'); if(!grid) return;
     var all = Array.prototype.slice.call(grid.querySelectorAll(':scope > .tcard'));
     var n = cols();
@@ -5809,6 +5840,149 @@ if ('serviceWorker' in navigator) {
 
   applyTheme(curTheme());
   syncTabs();
+})();
+</script>
+
+<!-- ─── style-2 CP2: free-drag/resize canvas + KV layout persistence ───────────── -->
+<script>
+(function(){
+  var GRID=24, MINW=192, MINH=120, GUTTER=12;
+  var LS_KEY='ui_layout_v1';                 // local mirror
+  function bp(){ return window.innerWidth < 720 ? 'm' : 'd'; }
+  function keyFor(tab){ return bp()+':'+tab; }
+  function snap(v){ return Math.round(v/GRID)*GRID; }
+
+  var layouts={};                            // { "d:today":[{id,x,y,w,h}], ... }  order = z-order
+  var reg={};                                // reg[tab] = {canvas, cards:{id:{el,handle}}, defaults}
+
+  try{ var o=JSON.parse(localStorage.getItem(LS_KEY)); if(o&&typeof o==='object') layouts=o; }catch(e){}
+
+  // ── persistence: local mirror now, one debounced KV write ──────────────────
+  var saveT=null;
+  function save(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(layouts)); }catch(e){}
+    clearTimeout(saveT); saveT=setTimeout(pushKV, 250);
+  }
+  function workerBase(){ return (typeof coachWorkerBase==='function') ? coachWorkerBase() : null; }
+  function editToken(){ try{ return localStorage.getItem('today_edit_token')||''; }catch(e){ return ''; } }
+  function pushKV(){
+    var b=workerBase(), t=editToken(); if(!b||!t) return;   // no token → local-only, like the records engine
+    try{ fetch(b+'/ui-layout',{method:'POST',headers:{'content-type':'application/json','x-edit-token':t},body:JSON.stringify(layouts)}).catch(function(){}); }catch(e){}
+  }
+  window.s2LayoutAdopt=function(remote){
+    if(remote&&typeof remote==='object'){ layouts=remote; try{ localStorage.setItem(LS_KEY, JSON.stringify(layouts)); }catch(e){} }
+    var cur=document.body.getAttribute('data-tab')||'today'; if(reg[cur]) applyTab(cur);
+  };
+
+  // ── layout access ──────────────────────────────────────────────────────────
+  function listFor(tab){
+    var k=keyFor(tab), l=layouts[k];
+    if(!Array.isArray(l)||!l.length){ l=(reg[tab]&&reg[tab].defaults)?reg[tab].defaults(bp()):[]; layouts[k]=l; }
+    return l;
+  }
+  function entry(tab,id){
+    var l=listFor(tab); for(var i=0;i<l.length;i++) if(l[i].id===id) return l[i];
+    var e={id:id,x:GUTTER,y:GUTTER,w:MINW*2,h:MINH*2}; l.push(e); return e;
+  }
+  function place(el,e){ el.style.left=e.x+'px'; el.style.top=e.y+'px'; el.style.width=e.w+'px'; el.style.height=e.h+'px'; }
+  function bringFront(tab,id){
+    var l=listFor(tab), i=-1,k; for(k=0;k<l.length;k++) if(l[k].id===id){ i=k; break; }
+    if(i>-1&&i!==l.length-1){ var e=l.splice(i,1)[0]; l.push(e); }
+    var cards=reg[tab].cards; l.forEach(function(x,idx){ if(cards[x.id]) cards[x.id].el.style.zIndex=10+idx; });
+  }
+  function fit(tab){
+    var canvas=reg[tab]&&reg[tab].canvas; if(!canvas) return;
+    var l=listFor(tab), mh=0,mw=0; l.forEach(function(e){ if(e.y+e.h>mh)mh=e.y+e.h; if(e.x+e.w>mw)mw=e.x+e.w; });
+    canvas.style.minHeight=(mh+GUTTER*3)+'px'; canvas.style.minWidth=(mw+GUTTER)+'px';
+  }
+  function applyTab(tab){
+    var r=reg[tab]; if(!r||!r.canvas) return;
+    Object.keys(r.cards).forEach(function(id){ entry(tab,id); });
+    listFor(tab).forEach(function(e,idx){ var c=r.cards[e.id]; if(!c) return; c.el.classList.add('s2-card-pos'); c.el.style.zIndex=10+idx; place(c.el,e); });
+    fit(tab);
+  }
+  window.s2ApplyTab=applyTab;
+
+  // ── drag / resize (pointer events + setPointerCapture) ───────────────────────
+  function bindOne(handle,el,tab,id,mode){
+    var sx,sy,ox,oy,ow,oh,active=false,pid=null;
+    handle.addEventListener('pointerdown',function(e){
+      if(e.button&&e.button!==0) return;
+      if(mode==='move'&&e.target.closest('button,a,input,textarea,select,[data-grip],.s2-grip,.row-grip,.pj-grip')) return;
+      active=true; pid=e.pointerId; try{ handle.setPointerCapture(pid); }catch(_){}
+      sx=e.clientX; sy=e.clientY; ox=el.offsetLeft; oy=el.offsetTop; ow=el.offsetWidth; oh=el.offsetHeight;
+      el.classList.add(mode==='move'?'s2-dragging':'s2-resizing');
+      bringFront(tab,id); save(); e.preventDefault();
+    });
+    handle.addEventListener('pointermove',function(e){
+      if(!active||e.pointerId!==pid) return; e.preventDefault();
+      var dx=e.clientX-sx, dy=e.clientY-sy;
+      if(mode==='move'){ el.style.left=Math.max(0,ox+dx)+'px'; el.style.top=Math.max(0,oy+dy)+'px'; }
+      else { el.style.width=Math.max(MINW,ow+dx)+'px'; el.style.height=Math.max(MINH,oh+dy)+'px'; }
+    });
+    function endFn(e){
+      if(!active||(e&&e.pointerId!==pid)) return;
+      active=false; el.classList.remove('s2-dragging','s2-resizing');
+      var en=entry(tab,id);
+      en.x=Math.max(0,snap(el.offsetLeft)); en.y=Math.max(0,snap(el.offsetTop));
+      en.w=Math.max(MINW,snap(el.offsetWidth)); en.h=Math.max(MINH,snap(el.offsetHeight));
+      place(el,en); fit(tab); save();
+    }
+    handle.addEventListener('pointerup',endFn); handle.addEventListener('pointercancel',endFn);
+  }
+
+  // ── registration API used by per-tab adapters ────────────────────────────────
+  window.s2RegisterTab=function(tab,canvasEl,defaultsFn){
+    reg[tab]=reg[tab]||{cards:{}}; reg[tab].canvas=canvasEl; reg[tab].defaults=defaultsFn; reg[tab].cards=reg[tab].cards||{};
+    canvasEl.classList.add('s2-canvas');
+  };
+  window.s2RegisterCard=function(tab,id,el,handleEl){
+    if(!reg[tab]) return;
+    if(!el.querySelector(':scope > .s2-grip')){ var g=document.createElement('div'); g.className='s2-grip'; g.title='Resize'; el.appendChild(g); }
+    reg[tab].cards[id]={el:el,handle:handleEl||el};
+    bindOne(handleEl||el,el,tab,id,'move');
+    bindOne(el.querySelector(':scope > .s2-grip'),el,tab,id,'size');
+  };
+  window.s2Reset=function(tab){
+    tab=tab||document.body.getAttribute('data-tab')||'today';
+    delete layouts[keyFor(tab)]; listFor(tab); applyTab(tab); save();
+  };
+  window.s2ResetLayout=function(){ window.s2Reset(); };   // wired to the bar's "Reset this tab's layout"
+
+  var lastBp=bp();
+  window.addEventListener('resize',function(){
+    var cur=document.body.getAttribute('data-tab')||'today';
+    if(bp()!==lastBp){ lastBp=bp(); if(reg[cur]) applyTab(cur); } else if(reg[cur]) fit(cur);
+  });
+
+  // ── Today adapter: the existing .tcard dashboard cards become canvas cards ────
+  function defToday(b){
+    var ids=['schedule','tasks','deadlines','slack','inbox','projects'];
+    if(b==='m'){ var W=Math.max(MINW, Math.floor((window.innerWidth-2*GUTTER)/GRID)*GRID), y=GUTTER, out=[];
+      ids.forEach(function(id){ out.push({id:id,x:GUTTER,y:y,w:W,h:264}); y+=264+GUTTER; }); return out; }
+    var w=336,h=288,gx=360,gy=312,out=[];
+    ids.forEach(function(id,i){ var c=i%3,r=(i/3)|0; out.push({id:id,x:24+c*gx,y:24+r*gy,w:w,h:h}); });
+    return out;
+  }
+  window.s2MountToday=function(){
+    var grid=document.getElementById('today-grid'); if(!grid) return;
+    s2RegisterTab('today',grid,defToday);
+    grid.querySelectorAll(':scope > .tcard').forEach(function(c){
+      var id=c.getAttribute('data-card'); if(!id) return;
+      s2RegisterCard('today',id,c,c.querySelector(':scope > .tcard-head'));
+    });
+    applyTab('today');
+  };
+
+  // Activate canvas mode, convert whatever's on screen now, then pull authoritative
+  // layout from KV (cross-device) and re-apply.
+  window.s2CanvasActive=true;
+  document.body.classList.add('s2-canvas-on');
+  s2MountToday();
+  (function(){ var b=workerBase(); if(!b) return;
+    try{ fetch(b+'/ui-layout',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(d){ if(d&&d.layout&&typeof d.layout==='object'&&Object.keys(d.layout).length) window.s2LayoutAdopt(d.layout); }).catch(function(){}); }catch(e){}
+  })();
 })();
 </script>
 

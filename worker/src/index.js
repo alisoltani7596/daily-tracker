@@ -186,6 +186,39 @@ export default {
       return json({ ok: true }, 200, corsHeaders(allowOrigin));
     }
 
+    // GET /ui-layout — the style-2 canvas card layouts (per tab + breakpoint), a
+    // single object under KV "ui:layout:v1". Browser-only (CORS-gated); reading a
+    // personal layout needs no token. Absent → {} so the client falls to defaults.
+    if (request.method === "GET" && url.pathname === "/ui-layout") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "layout store not configured" }, 500, corsHeaders(allowOrigin));
+      const raw = await env.TODAY_KV.get("ui:layout:v1");
+      const layout = raw ? (safeParse(raw) || {}) : {};
+      return new Response(JSON.stringify({ layout }), {
+        status: 200,
+        headers: { "content-type": "application/json", "cache-control": "no-store", ...corsHeaders(allowOrigin) },
+      });
+    }
+
+    // POST /ui-layout — persist the style-2 canvas layouts. Same permission class
+    // as /today-overrides (CORS + EDIT_TOKEN in x-edit-token); whole-object put.
+    if (request.method === "POST" && url.pathname === "/ui-layout") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "layout store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let layout;
+      try { layout = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      if (layout === null || typeof layout !== "object" || Array.isArray(layout)) {
+        return json({ error: "layout must be an object" }, 400, corsHeaders(allowOrigin));
+      }
+      const serialized = JSON.stringify(layout);
+      if (serialized.length > 100000) return json({ error: "layout too large" }, 413, corsHeaders(allowOrigin));
+      await env.TODAY_KV.put("ui:layout:v1", serialized);
+      return json({ ok: true }, 200, corsHeaders(allowOrigin));
+    }
+
     // POST /task-add — append a single task to the user's Today overrides (the
     // added-tasks list), exactly as the in-app "Add task" flow does. Same
     // permission class as in-app edits (EDIT_TOKEN in x-edit-token), so trusted
