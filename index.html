@@ -5972,7 +5972,12 @@ if ('serviceWorker' in navigator) {
   }
   function workerBase(){ return (typeof coachWorkerBase==='function') ? coachWorkerBase() : null; }
   function editToken(){ try{ return localStorage.getItem('today_edit_token')||''; }catch(e){ return ''; } }
+  // Only push once the boot GET confirms /ui-layout is really deployed. Otherwise a
+  // POST would fall through to the Worker's default (coach chat) handler — so until
+  // the route exists we stay local-only (localStorage) and never hit the network.
+  var kvOK=false;
   function pushKV(){
+    if(!kvOK) return;
     var b=workerBase(), t=editToken(); if(!b||!t) return;   // no token → local-only, like the records engine
     try{ fetch(b+'/ui-layout',{method:'POST',headers:{'content-type':'application/json','x-edit-token':t},body:JSON.stringify(layouts)}).catch(function(){}); }catch(e){}
   }
@@ -6088,7 +6093,7 @@ if ('serviceWorker' in navigator) {
   s2MountToday();
   (function(){ var b=workerBase(); if(!b) return;
     try{ fetch(b+'/ui-layout',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
-      .then(function(d){ if(d&&d.layout&&typeof d.layout==='object'&&Object.keys(d.layout).length) window.s2LayoutAdopt(d.layout); }).catch(function(){}); }catch(e){}
+      .then(function(d){ if(d&&d.layout&&typeof d.layout==='object'){ kvOK=true; if(Object.keys(d.layout).length) window.s2LayoutAdopt(d.layout); } }).catch(function(){}); }catch(e){}
   })();
 })();
 </script>
