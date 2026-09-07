@@ -416,15 +416,21 @@ export default {
       } catch {
         return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin));
       }
-      if (!isValidTodayShape(data)) {
-        return json({ error: "body is not a valid Today payload (need schedule, deadlines, tasks arrays)" }, 400, corsHeaders(allowOrigin));
+      try {
+        if (!isValidTodayShape(data)) {
+          return json({ error: "body is not a valid Today payload (need schedule, deadlines, tasks arrays)" }, 400, corsHeaders(allowOrigin));
+        }
+        const serialized = JSON.stringify(data);
+        if (serialized.length > 200000) {
+          return json({ error: "today payload too large" }, 413, corsHeaders(allowOrigin));
+        }
+        await env.TODAY_KV.put("today", serialized);
+        return json({ ok: true, bytes: serialized.length }, 200, corsHeaders(allowOrigin));
+      } catch (e) {
+        // Surface the real cause instead of an opaque Cloudflare 1101 so a failing
+        // /today-refresh is diagnosable from the response body (no wrangler tail needed).
+        return json({ error: "today-refresh failed", detail: String((e && e.message) || e) }, 500, corsHeaders(allowOrigin));
       }
-      const serialized = JSON.stringify(data);
-      if (serialized.length > 200000) {
-        return json({ error: "today payload too large" }, 413, corsHeaders(allowOrigin));
-      }
-      await env.TODAY_KV.put("today", serialized);
-      return json({ ok: true, bytes: serialized.length }, 200, corsHeaders(allowOrigin));
     }
 
     // POST /tts — synthesize speech with Workers AI (Deepgram Aura). CORS-locked
