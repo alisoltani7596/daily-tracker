@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html lang="en" data-theme="light"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- style-2: apply the saved theme before first paint (no flash of the default) -->
+<script>try{var t=localStorage.getItem('iris_theme_v1');if(t&&/^(light|dark|iris|dusk)$/.test(t))document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Daily Tracker</title>
@@ -29,6 +31,60 @@
   /* motion */
   --ease:cubic-bezier(.16,1,.3,1);--dur:.2s;
   --shadow:0 12px 30px rgba(0,0,0,.28);
+  /* style-2 canvas + bar tokens (fallback = iris; themes below override) */
+  --dot:#10292e;--on-accent:#04120a;
+  --bar:#0b120d;--bar-fg:#e4f2e8;--bar-muted:#4a6650;--bar-active:#1c2a1e;--bar-border:#294029;
+  --accent-soft:#1c2a1e;--ok:#57c48a;--ok-soft:#12241a;--amber-soft:rgba(212,160,64,.12);
+}
+
+/* ═══ style-2 THEMES ═══════════════════════════════════════════════════════════
+   Four themes remap the SAME semantic vars the whole app already uses, so every
+   screen recolors with no per-component edits. Default is light (set on <html>).
+   Font is a theme token: mono-forward for Iris, system sans elsewhere (--mono
+   stays monospace everywhere to keep numeric readouts + labels aligned). */
+:root[data-theme="light"]{
+  --bg:#f6f6f7;--surface:#ffffff;--surface2:#eeeef1;--border:#e2e2e7;--border-soft:rgba(0,0,0,.06);
+  --accent:#141416;--accent2:#3a3a40;--amber:#b4741b;--purple:#6d5fc4;--blue:#2f7fb8;
+  --white:#141416;--sub:#5c5c66;--muted:#8f8f98;--shadow:0 1px 2px rgba(0,0,0,.05),0 10px 28px rgba(0,0,0,.08);
+  --dot:#cdcdd3;--on-accent:#ffffff;
+  --bar:#0b0b0d;--bar-fg:#f4f4f5;--bar-muted:#a0a0a8;--bar-active:#28282d;--bar-border:transparent;
+  --accent-soft:#e5e5ea;--ok:#2e8b57;--ok-soft:#e2f2e9;--amber-soft:#faefda;
+  --serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,"DM Mono",monospace;
+}
+:root[data-theme="dark"]{
+  --bg:#121214;--surface:#1b1b1f;--surface2:#232329;--border:#2a2a30;--border-soft:rgba(255,255,255,.07);
+  --accent:#ececef;--accent2:#c7c7cd;--amber:#e0a44a;--purple:#a49dea;--blue:#5aacdc;
+  --white:#ececef;--sub:#a0a0a9;--muted:#7c7c85;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.35);
+  --dot:#2d2d33;--on-accent:#111114;
+  --bar:#09090b;--bar-fg:#f4f4f5;--bar-muted:#7f7f88;--bar-active:#232328;--bar-border:transparent;
+  --accent-soft:#2a2a30;--ok:#5cc08a;--ok-soft:#15291e;--amber-soft:#2d2415;
+  --serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,"DM Mono",monospace;
+}
+:root[data-theme="iris"]{
+  --bg:#04080a;--surface:#070f12;--surface2:#0a2a2f;--border:#0f353b;--border-soft:rgba(51,214,224,.10);
+  --accent:#33d6e0;--accent2:#1f9aa2;--amber:#f0b445;--purple:#8b85d4;--blue:#33d6e0;
+  --white:#d2f2f5;--sub:#5f949b;--muted:#3f6b70;--shadow:0 0 0 1px rgba(51,214,224,.05),0 10px 30px rgba(0,0,0,.6);
+  --dot:#10292e;--on-accent:#04120a;
+  --bar:#04080a;--bar-fg:#cdf3f6;--bar-muted:#4f8b92;--bar-active:#0a2a2f;--bar-border:#0f353b;
+  --accent-soft:#0a2a2f;--ok:#3ee0a3;--ok-soft:#062a1f;--amber-soft:#2a2008;
+  --serif:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+:root[data-theme="dusk"]{
+  --bg:#1a1411;--surface:#231b15;--surface2:#2b2019;--border:#3b2e25;--border-soft:rgba(233,162,76,.10);
+  --accent:#e9a24c;--accent2:#c07f2f;--amber:#e9a24c;--purple:#c89ad0;--blue:#7bb0c9;
+  --white:#f3e7d9;--sub:#c2ad97;--muted:#8f7862;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.4);
+  --dot:#3a2d24;--on-accent:#1a1005;
+  --bar:#120d0a;--bar-fg:#f5e9dc;--bar-muted:#9c8672;--bar-active:#2b2019;--bar-border:transparent;
+  --accent-soft:#3a2a17;--ok:#9ccb7a;--ok-soft:#24301a;--amber-soft:#3a2a17;
+  --serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,"DM Mono",monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:16px;overflow-x:hidden;}  /* viewport-level clip: body-only overflow-x:hidden doesn't stop sideways scroll */
@@ -74,7 +130,7 @@ body.tabswitch .coach-body,body.tabswitch .coach-commitments{animation:screenIn 
 .tab-btn.active svg{transform:translateY(-1px) scale(1.06);}
 .tab-btn.active::before{content:'';position:absolute;top:8px;width:26px;height:3px;border-radius:3px;background:var(--accent);box-shadow:0 0 12px rgba(87,196,138,.6);}
 .tab-btn:active{transform:scale(.93);}
-.tab-badge{position:absolute;top:9px;left:calc(50% + 9px);min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--accent);color:#04120a;font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.tab-badge{position:absolute;top:9px;left:calc(50% + 9px);min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
 
 /* coach becomes a full screen instead of a slide-in drawer.
    #coach-drawer (id) beats the original .coach-drawer rule that comes later. */
@@ -155,7 +211,7 @@ body.side-open .day-right{display:flex;}
 .check-item.done .check-sub{color:var(--muted);}
 .check-box{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .15s;}
 .check-item.done .check-box{background:var(--accent);border-color:var(--accent);}
-.check-tick{width:10px;height:10px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
+.check-tick{width:10px;height:10px;stroke:var(--on-accent);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
 .check-item.done .check-tick{opacity:1;}
 .check-label{font-size:14px;font-weight:500;color:var(--white);}
 .check-sub{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4;}
@@ -196,7 +252,7 @@ body.side-open .day-right{display:flex;}
 .habit-item.done .hlabel{text-decoration:line-through;color:var(--muted);}
 .hbox{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
 .habit-item.done .hbox{background:var(--accent);border-color:var(--accent);}
-.htick{width:9px;height:9px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
+.htick{width:9px;height:9px;stroke:var(--on-accent);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
 .habit-item.done .htick{opacity:1;}
 .hicon{font-size:14px;width:20px;text-align:center;flex-shrink:0;}
 .hlabel{font-size:13px;color:var(--white);}
@@ -298,7 +354,7 @@ footer{border-top:1px solid var(--border);padding:12px 0 0;font-family:var(--mon
 
 .pi-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;cursor:pointer;transition:all .15s;}
 .plan-item.done .pi-check{background:var(--accent);border-color:var(--accent);}
-.pi-tick{width:10px;height:10px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
+.pi-tick{width:10px;height:10px;stroke:var(--on-accent);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
 .plan-item.done .pi-tick{opacity:1;}
 
 .pi-body{flex:1;min-width:0;}
@@ -573,11 +629,89 @@ button.tchk.done{color:#fff;}
 .tc-foot{font-size:10px;color:var(--sub);padding:7px 11px 3px;line-height:1.45;}
 .tc-foot a{color:var(--accent);text-decoration:none;}
 .tc-foot a:hover{text-decoration:underline;}
+
+/* ═══ style-2 SHELL: token bridge + top bar + dot-grid canvas ═══════════════════
+   CP1: shell + themes + existing content. Drag/resize/KV layout is CP2. */
+/* Bridge: make style-1.css's physical tokens follow the active theme, so the
+   Today HUD, rings and history recolor with the rest (specificity 0,2,1 beats
+   style-1.css's plain :root). */
+:root[data-theme]{
+  --text:var(--white);--text-bright:var(--white);--text-dim:var(--sub);--text-faint:var(--muted);
+  --line:var(--border);--line-dim:var(--border-soft);--bg-raised:var(--surface);
+  --accent-glow:color-mix(in srgb,var(--accent) 32%,transparent);--wake:var(--amber);
+  --font-mono:var(--mono);
+}
+:root{ --s2bar-h:52px; }
+
+/* Dot-grid canvas: a fixed backdrop behind the whole app. */
+.s2-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1.5px);
+  background-size:24px 24px;background-position:12px 12px;opacity:.6;}
+/* Retire the legacy green glow (matches no theme); the noise texture stays subtle. */
+body::after{display:none!important;}
+
+/* Retire the old app chrome — replaced by the sticky top bar. */
+.page>header{display:none!important;}
+#tabbar{display:none!important;}
+
+/* ── Top bar: ring + IRIS + tab pills + theme popover ────────────────────────── */
+.s2bar{position:sticky;top:0;z-index:1000;min-height:calc(var(--s2bar-h) + var(--safe-t));
+  display:flex;align-items:center;gap:10px;padding:var(--safe-t) 14px 0;
+  background:var(--bar);color:var(--bar-fg);border-bottom:1px solid var(--bar-border);
+  -webkit-backdrop-filter:saturate(140%) blur(12px);backdrop-filter:saturate(140%) blur(12px);}
+.s2-brand{display:flex;align-items:center;gap:9px;flex:0 0 auto;}
+.s2-ring{width:20px;height:20px;display:block;flex:0 0 auto;overflow:visible;}
+.s2-ring .s1-ring-svg{width:100%;height:100%;display:block;overflow:visible;}
+.s2-word{font-family:var(--mono);font-weight:700;letter-spacing:.22em;font-size:13px;color:var(--bar-fg);}
+.s2-tabs{display:flex;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.s2-tabs::-webkit-scrollbar{display:none;}
+.s2-tab{flex:0 0 auto;border:0;background:transparent;color:var(--bar-muted);font-family:var(--sans);font-size:14px;padding:7px 14px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;-webkit-tap-highlight-color:transparent;}
+.s2-tab:hover{color:var(--bar-fg);}
+.s2-tab.active{background:var(--bar-active);color:var(--bar-fg);font-weight:600;}
+.s2-right{display:flex;align-items:center;gap:4px;margin-left:auto;position:relative;flex:0 0 auto;}
+.s2-theme{display:flex;align-items:center;gap:8px;border:1px solid var(--bar-active);background:transparent;color:var(--bar-fg);font-family:var(--sans);font-size:13px;padding:6px 12px 6px 8px;border-radius:999px;cursor:pointer;}
+.s2-swatch{width:12px;height:12px;border-radius:50%;background:var(--sw,#888);border:1px solid rgba(255,255,255,.25);flex:0 0 auto;}
+.s2-pop{position:absolute;right:0;top:calc(100% + 8px);background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;min-width:172px;color:var(--white);z-index:1001;}
+.s2-pop[hidden]{display:none;}
+.s2-opt{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:inherit;font-family:var(--sans);font-size:14px;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;}
+.s2-opt:hover{background:var(--accent-soft);}
+.s2-opt.on{font-weight:700;}
+.s2-pop hr{border:0;border-top:1px solid var(--border);margin:6px 4px;}
+:root:not([data-theme="iris"]) .s2-word{letter-spacing:.14em;}
+@media (max-width:719px){ .s2-theme-name{display:none;} .s2-theme{padding:6px 8px;} }
+
+/* Coach stays a full-screen chat for CP1 — sit it below the sticky bar and drop
+   the retired bottom-bar gap. */
+#coach-drawer{top:calc(var(--s2bar-h) + var(--safe-t))!important;bottom:0!important;}
 </style>
 <!-- style-1 experimental redesign: token overrides + Today HUD (loaded last to win) -->
 <link rel="stylesheet" href="style-1.css">
 </head>
 <body>
+<!-- style-2 dot-grid canvas backdrop -->
+<div class="s2-grid" aria-hidden="true"></div>
+
+<!-- ─── style-2 TOP BAR: living ring + IRIS + tab pills + theme popover ───────────
+     The mini ring shares .s1-ring-svg structure, so the existing ring engine
+     (rings()/buildTicks) drives it — breathing, wake, speaking, stable, charge. -->
+<div class="s2bar" id="s2bar">
+  <div class="s2-brand">
+    <span class="s2-ring" title="Iris">
+      <svg class="s1-ring-svg" viewBox="0 0 240 240" aria-hidden="true">
+        <g class="s1-ring-ticks"></g>
+        <circle class="s1-ring-dash" cx="120" cy="120" r="72"></circle>
+        <path class="s1-ring-blob" d=""></path>
+        <circle class="s1-ring-arc" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"></circle>
+      </svg>
+    </span>
+    <span class="s2-word">IRIS</span>
+  </div>
+  <nav class="s2-tabs" id="s2-tabs" aria-label="Sections"></nav>
+  <div class="s2-right">
+    <button class="s2-theme" id="s2-theme-btn" aria-haspopup="menu" aria-expanded="false"><span class="s2-swatch" id="s2-swatch"></span><span class="s2-theme-name" id="s2-theme-name">Light</span></button>
+    <div class="s2-pop" id="s2-pop" hidden role="menu"></div>
+  </div>
+</div>
 
 <!-- ─── WAKE BRIEFING OVERLAY (shown on ?wake=1; speaks the day) ──────────────── -->
 <div id="wake-overlay" class="wake-overlay" hidden>
@@ -5627,6 +5761,55 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+</script>
+
+<!-- ─── style-2 shell wiring: tab pills + theme switcher ───────────────────────── -->
+<script>
+(function(){
+  // Tab list is a config array — add ['meals','Meals'] / ['health','Health'] here
+  // once those screens exist. Keeps the bar in sync with the existing setTab().
+  var TABS = [['today','Today'],['tracker','Tracker'],['coach','Coach']];
+  var THEMES = { light:['Light','#f6f6f7'], dark:['Dark','#3a3a40'], iris:['Iris','#33d6e0'], dusk:['Dusk','#e9a24c'] };
+  var THEME_KEY='iris_theme_v1';
+  var BAR_COLOR={light:'#0b0b0d',dark:'#09090b',iris:'#04080a',dusk:'#120d0a'};
+  var tabsEl=document.getElementById('s2-tabs');
+  var pop=document.getElementById('s2-pop');
+  var themeBtn=document.getElementById('s2-theme-btn');
+  var swatch=document.getElementById('s2-swatch');
+  var nameEl=document.getElementById('s2-theme-name');
+  if(!tabsEl||!pop||!themeBtn) return;
+
+  function curTheme(){ var t=document.documentElement.getAttribute('data-theme'); return THEMES[t]?t:'light'; }
+  function applyTheme(t){
+    if(!THEMES[t]) t='light';
+    document.documentElement.setAttribute('data-theme',t);
+    try{ localStorage.setItem(THEME_KEY,t); }catch(e){}
+    nameEl.textContent=THEMES[t][0];
+    swatch.style.setProperty('--sw',THEMES[t][1]);
+    var m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content',BAR_COLOR[t]||BAR_COLOR.light);
+    pop.querySelectorAll('.s2-opt[data-theme]').forEach(function(o){ o.classList.toggle('on',o.getAttribute('data-theme')===t); });
+  }
+
+  // Tab pills → existing setTab(); body[data-tab] stays the source of truth.
+  tabsEl.innerHTML=TABS.map(function(t){ return '<button class="s2-tab" role="tab" data-tab="'+t[0]+'">'+t[1]+'</button>'; }).join('');
+  tabsEl.addEventListener('click',function(e){ var b=e.target.closest('.s2-tab'); if(!b) return; if(typeof setTab==='function') setTab(b.getAttribute('data-tab')); });
+  function syncTabs(){ var cur=document.body.getAttribute('data-tab')||'today'; tabsEl.querySelectorAll('.s2-tab').forEach(function(b){ b.classList.toggle('active',b.getAttribute('data-tab')===cur); }); }
+  new MutationObserver(syncTabs).observe(document.body,{attributes:true,attributeFilter:['data-tab']});
+
+  // Theme popover (four themes + reset-layout, which lands in CP2).
+  pop.innerHTML=Object.keys(THEMES).map(function(k){ return '<button class="s2-opt" role="menuitem" data-theme="'+k+'"><span class="s2-swatch" style="--sw:'+THEMES[k][1]+'"></span>'+THEMES[k][0]+'</button>'; }).join('')
+    +'<hr><button class="s2-opt" role="menuitem" id="s2-reset">Reset this tab’s layout</button>';
+  themeBtn.addEventListener('click',function(e){ e.stopPropagation(); var h=pop.hidden; pop.hidden=!h; themeBtn.setAttribute('aria-expanded',String(h)); });
+  pop.addEventListener('click',function(e){ var o=e.target.closest('.s2-opt'); if(!o) return;
+    if(o.id==='s2-reset'){ if(typeof window.s2ResetLayout==='function') window.s2ResetLayout(); }
+    else applyTheme(o.getAttribute('data-theme'));
+    pop.hidden=true; themeBtn.setAttribute('aria-expanded','false');
+  });
+  document.addEventListener('click',function(){ if(!pop.hidden){ pop.hidden=true; themeBtn.setAttribute('aria-expanded','false'); } });
+
+  applyTheme(curTheme());
+  syncTabs();
+})();
 </script>
 
 </body></html>
