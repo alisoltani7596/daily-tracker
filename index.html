@@ -622,6 +622,15 @@ button.tchk.done{color:#fff;}
 .task-add:hover{border-color:var(--accent2);color:var(--accent);}
 .task-input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--accent2);border-radius:6px;color:var(--white);font-family:var(--sans);font-size:12.5px;padding:4px 7px;outline:none;}
 @media(pointer:coarse){.task-star,.task-del{opacity:.7;}}
+/* editable Projects — checkbox + reveal-on-hover controls (mirrors Tasks) */
+.pj-check{width:15px;height:15px;border-radius:4px;border:2px solid var(--sub);flex:none;display:grid;place-items:center;font-size:9px;line-height:1;color:var(--on-accent);background:transparent;cursor:pointer;padding:0;}
+.pj-check.done{background:var(--accent);border-color:var(--accent);}
+.pj-tn{cursor:text;}
+.pj-task .task-star,.pj-task .task-del{opacity:0;}
+.pj-task:hover .task-star,.pj-task:hover .task-del{opacity:.75;}
+.pj-task .task-star.on{opacity:1;}
+.pj-list+.task-add{margin-top:4px;}
+@media(pointer:coarse){.pj-task .task-star,.pj-task .task-del{opacity:.7;}}
 .sched-toggle{width:100%;text-align:center;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;padding:8px 9px;margin-top:4px;cursor:pointer;border-top:1px solid rgba(42,63,45,.5);transition:color .15s;}
 .sched-toggle:hover{color:var(--accent);}
 .tc-empty{padding:14px 10px;text-align:center;font-size:11.5px;color:var(--sub);line-height:1.5;}
@@ -3887,39 +3896,36 @@ function renderToday(data){
     cards.push('<div class="tcard wide" data-card="inbox"><div class="tcard-head"><span class="tc-grip" data-grip title="Drag to reorder">⠿</span><div class="tc-ttl"><span class="tc-ic">✉️</span>Inbox</div><button class="tc-span" data-span-toggle type="button" title="Width">▢</button><span class="tc-tag setup">◆ Needs setup</span></div><div class="tc-body"><div class="tc-empty"><div class="big">✉️</div>Connect <b>Gmail</b> on claude.ai, then ask Claude to switch this on and it will show unread &amp; important threads here.</div></div></div>');
   }
 
-  // Projects — read-only mirror of the per-category Google Docs. Each category is
-  // a labelled group (name links to its Doc) with an open-task count and compact
-  // task rows. Canonical order Ph.D. / APEX / IRIS / Finance; missing categories
-  // are simply skipped, unknown ones appended. Editing happens in the Docs.
-  // Render categories in the payload's array order as-is — the pipeline owns
-  // ordering now (no client-side canonical sort).
+  // Projects — editable in-app, per category. todayMergeProjects already applied the
+  // per-category task order + category order, so render as-is. The category name still
+  // links to its Google Doc; edits (check/rename/add/delete) persist via
+  // /today-overrides and are reconciled back into the Docs by the Cowork pipeline.
   var projects = Array.isArray(data.projects) ? data.projects.filter(function(p){ return p && p.name; }) : [];
   if(projects.length){
-    var pjOv = todayNormalizeOverrides(window.__todayOverrides);
-    var pOrder = (pjOv.projectOrder && typeof pjOv.projectOrder==='object') ? pjOv.projectOrder : {};
-    // Whole-category order (drag a category header); new pipeline categories append.
-    projects = applyItemOrder(projects, pjOv.projectGroupOrder, function(p){ return p.name; });
     var pj = '<div class="pj-groups" data-sort="projgroups">';
     projects.forEach(function(p){
-      var tasks = applyItemOrder(Array.isArray(p.tasks) ? p.tasks : [], pOrder[p.name]);
+      var tasks = Array.isArray(p.tasks) ? p.tasks : [];
       var open = tasks.filter(function(t){ return t && !t.done; }).length;
       var nameHtml = (p.url && p.url!=='#')
         ? '<a class="pj-name" href="'+tEsc(p.url)+'" target="_blank" rel="noopener">'+tEsc(p.name)+'</a>'
         : '<span class="pj-name pj-name-off" title="No doc linked yet">'+tEsc(p.name)+'</span>';
       pj += '<div class="pj-group" data-name="'+tEsc(p.name)+'"><div class="pj-head"><span class="pj-grip" data-grip title="Drag category">⠿</span>'+nameHtml+'<span class="pj-count">'+open+' open</span></div>';
-      if(tasks.length){
-        pj += '<div class="pj-list" data-sort="proj" data-proj="'+tEsc(p.name)+'">';
-        tasks.forEach(function(t){
-          pj += '<div class="pj-task'+(t.done?' done':'')+'" data-name="'+tEsc(t.n)+'"><span class="row-grip" data-grip title="Drag to reorder">⠿</span><span class="pj-dot"></span><span class="pj-tn">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</span></div>';
-        });
-        pj += '</div>';
-      } else {
-        pj += '<div class="pj-empty">no open tasks</div>';
-      }
+      pj += '<div class="pj-list" data-sort="proj" data-proj="'+tEsc(p.name)+'">';
+      tasks.forEach(function(t){
+        pj += '<div class="pj-task'+(t.done?' done':'')+'" data-proj="'+tEsc(p.name)+'" data-key="'+tEsc(t.key)+'" data-name="'+tEsc(t.n)+'">'+
+          '<span class="row-grip" data-grip title="Drag to reorder">⠿</span>'+
+          '<button class="pj-check'+(t.done?' done':'')+'" title="Toggle done" data-act="proj-toggle">'+(t.done?'✓':'')+'</button>'+
+          '<span class="pj-tn" data-act="proj-edit">'+tEsc(t.n)+(t.hi?'<span class="thi">HIGH</span>':'')+'</span>'+
+          '<button class="task-star'+(t.hi?' on':'')+'" title="High priority" data-act="proj-hi">!</button>'+
+          '<button class="task-del" title="Delete" data-act="proj-del">✕</button>'+
+        '</div>';
+      });
+      pj += '</div>';
+      pj += '<button class="task-add" data-act="proj-add" data-proj="'+tEsc(p.name)+'">＋ Add task</button>';
       pj += '</div>';
     });
     pj += '</div>';
-    cards.push(tCard('projects','🗂','Projects','Docs',pj,'Read-only — edit in the linked Google Docs. Drag ⠿ on a category to reorder groups.',true));
+    cards.push(tCard('projects','🗂','Projects','Docs',pj,'Tap ✓ to check, the name to rename, ✕ to remove, ＋ to add — edits sync back to the Google Docs. Drag ⠿ to reorder.',true));
   }
 
   grid.innerHTML = cards.join('');
@@ -3981,6 +3987,12 @@ function todayNormalizeOverrides(o){
   if(!Array.isArray(o.added)) o.added = [];
   if(!o.deadlineState || typeof o.deadlineState!=='object') o.deadlineState = {};
   if(!Array.isArray(o.deadlinesAdded)) o.deadlinesAdded = [];
+  // Projects are now editable in-app too. Patches to generated project tasks live
+  // in projectTaskState[category][taskName] = {done?,hi?,text?,hidden?}; user-added
+  // project tasks in projectAdded[category] = [{n,hi,done}]. The Cowork/Docs pipeline
+  // reads these back to reconcile the source Google Docs (see PROJECTS-DRIVE-SYNC).
+  if(!o.projectTaskState || typeof o.projectTaskState!=='object') o.projectTaskState = {};
+  if(!o.projectAdded || typeof o.projectAdded!=='object') o.projectAdded = {};
   return o;
 }
 
@@ -4048,11 +4060,39 @@ function todayMergeDeadlines(){
   return applyItemOrder(out, ov.deadlineOrder);
 }
 
+// Merge generated projects (from the Docs pipeline) with the user's in-app edits,
+// per category: hidden/renamed/checked generated tasks + user-added tasks, then the
+// per-category task order and the category order. Mirrors todayMergeTasks.
+function todayMergeProjects(){
+  var gen = (window.__todayGenerated && window.__todayGenerated.projects) || [];
+  if(!Array.isArray(gen)) return gen;
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  var pOrder = (ov.projectOrder && typeof ov.projectOrder==='object') ? ov.projectOrder : {};
+  var out = gen.filter(function(p){ return p && p.name; }).map(function(p){
+    var st = ov.projectTaskState[p.name] || {};
+    var tasks = [];
+    (Array.isArray(p.tasks) ? p.tasks : []).forEach(function(t){
+      if(!t || t.n==null) return;
+      var pt = st[t.n] || {};
+      if(pt.hidden) return;
+      tasks.push({ key:t.n, added:false,
+        n:(pt.text!=null?pt.text:t.n), hi:(pt.hi!=null?!!pt.hi:!!t.hi), done:(pt.done!=null?!!pt.done:!!t.done) });
+    });
+    (ov.projectAdded[p.name] || []).forEach(function(a,i){
+      tasks.push({ key:'pa'+i, added:true, idx:i, n:a.n||'', hi:!!a.hi, done:!!a.done });
+    });
+    tasks = applyItemOrder(tasks, pOrder[p.name]);
+    return { name:p.name, url:p.url, tasks:tasks };
+  });
+  return applyItemOrder(out, ov.projectGroupOrder, function(p){ return p.name; });
+}
+
 function todayMerged(){
   var g = window.__todayGenerated || {};
   var m = {}; for(var k in g){ m[k]=g[k]; }
   m.tasks = todayMergeTasks();
   m.deadlines = todayMergeDeadlines();
+  m.projects = todayMergeProjects();
   return m;
 }
 
@@ -4194,6 +4234,66 @@ function todayDlEditDate(key, row){
   dateEl.replaceWith(input); input.focus(); input.select();
 }
 
+// ─── projects: editable per category (check / rename / add / delete) ──────────
+// Patches to generated project tasks go in projectTaskState[cat][taskName]; added
+// tasks in projectAdded[cat]. Added-task keys are 'pa<idx>'. Persists via todaySave
+// (→ /today-overrides); the Cowork pipeline reconciles these into the Google Docs.
+function todayProjState(cat){
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  if(!ov.projectTaskState[cat]) ov.projectTaskState[cat] = {};
+  if(!Array.isArray(ov.projectAdded[cat])) ov.projectAdded[cat] = [];
+  return ov;
+}
+function todayProjGenTask(cat, key){
+  var p = (window.__todayGenerated.projects||[]).find(function(x){ return x && x.name===cat; }) || {};
+  return (Array.isArray(p.tasks)?p.tasks:[]).find(function(t){ return t && t.n===key; }) || {};
+}
+function todayProjPatch(cat, key, fn){
+  var ov = todayProjState(cat);
+  if(/^pa\d+$/.test(key)){ var i=+key.slice(2); if(ov.projectAdded[cat][i]) fn(ov.projectAdded[cat][i], true); }
+  else { if(!ov.projectTaskState[cat][key]) ov.projectTaskState[cat][key] = {}; fn(ov.projectTaskState[cat][key], false); }
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+}
+function todayProjToggle(cat, key){
+  todayProjPatch(cat, key, function(o, isAdded){
+    if(isAdded){ o.done = !o.done; }
+    else { var cur=(o.done!=null)?o.done:!!todayProjGenTask(cat,key).done; o.done=!cur; }
+  });
+}
+function todayProjToggleHi(cat, key){
+  todayProjPatch(cat, key, function(o, isAdded){
+    if(isAdded){ o.hi = !o.hi; }
+    else { var cur=(o.hi!=null)?o.hi:!!todayProjGenTask(cat,key).hi; o.hi=!cur; }
+  });
+}
+function todayProjDelete(cat, key){
+  var ov = todayProjState(cat);
+  if(/^pa\d+$/.test(key)){ ov.projectAdded[cat].splice(+key.slice(2),1); }
+  else { if(!ov.projectTaskState[cat][key]) ov.projectTaskState[cat][key]={}; ov.projectTaskState[cat][key].hidden=true; }
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+}
+function todayProjAdd(cat){
+  var ov = todayProjState(cat);
+  ov.projectAdded[cat].push({ n:'New task', hi:false, done:false });
+  window.__todayOverrides = ov; todaySave(); todayRerender();
+  setTimeout(function(){ todayProjEdit(cat, 'pa'+(ov.projectAdded[cat].length-1)); }, 30);
+}
+function todayProjEdit(cat, key, row){
+  row = row || document.querySelector('.pj-task[data-proj="'+CSS.escape(cat)+'"][data-key="'+CSS.escape(key)+'"]');
+  if(!row) return;
+  var nameEl = row.querySelector('.pj-tn');
+  if(!nameEl || row.querySelector('.task-input')) return;
+  var ov = todayNormalizeOverrides(window.__todayOverrides);
+  var current='';
+  if(/^pa\d+$/.test(key)){ current=((ov.projectAdded[cat]||[])[+key.slice(2)]||{}).n||''; }
+  else { var pt=(ov.projectTaskState[cat]||{})[key]||{}; current=(pt.text!=null?pt.text:todayProjGenTask(cat,key).n)||key; }
+  var input=document.createElement('input'); input.className='task-input'; input.value=current;
+  function commit(save){ var val=input.value.trim(); if(save&&val){ todayProjPatch(cat,key,function(o,isAdded){ if(isAdded){o.n=val;}else{o.text=val;} }); } else { todayRerender(); } }
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault();commit(true);} else if(e.key==='Escape'){commit(false);} });
+  input.addEventListener('blur',function(){ commit(true); });
+  nameEl.replaceWith(input); input.focus(); input.select();
+}
+
 // ─── persistence: local mirror + debounced Worker POST ────────────────────────
 var _todaySaveTimer = null;
 function todaySave(){
@@ -4241,6 +4341,8 @@ function todayPushOverrides(base){
     var act = actEl.getAttribute('data-act');
     var row = actEl.closest('[data-key]');
     var key = row ? row.getAttribute('data-key') : null;  // raw, browser-decoded — safe for any character
+    var pcEl = actEl.closest('[data-proj]');
+    var cat = pcEl ? pcEl.getAttribute('data-proj') : null;   // project category for proj-* actions
     switch(act){
       case 'task-toggle': todayToggleTask(key); break;
       case 'task-hi':     todayToggleHi(key); break;
@@ -4251,6 +4353,11 @@ function todayPushOverrides(base){
       case 'dl-del':      todayDlDelete(key); break;
       case 'dl-date':     todayDlEditDate(key, row); break;
       case 'dl-add':      todayDlAdd(); break;
+      case 'proj-toggle': todayProjToggle(cat, key); break;
+      case 'proj-hi':     todayProjToggleHi(cat, key); break;
+      case 'proj-del':    todayProjDelete(cat, key); break;
+      case 'proj-edit':   todayProjEdit(cat, key, row); break;
+      case 'proj-add':    todayProjAdd(cat); break;
       case 'sched-toggle': todayScheduleToggle(); break;
     }
   });
