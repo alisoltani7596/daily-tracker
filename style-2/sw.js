@@ -12,7 +12,7 @@
 // style-2 PREVIEW build (served at /daily-tracker/style-2/). Distinct cache prefix
 // + prefix-scoped cleanup so this preview SW never evicts the live root app's caches.
 const CACHE_PREFIX = 'iris-s2preview-';
-const CACHE_VERSION = CACHE_PREFIX + 'v48';
+const CACHE_VERSION = CACHE_PREFIX + 'v49';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const FONT_CACHE  = `${CACHE_VERSION}-fonts`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
