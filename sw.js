@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION whenever the shell changes to force a clean re-cache.
  */
 
-const CACHE_VERSION = 'daily-tracker-v51';
+const CACHE_VERSION = 'daily-tracker-v52';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const FONT_CACHE  = `${CACHE_VERSION}-fonts`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
@@ -64,13 +64,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin app shell + assets — cache-first, fall back to network+cache.
+  // Same-origin app shell + assets.
   if (url.origin === self.location.origin) {
-    // For navigations, serve the cached app shell so deep offline reloads work.
+    // Navigations (the HTML shell): NETWORK-FIRST so a fresh deploy is picked up
+    // immediately when online; fall back to the cached shell offline. (Cache-first
+    // here is what made deployed changes "not show up" until the SW cycled.)
     if (req.mode === 'navigate') {
-      event.respondWith(
-        cacheFirst(req, SHELL_CACHE).catch(() => caches.match('./index.html'))
-      );
+      event.respondWith(networkFirstShell(req));
       return;
     }
     event.respondWith(cacheFirst(req, RUNTIME_CACHE));
@@ -84,6 +84,19 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+// Network-first for the HTML shell: always try the latest deploy; on success refresh
+// the cached shell so offline still works; on failure serve the cached shell.
+async function networkFirstShell(req) {
+  const cache = await caches.open(SHELL_CACHE);
+  try {
+    const res = await fetch(req);
+    if (res && res.ok) { cache.put('./index.html', res.clone()); }
+    return res;
+  } catch (e) {
+    return (await cache.match(req)) || (await cache.match('./index.html')) || Response.error();
+  }
+}
+
 async function cacheFirst(req, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(req);

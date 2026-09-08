@@ -4008,12 +4008,21 @@ function todayApply(raw){
   // Capture the Apple Health / Garmin map (GET /today `health`) for the Tracker's
   // health-verified habits. Absent from the Pages fallback — leave prior value.
   if(raw && typeof raw==='object' && raw.health && typeof raw.health==='object'){ window.__health = raw.health; }
-  // Prefer server overrides; fall back to the local mirror (offline / no server).
-  if(!overrides){ try{ overrides = JSON.parse(localStorage.getItem(TODAY_OVERRIDES_KEY)); }catch(e){} }
+  // Prefer the server's overrides UNLESS we hold unsynced local edits (dirty flag):
+  // those must win so an edit doesn't "go back" on reload when the last push hasn't
+  // landed yet (offline, or the Worker write failing). `generated` always comes fresh
+  // from the server, so preferring local overrides never stales the pipeline's data.
+  var localMirror=null; try{ localMirror = JSON.parse(localStorage.getItem(TODAY_OVERRIDES_KEY)); }catch(e){}
+  var dirty = todayDirty();
+  if(dirty && localMirror && typeof localMirror==='object' && !Array.isArray(localMirror)){ overrides = localMirror; }
+  else if(!overrides){ overrides = localMirror; }
   window.__todayGenerated = generated || {};
   window.__todayOverrides = todayNormalizeOverrides(overrides);
-  try{ localStorage.setItem(TODAY_OVERRIDES_KEY, JSON.stringify(window.__todayOverrides)); }catch(e){}
+  // Only overwrite the local mirror from the server when we're NOT holding edits.
+  if(!dirty){ try{ localStorage.setItem(TODAY_OVERRIDES_KEY, JSON.stringify(window.__todayOverrides)); }catch(e){} }
   renderToday(todayMerged());
+  // Still holding unsynced edits after a reload → retry the push silently (no prompt).
+  if(dirty){ var _b = todayWorkerBase(); if(_b && todayStoredToken()) todayPushOverrides(_b, true); }
 }
 
 // Apply a user-defined item order (array of display names) to a list of items.
@@ -4295,15 +4304,33 @@ function todayProjEdit(cat, key, row){
 }
 
 // ─── persistence: local mirror + debounced Worker POST ────────────────────────
+// A "dirty" flag marks edits that haven't been confirmed in KV yet, so a reload
+// keeps them (todayApply prefers the local mirror while dirty) and we can retry.
+var TODAY_OVERRIDES_DIRTY_KEY = 'today_overrides_dirty';
+function todayDirty(v){
+  try{
+    if(v===undefined) return localStorage.getItem(TODAY_OVERRIDES_DIRTY_KEY)==='1';
+    if(v) localStorage.setItem(TODAY_OVERRIDES_DIRTY_KEY,'1'); else localStorage.removeItem(TODAY_OVERRIDES_DIRTY_KEY);
+  }catch(e){ return false; }
+}
+function todayStoredToken(){ try{ return localStorage.getItem(TODAY_EDIT_TOKEN_KEY)||''; }catch(e){ return ''; } }
+function todayWorkerBase(){ return (typeof COACH_WORKER_URL==='string' && COACH_WORKER_URL.indexOf('YOUR-SUBDOMAIN')===-1) ? COACH_WORKER_URL.replace(/\/+$/,'') : null; }
 var _todaySaveTimer = null;
 function todaySave(){
+  todayDirty(true);   // unsynced edit pending — survives reload, retried until confirmed
   try{ localStorage.setItem(TODAY_OVERRIDES_KEY, JSON.stringify(window.__todayOverrides)); }catch(e){}
-  var base = (typeof COACH_WORKER_URL==='string' && COACH_WORKER_URL.indexOf('YOUR-SUBDOMAIN')===-1)
-    ? COACH_WORKER_URL.replace(/\/+$/,'') : null;
+  var base = todayWorkerBase();
   if(!base) return; // no worker configured: local-only
   clearTimeout(_todaySaveTimer);
   _todaySaveTimer = setTimeout(function(){ todayPushOverrides(base); }, 600);
 }
+// Flush a pending edit immediately when the tab is hidden/closed (keepalive), so a
+// quick reload right after editing still gets the edit to the server.
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='hidden' && todayDirty()){
+    var b=todayWorkerBase(); if(b && todayStoredToken()){ clearTimeout(_todaySaveTimer); todayPushOverrides(b, true); }
+  }
+});
 // style-1 HUD toast (non-blocking; replaces stray alert()s).
 function s1Toast(msg){
   var t = document.getElementById('s1-toast');
@@ -4319,16 +4346,20 @@ function todayEditToken(){
   }
   return t;
 }
-function todayPushOverrides(base){
-  var token = todayEditToken();
-  if(!token) return; // user dismissed; edits stay local
+function todayPushOverrides(base, silent){
+  // silent (reload retry / tab-hide flush): use the stored token only, never prompt.
+  var token = silent ? todayStoredToken() : todayEditToken();
+  if(!token) return; // no token / user dismissed — edits stay local (dirty), retried later
   fetch(base + '/today-overrides', {
     method:'POST',
     headers:{'content-type':'application/json','x-edit-token':token},
-    body: JSON.stringify(window.__todayOverrides)
+    body: JSON.stringify(window.__todayOverrides),
+    keepalive: !!silent
   }).then(function(r){
     if(r.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){}; s1Toast('today edit token rejected — you’ll be asked again on the next edit'); }
-  }).catch(function(){ /* offline: local mirror already saved */ });
+    else if(r.ok){ todayDirty(false); }   // confirmed in KV — server is authoritative again
+    else if(!silent){ s1Toast('couldn’t save to the server (HTTP '+r.status+') — kept locally, will retry'); }  // e.g. Worker 500
+  }).catch(function(){ /* offline / network error: stays dirty, retried on next load or edit */ });
 }
 
 // ─── delegated actions for editable Today (robust to any key, incl. apostrophes) ─
