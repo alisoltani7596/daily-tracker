@@ -72,3 +72,31 @@ npx wrangler deploy
   # Then confirm it surfaces in /today (browser Origin required; last 2 days only):
   curl -s "$WORKER/today" -H "Origin: https://alisoltani7596.github.io" | grep -o '"health":{.*}'
   ```
+- Meals routes (Slice 1). `/meal-log` is token-only (server-to-server, like
+  `/health-push`); `/meal-edit`, `/meal-delete`, `/meal-targets`, `/meal-context`
+  are CORS+token (send the Iris `Origin`); `GET /meals` is CORS-only. Photos are
+  estimated then discarded; top-level macros are the server's sum of `items`.
+  ```bash
+  WORKER=https://daily-tracker-coach.alisoltani75.workers.dev
+  ORIGIN=https://alisoltani7596.github.io
+  # text-only log → entry with ≥2 items, summed macros, dayTotals:
+  curl -s -X POST "$WORKER/meal-log" -H "content-type: application/json" -H "x-edit-token: $EDIT_TOKEN" \
+    -d '{"who":"ali","date":"2026-09-08","tz":"America/Vancouver","desc":"bowl of oatmeal with banana and peanut butter","source":"text","idempotencyKey":"demo-1"}'
+  # → {"entry":{...,"items":[...]},"dayTotals":{"ali":{...},"arefeh":{...}},"targets":{...}}
+  # repeat with the SAME idempotencyKey → returns the original entry (dedup:true), no duplicate.
+  # image log (base64 jpeg, ≤4 MB else 413):
+  #   -d '{"who":"both","date":"2026-09-08","tz":"America/Vancouver","image":"<base64>","mediaType":"image/jpeg","source":"shortcut","portionNote":"large bowl"}'
+  # read a day (CORS): entries + per-person totals (a "both" entry counts fully for each) + targets:
+  curl -s "$WORKER/meals?date=2026-09-08" -H "Origin: $ORIGIN"
+  # edit (recompute totals from items, corrected:true):
+  curl -s -X POST "$WORKER/meal-edit" -H "content-type: application/json" -H "x-edit-token: $EDIT_TOKEN" -H "Origin: $ORIGIN" \
+    -d '{"date":"2026-09-08","id":"<entry-id>","items":[{"name":"oats","qty":60,"unit":"g","calories":228,"protein":8,"carbs":40,"fat":4}]}'
+  # delete → updated totals:
+  curl -s -X POST "$WORKER/meal-delete" -H "content-type: application/json" -H "x-edit-token: $EDIT_TOKEN" -H "Origin: $ORIGIN" -d '{"date":"2026-09-08","id":"<entry-id>"}'
+  # targets + vision context:
+  curl -s -X POST "$WORKER/meal-targets" -H "content-type: application/json" -H "x-edit-token: $EDIT_TOKEN" -H "Origin: $ORIGIN" \
+    -d '{"ali":{"calories":2300,"protein":160},"arefeh":{"calories":1800,"protein":110}}'
+  curl -s -X POST "$WORKER/meal-context" -H "content-type: application/json" -H "x-edit-token: $EDIT_TOKEN" -H "Origin: $ORIGIN" \
+    -d '{"text":"Persian home cooking; olive oil; large dinner plates ~28cm; rice most nights."}'
+  # (403 = missing/bad token or Origin, 400 = bad date/who/json, 413 = image >4 MB, 502 = vision parse failed → nothing written)
+  ```

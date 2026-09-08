@@ -63,6 +63,13 @@ choice — device preference, localStorage only, never KV). Coach keys: `coach_c
 `today_agenda`.
 
 KV keys owned by **Claude Code** (app code), which the Cowork/Today pipeline must
-never read or write (same rule as the Meals keys): `ui:layout:v1` — the style-2
-canvas card layouts (per tab, per breakpoint). Introduced by the style-2 shell
-redesign; the layout read/write endpoint lands in CP2.
+never read or write: `ui:layout:v1` — the style-2 canvas card layouts (per tab, per
+breakpoint), introduced by the style-2 shell redesign.
+
+**Meals domain — Claude Code owns it entirely.** The Worker meal routes (`/meal-log`,
+`/meals`, `/meal-edit`, `/meal-delete`, `/meal-targets`, `/meal-context`) and ALL
+`meals:*` KV keys (`meals:<YYYY-MM-DD>` entry arrays, `meals:targets`, `meals:context`)
+belong to Claude Code. **Cowork must never write `meals:*`.** Photos are estimated at
+log time via the Anthropic vision proxy and NOT persisted — only the ingredient-level
+estimate is stored. Top-level entry macros are always the server-computed sum of
+`items`. `who:"both"` counts fully for each person in day totals.

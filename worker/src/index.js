@@ -110,6 +110,28 @@ Rules for the block:
 ## Tone
 Concise and concrete. One phase at a time. Ask, confirm, then proceed. Do not pad with encouragement.`;
 
+// ─── Meals domain (Slice 1) ───────────────────────────────────────────────────
+// Ingredient-level calorie/macro tracking for two people (ali, arefeh). Backend
+// only: routes + KV (meals:<date>, meals:targets, meals:context). Vision runs at
+// log time via the existing Anthropic proxy; photos are NOT persisted.
+const MEALS_VISION_MAX_TOKENS = 1200;
+const MEALS_IMG_MAX_BYTES = 4 * 1024 * 1024;   // 4 MB (the Shortcut downscales)
+const MEAL_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
+const MEAL_WHO = new Set(["ali", "arefeh", "both"]);
+const MEAL_SOURCES = new Set(["shortcut", "app", "text"]);
+const MEALS_SYSTEM_PROMPT = `You estimate the nutrition of a meal from a photo and/or a text description, for a household calorie tracker. Return JSON ONLY — no prose, no markdown, no code fences.
+
+Output shape (exactly these keys):
+{"desc": "short meal description", "mealType": "breakfast|lunch|dinner|snack (optional)", "items": [{"name": "basmati rice", "qty": 200, "unit": "g", "calories": 260, "protein": 5, "carbs": 57, "fat": 1}], "confidence": "low|medium|high", "clarify": "one short question (optional)"}
+
+Rules:
+- Estimate PER INGREDIENT, not one lump total. Every item MUST have numeric calories, protein, carbs, fat (grams for macros, kcal for calories) and a qty + unit.
+- Use visible reference cues (plate/bowl size, cutlery, hands) to gauge portions. Prefer METRIC units (g, ml, pieces). Give COOKED weights, not raw.
+- The photo represents ONE serving.
+- If the user gave a portion note, treat it as AUTHORITATIVE over what the photo suggests.
+- If genuinely ambiguous (hidden oil/butter, unseen sauce, dense vs airy), still give your best per-ingredient estimate, set "confidence":"low", and put ONE short question in "clarify" (e.g. "Was the rice cooked with butter/oil?"). Otherwise omit "clarify".
+- Do not include a top-level calories/macros total — the server sums the items.`;
+
 // ─── Entry point ──────────────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
@@ -394,6 +416,181 @@ export default {
       return json({ records: out, cursor: now }, 200, corsHeaders(allowOrigin));
     }
 
+    // ═══ Meals domain (Slice 1) ═══════════════════════════════════════════════
+    // POST /meal-log — log a meal from a photo and/or text. Token-gated ONLY (not
+    // origin-gated): the iOS Shortcut can't send a browser Origin, same convention as
+    // /task-add and /health-push. The photo is estimated then DISCARDED — only the
+    // estimate is stored. The write happens ONLY after a valid estimate.
+    if (request.method === "POST" && url.pathname === "/meal-log") {
+      if (!env.TODAY_KV) return json({ error: "meals store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      if (!env.ANTHROPIC_API_KEY) return json({ error: "vision not configured (missing API key)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "body must be a JSON object" }, 400, corsHeaders(allowOrigin));
+
+      const who = typeof body.who === "string" ? body.who.trim() : "";
+      if (!MEAL_WHO.has(who)) return json({ error: "`who` must be one of ali|arefeh|both" }, 400, corsHeaders(allowOrigin));
+      const date = typeof body.date === "string" ? body.date.trim() : "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "`date` (YYYY-MM-DD) is required" }, 400, corsHeaders(allowOrigin));
+      const image = (typeof body.image === "string" && body.image) ? body.image : null;
+      const desc = (typeof body.desc === "string" && body.desc.trim()) ? body.desc.trim() : "";
+      if (!image && !desc) return json({ error: "provide at least one of `image` or `desc`" }, 400, corsHeaders(allowOrigin));
+      if (image) {
+        const approxBytes = Math.floor(image.length * 3 / 4);   // base64 → raw bytes
+        if (approxBytes > MEALS_IMG_MAX_BYTES) return json({ error: "image too large (max 4 MB) — downscale and retry" }, 413, corsHeaders(allowOrigin));
+      }
+      const portionNote = typeof body.portionNote === "string" ? body.portionNote.trim().slice(0, 500) : "";
+      const idempotencyKey = (typeof body.idempotencyKey === "string" && body.idempotencyKey) ? body.idempotencyKey : null;
+
+      const targets = await readMealTargets(env);
+      const entries = await readMeals(env, date);
+
+      // Idempotency: a repeated Shortcut call with the same key returns the original
+      // entry instead of logging a duplicate.
+      if (idempotencyKey) {
+        const existing = entries.find((e) => e && e.idempotencyKey === idempotencyKey);
+        if (existing) return json({ entry: existing, dayTotals: mealDayTotals(entries), targets, dedup: true }, 200, corsHeaders(allowOrigin));
+      }
+
+      // Estimate BEFORE writing; on failure write nothing.
+      const contextText = await readMealContext(env);
+      const est = await estimateMeal(env, { image, mediaType: body.mediaType, desc, portionNote, contextText });
+      if (est.error) return json({ error: est.error, status: est.status }, 502, corsHeaders(allowOrigin));
+
+      const ts = new Date().toISOString();
+      // mealType: an explicit override wins; else inferred server-side from ts in the client's tz.
+      const mealType = (typeof body.mealType === "string" && MEAL_TYPES.has(body.mealType)) ? body.mealType : inferMealType(ts, body.tz);
+      const items = est.estimate.items;
+      const macros = sumMealMacros(items);   // server-computed sum; never the model's own total
+      const source = MEAL_SOURCES.has(body.source) ? body.source : (image ? "app" : "text");
+
+      const entry = {
+        id: crypto.randomUUID(),
+        ts, date, who, mealType,
+        desc: est.estimate.desc || desc,
+        portionNote,
+        items,
+        calories: macros.calories, protein: macros.protein, carbs: macros.carbs, fat: macros.fat,
+        confidence: est.estimate.confidence,
+        corrected: false,
+        source,
+      };
+      if (est.estimate.clarify) entry.clarify = est.estimate.clarify;
+      if (idempotencyKey) entry.idempotencyKey = idempotencyKey;
+
+      // Read → append → write. KV is last-write-wins; acceptable for a two-user household.
+      entries.push(entry);
+      await writeMeals(env, date, entries);
+      return json({ entry, dayTotals: mealDayTotals(entries), targets }, 200, corsHeaders(allowOrigin));
+    }
+
+    // GET /meals?date=YYYY-MM-DD — entries + per-person totals + targets. CORS-locked
+    // to the Iris origin like GET /today.
+    if (request.method === "GET" && url.pathname === "/meals") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "meals store not configured" }, 500, corsHeaders(allowOrigin));
+      const date = (url.searchParams.get("date") || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "`date` (YYYY-MM-DD) query param is required" }, 400, corsHeaders(allowOrigin));
+      const entries = await readMeals(env, date);
+      return json({ date, entries, totals: mealDayTotals(entries), targets: await readMealTargets(env) }, 200, corsHeaders(allowOrigin));
+    }
+
+    // POST /meal-edit — merge fields into an entry. If `items` supplied, recompute the
+    // top-level macros from it; if only top-level macros supplied, keep items and
+    // overwrite the totals. Sets corrected:true. CORS + token (browser edit route).
+    if (request.method === "POST" && url.pathname === "/meal-edit") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "meals store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      const date = (body && typeof body.date === "string") ? body.date.trim() : "";
+      const id = (body && typeof body.id === "string") ? body.id : "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !id) return json({ error: "`date` and `id` are required" }, 400, corsHeaders(allowOrigin));
+      const entries = await readMeals(env, date);
+      const idx = entries.findIndex((e) => e && e.id === id);
+      if (idx < 0) return json({ error: "entry not found" }, 404, corsHeaders(allowOrigin));
+      const entry = entries[idx];
+
+      if (typeof body.who === "string") { if (!MEAL_WHO.has(body.who)) return json({ error: "invalid `who`" }, 400, corsHeaders(allowOrigin)); entry.who = body.who; }
+      if (typeof body.mealType === "string") { if (!MEAL_TYPES.has(body.mealType)) return json({ error: "invalid `mealType`" }, 400, corsHeaders(allowOrigin)); entry.mealType = body.mealType; }
+      if (typeof body.desc === "string") entry.desc = body.desc.slice(0, 200);
+      if (typeof body.portionNote === "string") entry.portionNote = body.portionNote.slice(0, 500);
+      if (typeof body.confidence === "string" && ["low", "medium", "high"].includes(body.confidence)) entry.confidence = body.confidence;
+      if (typeof body.clarify === "string") entry.clarify = body.clarify.slice(0, 200);
+
+      if (body.items !== undefined) {
+        const items = normalizeMealItems(body.items);
+        if (!items) return json({ error: "`items` must be a non-empty array where every item has numeric macros" }, 400, corsHeaders(allowOrigin));
+        entry.items = items;
+        const m = sumMealMacros(items);   // totals recomputed from items
+        entry.calories = m.calories; entry.protein = m.protein; entry.carbs = m.carbs; entry.fat = m.fat;
+      } else {
+        for (const k of ["calories", "protein", "carbs", "fat"]) {
+          if (body[k] !== undefined) { const v = mealToNum(body[k]); if (v == null) return json({ error: "`" + k + "` must be numeric" }, 400, corsHeaders(allowOrigin)); entry[k] = v; }
+        }
+      }
+      entry.corrected = true;
+      entries[idx] = entry;
+      await writeMeals(env, date, entries);
+      return json({ entry, totals: mealDayTotals(entries), targets: await readMealTargets(env) }, 200, corsHeaders(allowOrigin));
+    }
+
+    // POST /meal-delete — remove an entry, return updated totals. CORS + token.
+    if (request.method === "POST" && url.pathname === "/meal-delete") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "meals store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      const date = (body && typeof body.date === "string") ? body.date.trim() : "";
+      const id = (body && typeof body.id === "string") ? body.id : "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !id) return json({ error: "`date` and `id` are required" }, 400, corsHeaders(allowOrigin));
+      const entries = await readMeals(env, date);
+      const next = entries.filter((e) => !(e && e.id === id));
+      if (next.length === entries.length) return json({ error: "entry not found" }, 404, corsHeaders(allowOrigin));
+      await writeMeals(env, date, next);
+      return json({ ok: true, totals: mealDayTotals(next), targets: await readMealTargets(env) }, 200, corsHeaders(allowOrigin));
+    }
+
+    // POST /meal-targets — overwrite meals:targets (calories/protein per person). CORS + token.
+    if (request.method === "POST" && url.pathname === "/meal-targets") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "meals store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "body must be a JSON object" }, 400, corsHeaders(allowOrigin));
+      const per = (p) => ({ calories: mealNum(p && p.calories), protein: mealNum(p && p.protein) });
+      const targets = { ali: per(body.ali), arefeh: per(body.arefeh), updated: new Date().toISOString() };
+      await env.TODAY_KV.put("meals:targets", JSON.stringify(targets));
+      return json({ ok: true, targets }, 200, corsHeaders(allowOrigin));
+    }
+
+    // POST /meal-context — overwrite meals:context (free text ≤2000 chars, injected
+    // into the vision prompt). CORS + token.
+    if (request.method === "POST" && url.pathname === "/meal-context") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "meals store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      const text = (body && typeof body.text === "string") ? body.text.slice(0, 2000) : "";
+      await env.TODAY_KV.put("meals:context", text);
+      return json({ ok: true, bytes: text.length }, 200, corsHeaders(allowOrigin));
+    }
+
     // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
     // Today data into the TODAY_KV `today` key. This is a server-to-server call
     // (curl, no browser Origin), so it is gated purely by the REFRESH_TOKEN secret
@@ -597,6 +794,152 @@ function json(obj, status, extraHeaders) {
 
 function safeParse(str) {
   try { return JSON.parse(str); } catch { return null; }
+}
+
+// ─── Meals helpers ─────────────────────────────────────────────────────────────
+function mealsKey(date) { return "meals:" + date; }
+async function readMeals(env, date) { const a = safeParse(await env.TODAY_KV.get(mealsKey(date))); return Array.isArray(a) ? a : []; }
+async function writeMeals(env, date, arr) { await env.TODAY_KV.put(mealsKey(date), JSON.stringify(arr)); }
+async function readMealTargets(env) {
+  const t = safeParse(await env.TODAY_KV.get("meals:targets"));
+  if (t && typeof t === "object") return t;
+  return { ali: { calories: 0, protein: 0 }, arefeh: { calories: 0, protein: 0 }, updated: null };
+}
+async function readMealContext(env) { const s = await env.TODAY_KV.get("meals:context"); return typeof s === "string" ? s : ""; }
+
+function mealNum(x) { return typeof x === "number" && isFinite(x) ? x : 0; }
+function mealToNum(x) {
+  if (typeof x === "number" && isFinite(x)) return x;
+  if (typeof x === "string" && x.trim() !== "" && isFinite(Number(x))) return Number(x);
+  return null;
+}
+function round1(x) { return Math.round(x * 10) / 10; }
+
+// Coerce the model's items into a clean array; reject (return null) if any item is
+// missing a name or a numeric macro — the caller then retries / 502s and writes nothing.
+function normalizeMealItems(items) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  const out = [];
+  for (const it of items) {
+    if (!it || typeof it !== "object") return null;
+    const name = typeof it.name === "string" ? it.name.trim() : "";
+    if (!name) return null;
+    const calories = mealToNum(it.calories), protein = mealToNum(it.protein), carbs = mealToNum(it.carbs), fat = mealToNum(it.fat);
+    if (calories == null || protein == null || carbs == null || fat == null) return null;
+    const qty = mealToNum(it.qty);
+    out.push({ name: name.slice(0, 120), qty: qty == null ? null : qty, unit: typeof it.unit === "string" ? it.unit.slice(0, 16) : "", calories, protein, carbs, fat });
+  }
+  return out;
+}
+
+// Top-level macros are ALWAYS the server-computed sum of items (never the model's total).
+function sumMealMacros(items) {
+  const t = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  for (const it of (Array.isArray(items) ? items : [])) {
+    t.calories += mealNum(it.calories); t.protein += mealNum(it.protein); t.carbs += mealNum(it.carbs); t.fat += mealNum(it.fat);
+  }
+  return { calories: Math.round(t.calories), protein: round1(t.protein), carbs: round1(t.carbs), fat: round1(t.fat) };
+}
+
+// Per-person day totals. who:"both" means EACH person ate one serving, so a "both"
+// entry counts FULLY for both ali and arefeh (not split).
+function mealDayTotals(entries) {
+  const z = () => ({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const t = { ali: z(), arefeh: z() };
+  const add = (acc, e) => { acc.calories += mealNum(e.calories); acc.protein += mealNum(e.protein); acc.carbs += mealNum(e.carbs); acc.fat += mealNum(e.fat); };
+  for (const e of (Array.isArray(entries) ? entries : [])) {
+    if (e.who === "ali" || e.who === "both") add(t.ali, e);
+    if (e.who === "arefeh" || e.who === "both") add(t.arefeh, e);
+  }
+  for (const p of ["ali", "arefeh"]) { t[p].calories = Math.round(t[p].calories); t[p].protein = round1(t[p].protein); t[p].carbs = round1(t[p].carbs); t[p].fat = round1(t[p].fat); }
+  return t;
+}
+
+// mealType from a server ISO timestamp in the client's timezone:
+// <10:30 breakfast · 10:30–15:00 lunch · 15:00–17:30 snack · >17:30 dinner.
+function inferMealType(tsISO, tz) {
+  let hour;
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz || "UTC" }).formatToParts(new Date(tsISO));
+    const h = Number(parts.find((p) => p.type === "hour").value);
+    const m = Number(parts.find((p) => p.type === "minute").value);
+    hour = (h % 24) + m / 60;
+  } catch {
+    const d = new Date(tsISO); hour = d.getUTCHours() + d.getUTCMinutes() / 60;
+  }
+  if (hour < 10.5) return "breakfast";
+  if (hour < 15) return "lunch";
+  if (hour < 17.5) return "snack";
+  return "dinner";
+}
+
+// Extract a JSON object from a model reply: strip code fences, then take the first
+// {...} span if there's surrounding prose. Returns the parsed object or null.
+function parseModelJSON(text) {
+  if (typeof text !== "string") return null;
+  let s = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  const first = s.indexOf("{"), last = s.lastIndexOf("}");
+  if (first >= 0 && last > first) s = s.slice(first, last + 1);
+  return safeParse(s);
+}
+
+// Validate + shape a model estimate. Returns {desc, items, confidence, mealType?, clarify?} or null.
+function validateMealEstimate(obj) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
+  const items = normalizeMealItems(obj.items);
+  if (!items) return null;
+  const est = {
+    desc: typeof obj.desc === "string" ? obj.desc.slice(0, 200) : "",
+    items,
+    confidence: ["low", "medium", "high"].includes(obj.confidence) ? obj.confidence : "low",
+  };
+  if (typeof obj.mealType === "string" && MEAL_TYPES.has(obj.mealType)) est.mealType = obj.mealType;
+  if (typeof obj.clarify === "string" && obj.clarify.trim()) est.clarify = obj.clarify.trim().slice(0, 200);
+  return est;
+}
+
+// Run the vision/text estimate through the Anthropic proxy. Returns {estimate} or
+// {error, status?}. On a parse failure it retries ONCE with a JSON-only nudge.
+async function estimateMeal(env, { image, mediaType, desc, portionNote, contextText }) {
+  let sys = MEALS_SYSTEM_PROMPT;
+  if (contextText) sys += "\n\n## Household notes\n" + contextText;
+
+  const ask = [];
+  ask.push(image ? "Estimate this meal (photo below) per ingredient and return JSON only."
+                 : "Estimate this meal from the description and return JSON only.");
+  if (desc) ask.push("Description: " + desc);
+  if (portionNote) ask.push("Portion note (authoritative): " + portionNote);
+  const userContent = [];
+  if (image) userContent.push({ type: "image", source: { type: "base64", media_type: mediaType || "image/jpeg", data: image } });
+  userContent.push({ type: "text", text: ask.join("\n") });
+  const messages = [{ role: "user", content: userContent }];
+
+  async function call(nudge) {
+    const system = [{ type: "text", text: sys }];
+    if (nudge) system.push({ type: "text", text: nudge });
+    let resp;
+    try {
+      resp = await fetch(ANTHROPIC_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": ANTHROPIC_VERSION },
+        body: JSON.stringify({ model: MODEL, max_tokens: MEALS_VISION_MAX_TOKENS, system, messages }),
+      });
+    } catch { return { httpErr: 502 }; }
+    if (!resp.ok) return { httpErr: resp.status };
+    const data = await resp.json();
+    return { text: (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("") };
+  }
+
+  let r = await call();
+  if (r.httpErr) return { error: "vision upstream error", status: r.httpErr };
+  let est = validateMealEstimate(parseModelJSON(r.text));
+  if (!est) {
+    r = await call("Return VALID JSON only — no prose, no code fences — matching {desc, mealType?, items[], confidence, clarify?}.");
+    if (r.httpErr) return { error: "vision upstream error", status: r.httpErr };
+    est = validateMealEstimate(parseModelJSON(r.text));
+  }
+  if (!est) return { error: "could not parse a valid estimate from the model" };
+  return { estimate: est };
 }
 
 // Validate the recognised health fields on an incoming push, copying the valid
