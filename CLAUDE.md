@@ -73,3 +73,14 @@ belong to Claude Code. **Cowork must never write `meals:*`.** Photos are estimat
 log time via the Anthropic vision proxy and NOT persisted — only the ingredient-level
 estimate is stored. Top-level entry macros are always the server-computed sum of
 `items`. `who:"both"` counts fully for each person in day totals.
+
+**Workout domain — Claude Code owns it entirely** (native port of the standalone
+"Block 1" tracker). The Worker routes (`/workout` GET, `/workout-log`, `/workout-delete`)
+and ALL `workout:*` KV keys (`workout:<YYYY-MM-DD>` = one DayLog object) belong to Claude
+Code. **Cowork must never write `workout:*`.** The 17-day program itself is STATIC data
+embedded client-side (`WORKOUT_PLAN` const in `index.html`), not KV. A DayLog holds
+`{tier, rpe, notes, stretch, sets, feedback, habits, bio, updated}`; `/workout-log`
+merges the nested maps (`sets`/`feedback`/`habits`/`bio`) one level deep so a single
+exercise can be PATCHed. Garmin biometrics are NOT re-pulled here — the client reads
+steps/sleep/kcal from `window.__health` (piggybacked on `/today`); a log's `bio` map is
+only a manual override. This retires the old workout-block-1 Garmin Shortcut/`garmin-pull`.

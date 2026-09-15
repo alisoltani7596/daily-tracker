@@ -119,6 +119,9 @@ const MEALS_IMG_MAX_BYTES = 4 * 1024 * 1024;   // 4 MB (the Shortcut downscales)
 const MEAL_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
 const MEAL_WHO = new Set(["ali", "arefeh", "both"]);
 const MEAL_SOURCES = new Set(["shortcut", "app", "text"]);
+// Workout domain (native port of the "Block 1" tracker). The 17-day program is static
+// and lives client-side; only the per-day LOG lives in KV (workout:<YYYY-MM-DD>).
+const WORKOUT_TIERS = new Set(["must", "best", "missed"]);
 const MEALS_SYSTEM_PROMPT = `You estimate the nutrition of a meal from a photo and/or a text description, for a household calorie tracker. Return JSON ONLY — no prose, no markdown, no code fences.
 
 Output shape (exactly these keys):
@@ -591,6 +594,89 @@ export default {
       return json({ ok: true, bytes: text.length }, 200, corsHeaders(allowOrigin));
     }
 
+    // ═══ Workout domain (Slice 1) ════════════════════════════════════════════════
+    // Native port of the standalone "Block 1" workout tracker. The 17-day program is
+    // static and lives client-side; only the user's per-day LOG lives here, one object
+    // per date at workout:<YYYY-MM-DD> (see readWorkout for the shape). Garmin biometrics
+    // are NOT pulled here — the client reads them from window.__health (piggybacked on
+    // /today); a log's `bio` map is only a manual override.
+
+    // GET /workout — one day (?date=YYYY-MM-DD) or the whole history (?all=1 / no date, for
+    // the Progress charts). CORS-locked to the Iris origin like GET /today and GET /meals.
+    if (request.method === "GET" && url.pathname === "/workout") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "workout store not configured" }, 500, corsHeaders(allowOrigin));
+      const date = (url.searchParams.get("date") || "").trim();
+      if (url.searchParams.get("all") === "1" || !date) {
+        return json({ logs: await readAllWorkout(env) }, 200, corsHeaders(allowOrigin));
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "`date` (YYYY-MM-DD) query param is required" }, 400, corsHeaders(allowOrigin));
+      return json({ date, log: await readWorkout(env, date) }, 200, corsHeaders(allowOrigin));
+    }
+
+    // POST /workout-log — upsert a day's log by merging the provided fields. The nested
+    // maps (sets/feedback/habits/bio) merge one level deep, so the client can PATCH a
+    // single exercise without resending the whole day; setting a nested key to null
+    // deletes it, and passing the whole map as null clears it. Scalar fields
+    // (tier/rpe/notes/stretch) overwrite only when present. CORS + token (browser route).
+    if (request.method === "POST" && url.pathname === "/workout-log") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "workout store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "body must be a JSON object" }, 400, corsHeaders(allowOrigin));
+      const date = typeof body.date === "string" ? body.date.trim() : "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "`date` (YYYY-MM-DD) is required" }, 400, corsHeaders(allowOrigin));
+
+      const log = (await readWorkout(env, date)) || { date };
+      if (body.tier !== undefined) {
+        if (body.tier === null) log.tier = null;
+        else if (WORKOUT_TIERS.has(body.tier)) log.tier = body.tier;
+        else return json({ error: "`tier` must be one of must|best|missed|null" }, 400, corsHeaders(allowOrigin));
+      }
+      if (body.rpe !== undefined) {
+        if (body.rpe === null) log.rpe = null;
+        else { const v = mealToNum(body.rpe); if (v == null || v < 0 || v > 10) return json({ error: "`rpe` must be a number 0–10" }, 400, corsHeaders(allowOrigin)); log.rpe = v; }
+      }
+      if (typeof body.notes === "string") log.notes = body.notes.slice(0, 2000);
+      if (body.stretch !== undefined) log.stretch = !!body.stretch;
+
+      // sets: { exId: [ {weight?,reps?,sec?,dist?,done?}, ... ] } · feedback: { exId: {feel,note} }
+      // habits: { habitId: bool } · bio: { weightKg?,steps?,activeKcal?,sleepScore?,sleepHours?,restHr? }
+      for (const map of ["sets", "feedback", "habits", "bio"]) {
+        if (body[map] === undefined) continue;
+        if (body[map] === null) { log[map] = {}; continue; }
+        if (typeof body[map] !== "object" || Array.isArray(body[map])) return json({ error: "`" + map + "` must be an object" }, 400, corsHeaders(allowOrigin));
+        const base = (log[map] && typeof log[map] === "object") ? log[map] : {};
+        for (const k of Object.keys(body[map])) {
+          if (body[map][k] === null) delete base[k];
+          else base[k] = body[map][k];
+        }
+        log[map] = base;
+      }
+      log.updated = new Date().toISOString();
+      await writeWorkout(env, date, log);
+      return json({ date, log }, 200, corsHeaders(allowOrigin));
+    }
+
+    // POST /workout-delete — remove a whole day's log. CORS + token.
+    if (request.method === "POST" && url.pathname === "/workout-delete") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "workout store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      const date = (body && typeof body.date === "string") ? body.date.trim() : "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "`date` (YYYY-MM-DD) is required" }, 400, corsHeaders(allowOrigin));
+      await env.TODAY_KV.delete(workoutKey(date));
+      return json({ ok: true, date }, 200, corsHeaders(allowOrigin));
+    }
+
     // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
     // Today data into the TODAY_KV `today` key. This is a server-to-server call
     // (curl, no browser Origin), so it is gated purely by the REFRESH_TOKEN secret
@@ -806,6 +892,23 @@ async function readMealTargets(env) {
   return { ali: { calories: 0, protein: 0 }, arefeh: { calories: 0, protein: 0 }, updated: null };
 }
 async function readMealContext(env) { const s = await env.TODAY_KV.get("meals:context"); return typeof s === "string" ? s : ""; }
+
+// ─── Workout helpers ─────────────────────────────────────────────────────────────
+// A DayLog: { date, tier?, rpe?, notes?, stretch?, updated,
+//   sets:{[exId]:[{weight?,reps?,sec?,dist?,done?}]}, feedback:{[exId]:{feel,note}},
+//   habits:{[habitId]:bool}, bio:{weightKg?,steps?,activeKcal?,sleepScore?,sleepHours?,restHr?} }
+function workoutKey(date) { return "workout:" + date; }
+async function readWorkout(env, date) { const o = safeParse(await env.TODAY_KV.get(workoutKey(date))); return (o && typeof o === "object" && !Array.isArray(o)) ? o : null; }
+async function writeWorkout(env, date, obj) { await env.TODAY_KV.put(workoutKey(date), JSON.stringify(obj)); }
+async function readAllWorkout(env) {
+  const out = {};
+  const listed = await env.TODAY_KV.list({ prefix: "workout:" });
+  await Promise.all((listed.keys || []).map(async (k) => {
+    const rec = safeParse(await env.TODAY_KV.get(k.name));
+    if (rec) out[k.name.slice("workout:".length)] = rec;
+  }));
+  return out;
+}
 
 function mealNum(x) { return typeof x === "number" && isFinite(x) ? x : 0; }
 function mealToNum(x) {
