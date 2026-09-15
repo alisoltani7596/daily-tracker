@@ -847,368 +847,7 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
 </div>
 
 <!-- PLANS SECTION -->
-<div class="plans-section collapsed" id="plans-section">
-  <div class="plans-header">
-    <button class="plans-title" onclick="togglePlans()" aria-expanded="false"><span class="plans-chevron">▸</span>My Plans</button>
-    <div class="plans-tabs">
-      <button class="ptab active" data-pview="all" onclick="switchPView(this)">All</button>
-      <button class="ptab" data-pview="daily" onclick="switchPView(this)">Daily</button>
-      <button class="ptab" data-pview="weekly" onclick="switchPView(this)">Weekly</button>
-      <button class="ptab" data-pview="monthly" onclick="switchPView(this)">Monthly</button>
-      <button class="ptab" data-pview="yearly" onclick="switchPView(this)">Yearly</button>
-    </div>
-  </div>
-  <div class="plans-board" id="plans-board">
-    <div class="plan-col" data-pcol="daily">
-      <div class="plan-col-head">
-        <span class="plan-col-title">Daily</span>
-        <button class="plan-add-btn" onclick="openPlanModal(&#39;daily&#39;)" title="Add">+</button>
-      </div>
-      <div class="plan-items" id="pitems-daily"><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;daily&#39;,&#39;mo3dib8x46jg&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Workout</div>
-          <div class="pi-meta"><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;daily&#39;,&#39;mo3dib8x46jg&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;daily&#39;,&#39;mo3dib8x46jg&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;daily&#39;,&#39;mo3dib8x46jg&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;daily&#39;,&#39;mo3dib8x46jg&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item done">
-        <div class="pi-check" onclick="togglePlan(&#39;daily&#39;,&#39;mo7j6o62ge9k&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Tubelite for TAD</div>
-          <div class="pi-meta"><span class="pi-prio medium">medium</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;daily&#39;,&#39;mo7j6o62ge9k&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;daily&#39;,&#39;mo7j6o62ge9k&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;daily&#39;,&#39;mo7j6o62ge9k&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;daily&#39;,&#39;mo7j6o62ge9k&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item done">
-        <div class="pi-check" onclick="togglePlan(&#39;daily&#39;,&#39;mo7j64tbhlyp&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Meeting with Mosi and Pani</div>
-          <div class="pi-meta"><span class="pi-prio medium">medium</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;daily&#39;,&#39;mo7j64tbhlyp&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;daily&#39;,&#39;mo7j64tbhlyp&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;daily&#39;,&#39;mo7j64tbhlyp&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;daily&#39;,&#39;mo7j64tbhlyp&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;daily&#39;,&#39;mo3dhllbbz9t&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">LeetCode</div>
-          <div class="pi-meta"><span class="pi-prio medium">medium</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;daily&#39;,&#39;mo3dhllbbz9t&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;daily&#39;,&#39;mo3dhllbbz9t&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;daily&#39;,&#39;mo3dhllbbz9t&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;daily&#39;,&#39;mo3dhllbbz9t&#39;)" title="Delete">×</button>
-        </div>
-      </div></div>
-    </div>
-    <div class="plan-col" data-pcol="weekly" style="">
-      <div class="plan-col-head">
-        <span class="plan-col-title">Weekly</span>
-        <button class="plan-add-btn" onclick="openPlanModal(&#39;weekly&#39;)" title="Add">+</button>
-      </div>
-      <div class="plan-items" id="pitems-weekly"><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;weekly&#39;,&#39;mo3d5xvnu0gs&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Fix Lab's Computer</div>
-          <div class="pi-meta"><span class="pi-day">Tue</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;weekly&#39;,&#39;mo3d5xvnu0gs&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;weekly&#39;,&#39;mo3d5xvnu0gs&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;weekly&#39;,&#39;mo3d5xvnu0gs&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;weekly&#39;,&#39;mo3d5xvnu0gs&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;weekly&#39;,&#39;mo3ddedtxdmw&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Address ICPR reviews</div>
-          <div class="pi-meta"><span class="pi-day">Fri</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;weekly&#39;,&#39;mo3ddedtxdmw&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;weekly&#39;,&#39;mo3ddedtxdmw&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;weekly&#39;,&#39;mo3ddedtxdmw&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;weekly&#39;,&#39;mo3ddedtxdmw&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;weekly&#39;,&#39;mo3de7ugsrf0&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Tubelite for TAD</div>
-          <div class="pi-meta"><span class="pi-day">Mon</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;weekly&#39;,&#39;mo3de7ugsrf0&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;weekly&#39;,&#39;mo3de7ugsrf0&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;weekly&#39;,&#39;mo3de7ugsrf0&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;weekly&#39;,&#39;mo3de7ugsrf0&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;weekly&#39;,&#39;mo3dfkawv8tv&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Call Home Depot</div>
-          <div class="pi-meta"><span class="pi-day">Mon</span><span class="pi-prio medium">medium</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;weekly&#39;,&#39;mo3dfkawv8tv&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;weekly&#39;,&#39;mo3dfkawv8tv&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;weekly&#39;,&#39;mo3dfkawv8tv&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;weekly&#39;,&#39;mo3dfkawv8tv&#39;)" title="Delete">×</button>
-        </div>
-      </div></div>
-    </div>
-    <div class="plan-col" data-pcol="monthly" style="">
-      <div class="plan-col-head">
-        <span class="plan-col-title">Monthly</span>
-        <button class="plan-add-btn" onclick="openPlanModal(&#39;monthly&#39;)" title="Add">+</button>
-      </div>
-      <div class="plan-items" id="pitems-monthly"><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;monthly&#39;,&#39;mo5881114l73&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Home Depot payment (14$, May 4th)</div>
-          <div class="pi-meta"><span class="pi-day">Week 1</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo5881114l73&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo5881114l73&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;monthly&#39;,&#39;mo5881114l73&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;monthly&#39;,&#39;mo5881114l73&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;monthly&#39;,&#39;mo3d8h2imvg6&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">ICPR Camera Ready</div>
-          <div class="pi-meta"><span class="pi-day">Week 1</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3d8h2imvg6&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3d8h2imvg6&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;monthly&#39;,&#39;mo3d8h2imvg6&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;monthly&#39;,&#39;mo3d8h2imvg6&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;monthly&#39;,&#39;mo3dgzrolqrj&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">TubeLite for TAD</div>
-          <div class="pi-meta"><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3dgzrolqrj&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3dgzrolqrj&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;monthly&#39;,&#39;mo3dgzrolqrj&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;monthly&#39;,&#39;mo3dgzrolqrj&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;monthly&#39;,&#39;mo3d7zsbabvb&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Monthly meeting with Archipelago</div>
-          <div class="pi-meta"><span class="pi-day">Week 2</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3d7zsbabvb&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3d7zsbabvb&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;monthly&#39;,&#39;mo3d7zsbabvb&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;monthly&#39;,&#39;mo3d7zsbabvb&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;monthly&#39;,&#39;mo3df0hy5v9h&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">PKU-MMD dataset</div>
-          <div class="pi-meta"><span class="pi-prio medium">medium</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3df0hy5v9h&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3df0hy5v9h&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;monthly&#39;,&#39;mo3df0hy5v9h&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;monthly&#39;,&#39;mo3df0hy5v9h&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;monthly&#39;,&#39;mo3gvebwj3on&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Seminar</div>
-          <div class="pi-meta"><span class="pi-prio medium">medium</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3gvebwj3on&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;monthly&#39;,&#39;mo3gvebwj3on&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;monthly&#39;,&#39;mo3gvebwj3on&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;monthly&#39;,&#39;mo3gvebwj3on&#39;)" title="Delete">×</button>
-        </div>
-      </div></div>
-    </div>
-    <div class="plan-col" data-pcol="yearly" style="">
-      <div class="plan-col-head">
-        <span class="plan-col-title">🌟 Yearly</span>
-        <button class="plan-add-btn" onclick="openPlanModal(&#39;yearly&#39;)" title="Add">+</button>
-      </div>
-      <div class="plan-items" id="pitems-yearly"><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;yearly&#39;,&#39;mo3d42oohicb&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Set appointment for France Visa</div>
-          <div class="pi-meta"><span class="pi-day">May</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3d42oohicb&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3d42oohicb&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;yearly&#39;,&#39;mo3d42oohicb&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;yearly&#39;,&#39;mo3d42oohicb&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;yearly&#39;,&#39;mo3da8osz1w1&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Buy Insurance for Europe trip</div>
-          <div class="pi-meta"><span class="pi-day">May</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3da8osz1w1&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3da8osz1w1&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;yearly&#39;,&#39;mo3da8osz1w1&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;yearly&#39;,&#39;mo3da8osz1w1&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;yearly&#39;,&#39;mo3d4j66w4hc&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">WACV round 1</div>
-          <div class="pi-meta"><span class="pi-day">Jul</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3d4j66w4hc&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3d4j66w4hc&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;yearly&#39;,&#39;mo3d4j66w4hc&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;yearly&#39;,&#39;mo3d4j66w4hc&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;yearly&#39;,&#39;mo3d9mtqc0qe&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Buy France Ticket</div>
-          <div class="pi-meta"><span class="pi-day">May</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3d9mtqc0qe&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3d9mtqc0qe&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;yearly&#39;,&#39;mo3d9mtqc0qe&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;yearly&#39;,&#39;mo3d9mtqc0qe&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;yearly&#39;,&#39;mo3d4z2ert1c&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">WACV round 2</div>
-          <div class="pi-meta"><span class="pi-day">Sep</span><span class="pi-prio high">high</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3d4z2ert1c&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3d4z2ert1c&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;yearly&#39;,&#39;mo3d4z2ert1c&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;yearly&#39;,&#39;mo3d4z2ert1c&#39;)" title="Delete">×</button>
-        </div>
-      </div><div class="plan-item">
-        <div class="pi-check" onclick="togglePlan(&#39;yearly&#39;,&#39;mo3gvly008h6&#39;)">
-          <svg class="pi-tick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg>
-        </div>
-        <div class="pi-body">
-          <div class="pi-title">Seminar</div>
-          <div class="pi-meta"><span class="pi-prio medium">medium</span></div>
-        </div>
-        <div class="pi-move-btns">
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3gvly008h6&#39;,-1)" title="Move up">▲</button>
-          <button class="pimove-btn" onclick="movePlan(&#39;yearly&#39;,&#39;mo3gvly008h6&#39;,1)" title="Move down">▼</button>
-        </div>
-        <div class="pi-actions">
-          <button class="pi-btn" onclick="editPlan(&#39;yearly&#39;,&#39;mo3gvly008h6&#39;)" title="Edit">✎</button>
-          <button class="pi-btn del" onclick="deletePlan(&#39;yearly&#39;,&#39;mo3gvly008h6&#39;)" title="Delete">×</button>
-        </div>
-      </div></div>
-    </div>
-  </div>
-</div>
+
 
 <!-- style-1: DATE is the primary day navigation (opens on today; prev/next/today). -->
 <div class="trk-datebar" id="trk-datebar">
@@ -1239,23 +878,15 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
   </div>
 </div>
 
-<div class="progress-card">
-  <div class="prog-header"><span class="prog-label">Today's progress</span><span class="prog-count" id="prog-txt">4 of 17 (24%)</span></div>
-  <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width: 24%;"></div></div>
-  <div class="kcal-row">
-    <div class="kc"><div class="kc-val" id="kc-burn">0</div><div class="kc-lbl">kcal burned</div></div>
-    <div class="kc"><div class="kc-val">2,200</div><div class="kc-lbl">kcal target</div></div>
-    <div class="kc"><div class="kc-val" id="kc-net">–600</div><div class="kc-lbl">deficit</div></div>
-  </div>
-</div>
+
 
 <!-- Sleep + steps HUD rings for the VIEWED date (historical for past days). Built
      by JS; re-rendered from showDate against currentDate's health record. -->
-<div class="trk-hrings" id="trk-hrings"></div>
+
 
 <!-- LeetCode / stretch / HIIT / link column — collapsed by default, revealed as a
      full-width row below the habits+checklists so it doesn't crowd the daily view. -->
-<button class="side-toggle" id="side-toggle" aria-expanded="false"><span class="side-chev">▸</span>LeetCode &amp; links</button>
+
 
 <div class="main-grid">
 <div id="days-container">
@@ -1343,62 +974,8 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
           <button class="hmove-btn" onclick="moveHabit(&#39;s_mag&#39;,1)" title="Move down">▼</button>
         </div></div></div></div>
   </div>
-  <div class="day-middle">
-    <div class="card">
-      <div class="card-title">Morning routine</div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Wake up at 8:00 am</div><div class="check-sub">First alarm, no snooze</div></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Morning stretch — 20 min</div><div class="check-sub">Yoga with Adriene — full body wake-up</div><a class="check-link" href="https://www.youtube.com/watch?v=UEEsdXn8oG8" target="_blank" onclick="event.stopPropagation()">▶ Watch</a></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Shower (Cold)</div><div class="check-sub">Cold finish recommended</div></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Meditation — 20 min</div><div class="check-sub">Box breathing (4-4-4-4) + visualize the lift session</div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">6 pm — Lift A · Upper push <span style="color:var(--amber);margin-left:6px;">380 kcal</span></div>
-      <div class="check-item" data-kcal="380" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Complete Lift A workout</div><div class="check-sub">45–60 min · Bench · Incline · OHP · Laterals · Triceps · Plank</div></div><span class="kcal-badge">380 kcal</span></div>
-      <div class="ex-grid">
-        <a class="ex-card" href="https://www.youtube.com/watch?v=rT7DgCr-3pg" target="_blank"><img class="ex-thumb" src="assets/mqdefault.jpg" alt=""><div><div class="ex-name">Bench press</div><div class="ex-sets">4×6–8 · RPE 8</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=0G2_XV7slIg" target="_blank"><img class="ex-thumb" src="assets/mqdefault(1).jpg" alt=""><div><div class="ex-name">Incline DB press</div><div class="ex-sets">3×10–12 · RPE 7</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=2yjwXTZQDDI" target="_blank"><img class="ex-thumb" src="assets/mqdefault(2).jpg" alt=""><div><div class="ex-name">Overhead press</div><div class="ex-sets">3×10 · RPE 7</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=3VcKaXpzqRo" target="_blank"><img class="ex-thumb" src="assets/mqdefault(3).jpg" alt=""><div><div class="ex-name">Lateral raise</div><div class="ex-sets">3×15 · RPE 7</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=YbX7Wd8jQ-Q" target="_blank"><img class="ex-thumb" src="assets/mqdefault(4).jpg" alt=""><div><div class="ex-name">Tricep extension</div><div class="ex-sets">3×12 · RPE 7</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=ASdvN_XEl_c" target="_blank"><img class="ex-thumb" src="assets/mqdefault(5).jpg" alt=""><div><div class="ex-name">Plank hold</div><div class="ex-sets">3×40 sec · RPE 6</div></div></a>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">LeetCode — Monday · Easy <span style="color:var(--blue);margin-left:6px;">Month 1 · Arrays &amp; Hashmaps</span></div>
-      <div class="check-item done" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#1 · Two Sum</div><div class="check-sub">Given an array of integers, return indices of two numbers that add up to target. Classic hashmap pattern.</div><a class="check-link" href="https://leetcode.com/problems/two-sum/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#217 · Contains Duplicate</div><div class="check-sub">Return true if any value appears at least twice. Simple set or hashmap solution.</div><a class="check-link" href="https://leetcode.com/problems/contains-duplicate/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#242 · Valid Anagram</div><div class="check-sub">Check if two strings are anagrams using character frequency count.</div><a class="check-link" href="https://leetcode.com/problems/valid-anagram/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#121 · Best Time to Buy and Sell Stock</div><div class="check-sub">Single pass with a running min. Classic easy that appears in real interviews.</div><a class="check-link" href="https://leetcode.com/problems/best-time-to-buy-and-sell-stock/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-    </div>
-  </div>
-  <div class="day-right" id="scol-0">
-<div class="lg"><div class="lgt">LeetCode · Month 1</div>
-  <a class="li" href="https://leetcode.com/problems/two-sum/" target="_blank"><div><div class="ln c-blue">#1 · Two Sum</div><div class="ls">Easy · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/group-anagrams/" target="_blank"><div><div class="ln c-blue">#49 · Group Anagrams</div><div class="ls">Medium · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank"><div><div class="ln c-blue">#347 · Top K Frequent</div><div class="ls">Medium · Heap/Bucket</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank"><div><div class="ln c-blue">#238 · Product Except Self</div><div class="ls">Medium · Prefix/Suffix</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/maximum-subarray/" target="_blank"><div><div class="ln c-blue">#53 · Maximum Subarray</div><div class="ls">Medium · Kadane's</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/3sum/" target="_blank"><div><div class="ln c-blue">#15 · 3Sum</div><div class="ls">Medium · Two pointer</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://neetcode.io/roadmap" target="_blank"><div><div class="ln c-blue">NeetCode Roadmap</div><div class="ls">Full study plan</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Stretch videos</div>
-  <a class="li" href="https://www.youtube.com/watch?v=UEEsdXn8oG8" target="_blank"><div><div class="ln c-green">Adriene — Full body (Mon)</div><div class="ls">20 min wake-up</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank"><div><div class="ln c-green">Mady Morrison (Tue/Sat)</div><div class="ls">15 min · 46M views</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=THzHoMDMUHQ" target="_blank"><div><div class="ln c-green">Adriene — Hips (Wed)</div><div class="ls">Primes legs for squats</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7AYKMP6rOE" target="_blank"><div><div class="ln c-green">Kassandra — Yin (Thu)</div><div class="ls">Gentle on tired legs</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=RqcOCBb4arc" target="_blank"><div><div class="ln c-green">Adriene — Upper back (Fri)</div><div class="ls">Opens chest before pulling</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7SN-d4qXx0" target="_blank"><div><div class="ln c-green">Adriene — Recovery (Sun)</div><div class="ls">Slow, long holds</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">HIIT playlists</div>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOrZliY8_Upde97LVtSx8pCA" target="_blank"><div><div class="ln c-purple">HR12WEEK 1.0</div><div class="ls">Weeks 1–4</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOq1XrwBfK5OwVUMQD8jIFgR" target="_blank"><div><div class="ln c-purple">HR12WEEK 2.0</div><div class="ls">Weeks 5–8</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOpowOM1t2xPu3JA22vMwfE9" target="_blank"><div><div class="ln c-purple">HR12WEEK 3.0</div><div class="ls">Weeks 9–12</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/@CarolineGirvan" target="_blank"><div><div class="ln c-purple">Caroline Girvan</div><div class="ls">Advanced — Wks 9–12</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Track &amp; log</div>
-  <a class="li" href="https://connect.garmin.com/" target="_blank"><div><div class="ln c-amber">Garmin Connect</div><div class="ls">Body Battery · Steps</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.myfitnesspal.com/" target="_blank"><div><div class="ln c-amber">MyFitnessPal</div><div class="ls">Food log · 160g protein</div></div><span class="la">↗</span></a>
-</div></div>
+  
+  
 </div>
 
 <!-- TUE -->
@@ -1485,57 +1062,8 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
           <button class="hmove-btn" onclick="moveHabit(&#39;s_mag&#39;,1)" title="Move down">▼</button>
         </div></div></div></div>
   </div>
-  <div class="day-middle">
-    <div class="card">
-      <div class="card-title">Morning routine</div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Wake up at 8:00 am</div></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Morning stretch — 20 min</div><div class="check-sub">Mady Morrison — 15 min full body</div><a class="check-link" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank" onclick="event.stopPropagation()">▶ Watch</a></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Shower</div></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Meditation — 20 min</div><div class="check-sub">Body scan — notice soreness before HIIT</div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">6 pm — HIIT <span style="color:var(--amber);margin-left:6px;">344 kcal</span></div>
-      <div class="check-item done" data-kcal="344" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Complete HIIT session</div><div class="check-sub">20–30 min · Heather Robertson HR12WEEK</div></div><span class="kcal-badge">344 kcal</span></div>
-      <div class="hiit-links">
-        <a class="hiit-link" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOrZliY8_Upde97LVtSx8pCA" target="_blank"><img class="yt-thumb" src="assets/mqdefault(6).jpg" alt=""><div><div class="hiit-title">HR12WEEK 1.0</div><div class="hiit-meta">Weeks 1–4 · Follow in order</div></div></a>
-        <a class="hiit-link" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOq1XrwBfK5OwVUMQD8jIFgR" target="_blank"><img class="yt-thumb" src="file:///Users/Ali/Downloads/Daily%20Tracker_files/mqdefault(7).jpg" alt=""><div><div class="hiit-title">HR12WEEK 2.0</div><div class="hiit-meta">Weeks 5–8 · Dumbbell HIIT</div></div></a>
-        <a class="hiit-link" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOpowOM1t2xPu3JA22vMwfE9" target="_blank"><img class="yt-thumb" src="file:///Users/Ali/Downloads/Daily%20Tracker_files/mqdefault(8).jpg" alt=""><div><div class="hiit-title">HR12WEEK 3.0</div><div class="hiit-meta">Weeks 9–12 · MetCon</div></div></a>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">LeetCode — Tuesday · Rest from coding <span style="color:var(--blue);margin-left:6px;">Month 1</span></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Review Monday's solutions</div><div class="check-sub">Read back through your Two Sum and Anagram solutions. Can you spot a cleaner approach?</div></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Watch NeetCode — Arrays &amp; Hashmaps</div><div class="check-sub">5–10 min explainer to reinforce the patterns before Wednesday's medium problems.</div><a class="check-link" href="https://www.youtube.com/watch?v=QNa0SL1o9ms" target="_blank" onclick="event.stopPropagation()">▶ Watch</a></div></div>
-    </div>
-  </div>
-  <div class="day-right" id="scol-1">
-<div class="lg"><div class="lgt">LeetCode · Month 1</div>
-  <a class="li" href="https://leetcode.com/problems/two-sum/" target="_blank"><div><div class="ln c-blue">#1 · Two Sum</div><div class="ls">Easy · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/group-anagrams/" target="_blank"><div><div class="ln c-blue">#49 · Group Anagrams</div><div class="ls">Medium · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank"><div><div class="ln c-blue">#347 · Top K Frequent</div><div class="ls">Medium · Heap/Bucket</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank"><div><div class="ln c-blue">#238 · Product Except Self</div><div class="ls">Medium · Prefix/Suffix</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/maximum-subarray/" target="_blank"><div><div class="ln c-blue">#53 · Maximum Subarray</div><div class="ls">Medium · Kadane's</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/3sum/" target="_blank"><div><div class="ln c-blue">#15 · 3Sum</div><div class="ls">Medium · Two pointer</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://neetcode.io/roadmap" target="_blank"><div><div class="ln c-blue">NeetCode Roadmap</div><div class="ls">Full study plan</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Stretch videos</div>
-  <a class="li" href="https://www.youtube.com/watch?v=UEEsdXn8oG8" target="_blank"><div><div class="ln c-green">Adriene — Full body (Mon)</div><div class="ls">20 min wake-up</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank"><div><div class="ln c-green">Mady Morrison (Tue/Sat)</div><div class="ls">15 min · 46M views</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=THzHoMDMUHQ" target="_blank"><div><div class="ln c-green">Adriene — Hips (Wed)</div><div class="ls">Primes legs for squats</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7AYKMP6rOE" target="_blank"><div><div class="ln c-green">Kassandra — Yin (Thu)</div><div class="ls">Gentle on tired legs</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=RqcOCBb4arc" target="_blank"><div><div class="ln c-green">Adriene — Upper back (Fri)</div><div class="ls">Opens chest before pulling</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7SN-d4qXx0" target="_blank"><div><div class="ln c-green">Adriene — Recovery (Sun)</div><div class="ls">Slow, long holds</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">HIIT playlists</div>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOrZliY8_Upde97LVtSx8pCA" target="_blank"><div><div class="ln c-purple">HR12WEEK 1.0</div><div class="ls">Weeks 1–4</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOq1XrwBfK5OwVUMQD8jIFgR" target="_blank"><div><div class="ln c-purple">HR12WEEK 2.0</div><div class="ls">Weeks 5–8</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOpowOM1t2xPu3JA22vMwfE9" target="_blank"><div><div class="ln c-purple">HR12WEEK 3.0</div><div class="ls">Weeks 9–12</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/@CarolineGirvan" target="_blank"><div><div class="ln c-purple">Caroline Girvan</div><div class="ls">Advanced — Wks 9–12</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Track &amp; log</div>
-  <a class="li" href="https://connect.garmin.com/" target="_blank"><div><div class="ln c-amber">Garmin Connect</div><div class="ls">Body Battery · Steps</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.myfitnesspal.com/" target="_blank"><div><div class="ln c-amber">MyFitnessPal</div><div class="ls">Food log · 160g protein</div></div><span class="la">↗</span></a>
-</div></div>
+  
+  
 </div>
 
 <!-- WED -->
@@ -1622,62 +1150,8 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
           <button class="hmove-btn" onclick="moveHabit(&#39;s_mag&#39;,1)" title="Move down">▼</button>
         </div></div></div></div>
   </div>
-  <div class="day-middle">
-    <div class="card">
-      <div class="card-title">Morning routine</div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Wake up at 8:00 am</div></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Morning stretch — 20 min</div><div class="check-sub">Yoga with Adriene — hips &amp; lower body</div><a class="check-link" href="https://www.youtube.com/watch?v=THzHoMDMUHQ" target="_blank" onclick="event.stopPropagation()">▶ Watch</a></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Shower</div></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Meditation — 20 min</div><div class="check-sub">Visualize each lift with perfect form</div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">6 pm — Lift B · Lower body <span style="color:var(--amber);margin-left:6px;">430 kcal</span></div>
-      <div class="check-item" data-kcal="430" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Complete Lift B workout</div><div class="check-sub">45–60 min · Squat · RDL · Lunge · Bulgarian · Calves · Core</div></div><span class="kcal-badge">430 kcal</span></div>
-      <div class="ex-grid">
-        <a class="ex-card" href="https://www.youtube.com/watch?v=ultWZbUMPL8" target="_blank"><img class="ex-thumb" src="assets/mqdefault(9).jpg" alt=""><div><div class="ex-name">Barbell squat</div><div class="ex-sets">4×5–6 · RPE 8</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=JCXUYuzwNrM" target="_blank"><img class="ex-thumb" src="assets/mqdefault(10).jpg" alt=""><div><div class="ex-name">Romanian DL</div><div class="ex-sets">3×10 · RPE 7</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=L8fvypPrzzs" target="_blank"><img class="ex-thumb" src="assets/mqdefault(11).jpg" alt=""><div><div class="ex-name">Walking lunge</div><div class="ex-sets">3×12/side</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=2C-uNgKwPLE" target="_blank"><img class="ex-thumb" src="assets/mqdefault(12).jpg" alt=""><div><div class="ex-name">Bulgarian squat</div><div class="ex-sets">3×12</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=gwLzBJYoWlI" target="_blank"><img class="ex-thumb" src="assets/mqdefault(13).jpg" alt=""><div><div class="ex-name">Calf raise</div><div class="ex-sets">4×15</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=TlnBQfhDMhA" target="_blank"><img class="ex-thumb" src="file:///Users/Ali/Downloads/Daily%20Tracker_files/mqdefault(14).jpg" alt=""><div><div class="ex-name">Knee raise</div><div class="ex-sets">3×15</div></div></a>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">LeetCode — Wednesday · Easy/Medium <span style="color:var(--blue);margin-left:6px;">Month 1 · Arrays &amp; Hashmaps</span></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#49 · Group Anagrams</div><div class="check-sub">Group strings that are anagrams of each other. Sorted key hashmap pattern.</div><a class="check-link" href="https://leetcode.com/problems/group-anagrams/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#347 · Top K Frequent Elements</div><div class="check-sub">Return k most frequent elements. Bucket sort or heap — very common in interviews.</div><a class="check-link" href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#238 · Product of Array Except Self</div><div class="check-sub">No division allowed — prefix/suffix pattern. Very common at Amazon.</div><a class="check-link" href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#128 · Longest Consecutive Sequence</div><div class="check-sub">Find length of longest consecutive run. O(n) with a hashset — tricky but elegant.</div><a class="check-link" href="https://leetcode.com/problems/longest-consecutive-sequence/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-    </div>
-  </div>
-  <div class="day-right" id="scol-2">
-<div class="lg"><div class="lgt">LeetCode · Month 1</div>
-  <a class="li" href="https://leetcode.com/problems/two-sum/" target="_blank"><div><div class="ln c-blue">#1 · Two Sum</div><div class="ls">Easy · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/group-anagrams/" target="_blank"><div><div class="ln c-blue">#49 · Group Anagrams</div><div class="ls">Medium · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank"><div><div class="ln c-blue">#347 · Top K Frequent</div><div class="ls">Medium · Heap/Bucket</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank"><div><div class="ln c-blue">#238 · Product Except Self</div><div class="ls">Medium · Prefix/Suffix</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/maximum-subarray/" target="_blank"><div><div class="ln c-blue">#53 · Maximum Subarray</div><div class="ls">Medium · Kadane's</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/3sum/" target="_blank"><div><div class="ln c-blue">#15 · 3Sum</div><div class="ls">Medium · Two pointer</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://neetcode.io/roadmap" target="_blank"><div><div class="ln c-blue">NeetCode Roadmap</div><div class="ls">Full study plan</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Stretch videos</div>
-  <a class="li" href="https://www.youtube.com/watch?v=UEEsdXn8oG8" target="_blank"><div><div class="ln c-green">Adriene — Full body (Mon)</div><div class="ls">20 min wake-up</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank"><div><div class="ln c-green">Mady Morrison (Tue/Sat)</div><div class="ls">15 min · 46M views</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=THzHoMDMUHQ" target="_blank"><div><div class="ln c-green">Adriene — Hips (Wed)</div><div class="ls">Primes legs for squats</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7AYKMP6rOE" target="_blank"><div><div class="ln c-green">Kassandra — Yin (Thu)</div><div class="ls">Gentle on tired legs</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=RqcOCBb4arc" target="_blank"><div><div class="ln c-green">Adriene — Upper back (Fri)</div><div class="ls">Opens chest before pulling</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7SN-d4qXx0" target="_blank"><div><div class="ln c-green">Adriene — Recovery (Sun)</div><div class="ls">Slow, long holds</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">HIIT playlists</div>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOrZliY8_Upde97LVtSx8pCA" target="_blank"><div><div class="ln c-purple">HR12WEEK 1.0</div><div class="ls">Weeks 1–4</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOq1XrwBfK5OwVUMQD8jIFgR" target="_blank"><div><div class="ln c-purple">HR12WEEK 2.0</div><div class="ls">Weeks 5–8</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOpowOM1t2xPu3JA22vMwfE9" target="_blank"><div><div class="ln c-purple">HR12WEEK 3.0</div><div class="ls">Weeks 9–12</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/@CarolineGirvan" target="_blank"><div><div class="ln c-purple">Caroline Girvan</div><div class="ls">Advanced — Wks 9–12</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Track &amp; log</div>
-  <a class="li" href="https://connect.garmin.com/" target="_blank"><div><div class="ln c-amber">Garmin Connect</div><div class="ls">Body Battery · Steps</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.myfitnesspal.com/" target="_blank"><div><div class="ln c-amber">MyFitnessPal</div><div class="ls">Food log · 160g protein</div></div><span class="la">↗</span></a>
-</div></div>
+  
+  
 </div>
 
 <!-- THU -->
@@ -1764,58 +1238,8 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
           <button class="hmove-btn" onclick="moveHabit(&#39;s_mag&#39;,1)" title="Move down">▼</button>
         </div></div></div></div>
   </div>
-  <div class="day-middle">
-    <div class="card">
-      <div class="card-title">Morning routine</div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Wake up at 8:00 am</div></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Morning stretch — 20 min</div><div class="check-sub">Yoga with Kassandra — morning yin</div><a class="check-link" href="https://www.youtube.com/watch?v=v7AYKMP6rOE" target="_blank" onclick="event.stopPropagation()">▶ Watch</a></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Shower</div></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Meditation — 20 min</div><div class="check-sub">Check Garmin Body Battery — below 40 = lighter HIIT</div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">6 pm — HIIT <span style="color:var(--amber);margin-left:6px;">344 kcal</span></div>
-      <div class="check-item" data-kcal="344" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Complete HIIT session</div><div class="check-sub">Low-impact option if Body Battery below 40</div></div><span class="kcal-badge">344 kcal</span></div>
-      <div class="hiit-links">
-        <a class="hiit-link" href="https://www.youtube.com/watch?v=qETB_kLkXis" target="_blank"><img class="yt-thumb" src="file:///Users/Ali/Downloads/Daily%20Tracker_files/mqdefault(7).jpg" alt=""><div><div class="hiit-title">30 Min Low Impact HIIT</div><div class="hiit-meta">No jumping · Good for tired legs</div></div></a>
-        <a class="hiit-link" href="https://www.youtube.com/watch?v=ml6cT4AZdqI" target="_blank"><img class="yt-thumb" src="assets/mqdefault(6).jpg" alt=""><div><div class="hiit-title">20 Min Full Body HIIT</div><div class="hiit-meta">Shorter option if fatigued</div></div></a>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">LeetCode — Thursday · Review <span style="color:var(--blue);margin-left:6px;">Month 1</span></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Re-solve one problem from Wednesday</div><div class="check-sub">Close the solution tab, open a blank editor, reproduce it from memory. This is how patterns stick.</div></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#36 · Valid Sudoku</div><div class="check-sub">Validate a 9×9 board using sets per row, col, and box. Hashset iteration practice.</div><a class="check-link" href="https://leetcode.com/problems/valid-sudoku/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#271 · Encode and Decode Strings</div><div class="check-sub">Design algorithm to encode/decode a list of strings. Good for understanding delimiters.</div><a class="check-link" href="https://leetcode.com/problems/encode-and-decode-strings/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#125 · Valid Palindrome</div><div class="check-sub">Two pointer from both ends after filtering non-alphanumeric characters.</div><a class="check-link" href="https://leetcode.com/problems/valid-palindrome/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-    </div>
-  </div>
-  <div class="day-right" id="scol-3">
-<div class="lg"><div class="lgt">LeetCode · Month 1</div>
-  <a class="li" href="https://leetcode.com/problems/two-sum/" target="_blank"><div><div class="ln c-blue">#1 · Two Sum</div><div class="ls">Easy · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/group-anagrams/" target="_blank"><div><div class="ln c-blue">#49 · Group Anagrams</div><div class="ls">Medium · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank"><div><div class="ln c-blue">#347 · Top K Frequent</div><div class="ls">Medium · Heap/Bucket</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank"><div><div class="ln c-blue">#238 · Product Except Self</div><div class="ls">Medium · Prefix/Suffix</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/maximum-subarray/" target="_blank"><div><div class="ln c-blue">#53 · Maximum Subarray</div><div class="ls">Medium · Kadane's</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/3sum/" target="_blank"><div><div class="ln c-blue">#15 · 3Sum</div><div class="ls">Medium · Two pointer</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://neetcode.io/roadmap" target="_blank"><div><div class="ln c-blue">NeetCode Roadmap</div><div class="ls">Full study plan</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Stretch videos</div>
-  <a class="li" href="https://www.youtube.com/watch?v=UEEsdXn8oG8" target="_blank"><div><div class="ln c-green">Adriene — Full body (Mon)</div><div class="ls">20 min wake-up</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank"><div><div class="ln c-green">Mady Morrison (Tue/Sat)</div><div class="ls">15 min · 46M views</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=THzHoMDMUHQ" target="_blank"><div><div class="ln c-green">Adriene — Hips (Wed)</div><div class="ls">Primes legs for squats</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7AYKMP6rOE" target="_blank"><div><div class="ln c-green">Kassandra — Yin (Thu)</div><div class="ls">Gentle on tired legs</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=RqcOCBb4arc" target="_blank"><div><div class="ln c-green">Adriene — Upper back (Fri)</div><div class="ls">Opens chest before pulling</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7SN-d4qXx0" target="_blank"><div><div class="ln c-green">Adriene — Recovery (Sun)</div><div class="ls">Slow, long holds</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">HIIT playlists</div>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOrZliY8_Upde97LVtSx8pCA" target="_blank"><div><div class="ln c-purple">HR12WEEK 1.0</div><div class="ls">Weeks 1–4</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOq1XrwBfK5OwVUMQD8jIFgR" target="_blank"><div><div class="ln c-purple">HR12WEEK 2.0</div><div class="ls">Weeks 5–8</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOpowOM1t2xPu3JA22vMwfE9" target="_blank"><div><div class="ln c-purple">HR12WEEK 3.0</div><div class="ls">Weeks 9–12</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/@CarolineGirvan" target="_blank"><div><div class="ln c-purple">Caroline Girvan</div><div class="ls">Advanced — Wks 9–12</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Track &amp; log</div>
-  <a class="li" href="https://connect.garmin.com/" target="_blank"><div><div class="ln c-amber">Garmin Connect</div><div class="ls">Body Battery · Steps</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.myfitnesspal.com/" target="_blank"><div><div class="ln c-amber">MyFitnessPal</div><div class="ls">Food log · 160g protein</div></div><span class="la">↗</span></a>
-</div></div>
+  
+  
 </div>
 
 <!-- FRI -->
@@ -1902,62 +1326,8 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
           <button class="hmove-btn" onclick="moveHabit(&#39;s_mag&#39;,1)" title="Move down">▼</button>
         </div></div></div></div>
   </div>
-  <div class="day-middle">
-    <div class="card">
-      <div class="card-title">Morning routine</div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Wake up at 8:00 am</div></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Morning stretch — 20 min</div><div class="check-sub">Yoga with Adriene — upper back &amp; neck</div><a class="check-link" href="https://www.youtube.com/watch?v=RqcOCBb4arc" target="_blank" onclick="event.stopPropagation()">▶ Watch</a></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Shower</div></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Meditation — 20 min</div><div class="check-sub">Gratitude + week review</div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">6 pm — Lift C · Upper pull <span style="color:var(--amber);margin-left:6px;">350 kcal</span></div>
-      <div class="check-item done" data-kcal="350" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Complete Lift C workout</div><div class="check-sub">45–60 min · BB row · DB row · Rear delt · Bicep · Hammer · Core</div></div><span class="kcal-badge">350 kcal</span></div>
-      <div class="ex-grid">
-        <a class="ex-card" href="https://www.youtube.com/watch?v=FWJR5Ve8bnQ" target="_blank"><img class="ex-thumb" src="assets/mqdefault(15).jpg" alt=""><div><div class="ex-name">BB row</div><div class="ex-sets">4×6–8 · RPE 8</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=roCP6wCXPqo" target="_blank"><img class="ex-thumb" src="assets/mqdefault(16).jpg" alt=""><div><div class="ex-name">Single-arm row</div><div class="ex-sets">3×12/side</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=ttvfGg9d76c" target="_blank"><img class="ex-thumb" src="assets/mqdefault(17).jpg" alt=""><div><div class="ex-name">Rear delt fly</div><div class="ex-sets">3×15</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=ykJmrZ5v0Oo" target="_blank"><img class="ex-thumb" src="assets/mqdefault(18).jpg" alt=""><div><div class="ex-name">Bicep curl</div><div class="ex-sets">3×12</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=zC3nLlEvin4" target="_blank"><img class="ex-thumb" src="assets/mqdefault(19).jpg" alt=""><div><div class="ex-name">Hammer curl</div><div class="ex-sets">3×12</div></div></a>
-        <a class="ex-card" href="https://www.youtube.com/watch?v=n1WsM_YBcC0" target="_blank"><img class="ex-thumb" src="file:///Users/Ali/Downloads/Daily%20Tracker_files/mqdefault(20).jpg" alt=""><div><div class="ex-name">Dead bug</div><div class="ex-sets">3×10/side</div></div></a>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">LeetCode — Friday · Medium <span style="color:var(--blue);margin-left:6px;">Month 1 · Arrays &amp; Hashmaps</span></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#53 · Maximum Subarray</div><div class="check-sub">Find contiguous subarray with largest sum. Classic Kadane's algorithm — appears constantly.</div><a class="check-link" href="https://leetcode.com/problems/maximum-subarray/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#15 · 3Sum</div><div class="check-sub">Find all unique triplets that sum to zero. Two-pointer after sorting — classic medium.</div><a class="check-link" href="https://leetcode.com/problems/3sum/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#11 · Container With Most Water</div><div class="check-sub">Two pointer from both ends moving inward. Builds intuition for two-pointer pattern.</div><a class="check-link" href="https://leetcode.com/problems/container-with-most-water/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#167 · Two Sum II — Sorted Array</div><div class="check-sub">Two Sum variant on a sorted array. Direct two-pointer, no hashmap needed.</div><a class="check-link" href="https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-    </div>
-  </div>
-  <div class="day-right" id="scol-4">
-<div class="lg"><div class="lgt">LeetCode · Month 1</div>
-  <a class="li" href="https://leetcode.com/problems/two-sum/" target="_blank"><div><div class="ln c-blue">#1 · Two Sum</div><div class="ls">Easy · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/group-anagrams/" target="_blank"><div><div class="ln c-blue">#49 · Group Anagrams</div><div class="ls">Medium · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank"><div><div class="ln c-blue">#347 · Top K Frequent</div><div class="ls">Medium · Heap/Bucket</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank"><div><div class="ln c-blue">#238 · Product Except Self</div><div class="ls">Medium · Prefix/Suffix</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/maximum-subarray/" target="_blank"><div><div class="ln c-blue">#53 · Maximum Subarray</div><div class="ls">Medium · Kadane's</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/3sum/" target="_blank"><div><div class="ln c-blue">#15 · 3Sum</div><div class="ls">Medium · Two pointer</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://neetcode.io/roadmap" target="_blank"><div><div class="ln c-blue">NeetCode Roadmap</div><div class="ls">Full study plan</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Stretch videos</div>
-  <a class="li" href="https://www.youtube.com/watch?v=UEEsdXn8oG8" target="_blank"><div><div class="ln c-green">Adriene — Full body (Mon)</div><div class="ls">20 min wake-up</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank"><div><div class="ln c-green">Mady Morrison (Tue/Sat)</div><div class="ls">15 min · 46M views</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=THzHoMDMUHQ" target="_blank"><div><div class="ln c-green">Adriene — Hips (Wed)</div><div class="ls">Primes legs for squats</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7AYKMP6rOE" target="_blank"><div><div class="ln c-green">Kassandra — Yin (Thu)</div><div class="ls">Gentle on tired legs</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=RqcOCBb4arc" target="_blank"><div><div class="ln c-green">Adriene — Upper back (Fri)</div><div class="ls">Opens chest before pulling</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7SN-d4qXx0" target="_blank"><div><div class="ln c-green">Adriene — Recovery (Sun)</div><div class="ls">Slow, long holds</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">HIIT playlists</div>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOrZliY8_Upde97LVtSx8pCA" target="_blank"><div><div class="ln c-purple">HR12WEEK 1.0</div><div class="ls">Weeks 1–4</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOq1XrwBfK5OwVUMQD8jIFgR" target="_blank"><div><div class="ln c-purple">HR12WEEK 2.0</div><div class="ls">Weeks 5–8</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOpowOM1t2xPu3JA22vMwfE9" target="_blank"><div><div class="ln c-purple">HR12WEEK 3.0</div><div class="ls">Weeks 9–12</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/@CarolineGirvan" target="_blank"><div><div class="ln c-purple">Caroline Girvan</div><div class="ls">Advanced — Wks 9–12</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Track &amp; log</div>
-  <a class="li" href="https://connect.garmin.com/" target="_blank"><div><div class="ln c-amber">Garmin Connect</div><div class="ls">Body Battery · Steps</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.myfitnesspal.com/" target="_blank"><div><div class="ln c-amber">MyFitnessPal</div><div class="ls">Food log · 160g protein</div></div><span class="la">↗</span></a>
-</div></div>
+  
+  
 </div>
 
 <!-- SAT -->
@@ -2044,59 +1414,8 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
           <button class="hmove-btn" onclick="moveHabit(&#39;s_mag&#39;,1)" title="Move down">▼</button>
         </div></div></div></div>
   </div>
-  <div class="day-middle">
-    <div class="card">
-      <div class="card-title">Morning routine</div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Wake up at 8:00 am</div></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Morning stretch — 20 min</div><div class="check-sub">Mady Morrison — full 15 min + 5 min own</div><a class="check-link" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank" onclick="event.stopPropagation()">▶ Watch</a></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Shower</div></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Meditation — 20 min</div><div class="check-sub">Open — reflect on full week, set intention for hardest session</div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">6 pm — HIIT hardest <span style="color:var(--amber);margin-left:6px;">430 kcal</span></div>
-      <div class="check-item" data-kcal="430" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Complete hardest HIIT session</div><div class="check-sub">30–45 min · Push hardest — no workout tomorrow</div></div><span class="kcal-badge">430 kcal</span></div>
-      <div class="hiit-links">
-        <a class="hiit-link" href="https://www.youtube.com/watch?v=xm_N6plIYNQ" target="_blank"><img class="yt-thumb" src="file:///Users/Ali/Downloads/Daily%20Tracker_files/mqdefault(8).jpg" alt=""><div><div class="hiit-title">30 Min Dumbbell HIIT</div><div class="hiit-meta">Wks 5+ · ~300 kcal</div></div></a>
-        <a class="hiit-link" href="https://www.youtube.com/watch?v=VHDFAJxHqaA" target="_blank"><img class="yt-thumb" src="file:///Users/Ali/Downloads/Daily%20Tracker_files/mqdefault(21).jpg" alt=""><div><div class="hiit-title">40 Exercises in 40 Min</div><div class="hiit-meta">No repeats · ~380 kcal</div></div></a>
-        <a class="hiit-link" href="https://www.youtube.com/watch?v=y-ATJZ3EKE0" target="_blank"><img class="yt-thumb" src="file:///Users/Ali/Downloads/Daily%20Tracker_files/mqdefault(22).jpg" alt=""><div><div class="hiit-title">Power Hour (40 min)</div><div class="hiit-meta">Wks 9–12 · ~430 kcal</div></div></a>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">LeetCode — Saturday · Bonus <span style="color:var(--blue);margin-left:6px;">Month 1</span></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#20 · Valid Parentheses</div><div class="check-sub">Use a stack to validate bracket pairs. Introduces the stack pattern used in harder problems.</div><a class="check-link" href="https://leetcode.com/problems/valid-parentheses/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#155 · Min Stack</div><div class="check-sub">Design a stack that supports push, pop and retrieving the minimum in O(1).</div><a class="check-link" href="https://leetcode.com/problems/min-stack/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#150 · Evaluate Reverse Polish Notation</div><div class="check-sub">Evaluate arithmetic expression in RPN using a stack. Classic stack application.</div><a class="check-link" href="https://leetcode.com/problems/evaluate-reverse-polish-notation/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#739 · Daily Temperatures</div><div class="check-sub">Find days until warmer temperature. Monotonic stack pattern — very common in interviews.</div><a class="check-link" href="https://leetcode.com/problems/daily-temperatures/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-    </div>
-  </div>
-  <div class="day-right" id="scol-5">
-<div class="lg"><div class="lgt">LeetCode · Month 1</div>
-  <a class="li" href="https://leetcode.com/problems/two-sum/" target="_blank"><div><div class="ln c-blue">#1 · Two Sum</div><div class="ls">Easy · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/group-anagrams/" target="_blank"><div><div class="ln c-blue">#49 · Group Anagrams</div><div class="ls">Medium · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank"><div><div class="ln c-blue">#347 · Top K Frequent</div><div class="ls">Medium · Heap/Bucket</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank"><div><div class="ln c-blue">#238 · Product Except Self</div><div class="ls">Medium · Prefix/Suffix</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/maximum-subarray/" target="_blank"><div><div class="ln c-blue">#53 · Maximum Subarray</div><div class="ls">Medium · Kadane's</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/3sum/" target="_blank"><div><div class="ln c-blue">#15 · 3Sum</div><div class="ls">Medium · Two pointer</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://neetcode.io/roadmap" target="_blank"><div><div class="ln c-blue">NeetCode Roadmap</div><div class="ls">Full study plan</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Stretch videos</div>
-  <a class="li" href="https://www.youtube.com/watch?v=UEEsdXn8oG8" target="_blank"><div><div class="ln c-green">Adriene — Full body (Mon)</div><div class="ls">20 min wake-up</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank"><div><div class="ln c-green">Mady Morrison (Tue/Sat)</div><div class="ls">15 min · 46M views</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=THzHoMDMUHQ" target="_blank"><div><div class="ln c-green">Adriene — Hips (Wed)</div><div class="ls">Primes legs for squats</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7AYKMP6rOE" target="_blank"><div><div class="ln c-green">Kassandra — Yin (Thu)</div><div class="ls">Gentle on tired legs</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=RqcOCBb4arc" target="_blank"><div><div class="ln c-green">Adriene — Upper back (Fri)</div><div class="ls">Opens chest before pulling</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7SN-d4qXx0" target="_blank"><div><div class="ln c-green">Adriene — Recovery (Sun)</div><div class="ls">Slow, long holds</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">HIIT playlists</div>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOrZliY8_Upde97LVtSx8pCA" target="_blank"><div><div class="ln c-purple">HR12WEEK 1.0</div><div class="ls">Weeks 1–4</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOq1XrwBfK5OwVUMQD8jIFgR" target="_blank"><div><div class="ln c-purple">HR12WEEK 2.0</div><div class="ls">Weeks 5–8</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOpowOM1t2xPu3JA22vMwfE9" target="_blank"><div><div class="ln c-purple">HR12WEEK 3.0</div><div class="ls">Weeks 9–12</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/@CarolineGirvan" target="_blank"><div><div class="ln c-purple">Caroline Girvan</div><div class="ls">Advanced — Wks 9–12</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Track &amp; log</div>
-  <a class="li" href="https://connect.garmin.com/" target="_blank"><div><div class="ln c-amber">Garmin Connect</div><div class="ls">Body Battery · Steps</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.myfitnesspal.com/" target="_blank"><div><div class="ln c-amber">MyFitnessPal</div><div class="ls">Food log · 160g protein</div></div><span class="la">↗</span></a>
-</div></div>
+  
+  
 </div>
 
 <!-- SUN -->
@@ -2183,53 +1502,8 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
           <button class="hmove-btn" onclick="moveHabit(&#39;s_mag&#39;,1)" title="Move down">▼</button>
         </div></div></div></div>
   </div>
-  <div class="day-middle">
-    <div class="card">
-      <div class="card-title">Morning routine</div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Wake up at 8:00 am</div></div></div>
-      <div class="check-item done" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Morning stretch — 20 min</div><div class="check-sub">Yoga with Adriene — Yoga for Recovery</div><a class="check-link" href="https://www.youtube.com/watch?v=v7SN-d4qXx0" target="_blank" onclick="event.stopPropagation()">▶ Watch</a></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Shower</div></div></div>
-      <div class="check-item" data-section="morning" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Meditation — 20 min</div><div class="check-sub">Fully open — set intentions for the week ahead</div></div></div>
-    </div>
-    <div class="card" style="display:flex;align-items:center;justify-content:center;min-height:100px;">
-      <div style="text-align:center;padding:20px;"><div style="font-family:var(--serif);font-size:1.2rem;color:var(--accent);">Full rest day</div><div style="font-size:13px;color:var(--sub);margin-top:6px;">Walk only if you feel like it. Sleep early.</div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">LeetCode — Sunday · Weekly review <span style="color:var(--blue);margin-left:6px;">Month 1</span></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Re-solve your hardest problem this week</div><div class="check-sub">Close the solution, blank editor, reproduce from scratch. The cycle of struggle → understand → reproduce is what builds pattern recognition.</div></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#3 · Longest Substring Without Repeating</div><div class="check-sub">Sliding window pattern — keep a window of unique characters using a set.</div><a class="check-link" href="https://leetcode.com/problems/longest-substring-without-repeating-characters/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">#424 · Longest Repeating Character Replacement</div><div class="check-sub">Sliding window with a frequency count. Builds on #3's pattern with an extra constraint.</div><a class="check-link" href="https://leetcode.com/problems/longest-repeating-character-replacement/" target="_blank" onclick="event.stopPropagation()">→ Solve</a></div></div>
-      <div class="check-item" data-kcal="0" onclick="toggle(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 12 12"><use href="#tick"></use></svg></div><div style="flex:1"><div class="check-label">Count your week: how many solved?</div><div class="check-sub">Goal: 4+ problems this week. Write it down. Track it every Sunday to see your growth.</div></div></div>
-    </div>
-  </div>
-  <div class="day-right" id="scol-6">
-<div class="lg"><div class="lgt">LeetCode · Month 1</div>
-  <a class="li" href="https://leetcode.com/problems/two-sum/" target="_blank"><div><div class="ln c-blue">#1 · Two Sum</div><div class="ls">Easy · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/group-anagrams/" target="_blank"><div><div class="ln c-blue">#49 · Group Anagrams</div><div class="ls">Medium · Hashmap</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank"><div><div class="ln c-blue">#347 · Top K Frequent</div><div class="ls">Medium · Heap/Bucket</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank"><div><div class="ln c-blue">#238 · Product Except Self</div><div class="ls">Medium · Prefix/Suffix</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/maximum-subarray/" target="_blank"><div><div class="ln c-blue">#53 · Maximum Subarray</div><div class="ls">Medium · Kadane's</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://leetcode.com/problems/3sum/" target="_blank"><div><div class="ln c-blue">#15 · 3Sum</div><div class="ls">Medium · Two pointer</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://neetcode.io/roadmap" target="_blank"><div><div class="ln c-blue">NeetCode Roadmap</div><div class="ls">Full study plan</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Stretch videos</div>
-  <a class="li" href="https://www.youtube.com/watch?v=UEEsdXn8oG8" target="_blank"><div><div class="ln c-green">Adriene — Full body (Mon)</div><div class="ls">20 min wake-up</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=L_xrDAtykMI" target="_blank"><div><div class="ln c-green">Mady Morrison (Tue/Sat)</div><div class="ls">15 min · 46M views</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=THzHoMDMUHQ" target="_blank"><div><div class="ln c-green">Adriene — Hips (Wed)</div><div class="ls">Primes legs for squats</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7AYKMP6rOE" target="_blank"><div><div class="ln c-green">Kassandra — Yin (Thu)</div><div class="ls">Gentle on tired legs</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=RqcOCBb4arc" target="_blank"><div><div class="ln c-green">Adriene — Upper back (Fri)</div><div class="ls">Opens chest before pulling</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/watch?v=v7SN-d4qXx0" target="_blank"><div><div class="ln c-green">Adriene — Recovery (Sun)</div><div class="ls">Slow, long holds</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">HIIT playlists</div>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOrZliY8_Upde97LVtSx8pCA" target="_blank"><div><div class="ln c-purple">HR12WEEK 1.0</div><div class="ls">Weeks 1–4</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOq1XrwBfK5OwVUMQD8jIFgR" target="_blank"><div><div class="ln c-purple">HR12WEEK 2.0</div><div class="ls">Weeks 5–8</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/playlist?list=PL2ov72VWpiOpowOM1t2xPu3JA22vMwfE9" target="_blank"><div><div class="ln c-purple">HR12WEEK 3.0</div><div class="ls">Weeks 9–12</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.youtube.com/@CarolineGirvan" target="_blank"><div><div class="ln c-purple">Caroline Girvan</div><div class="ls">Advanced — Wks 9–12</div></div><span class="la">↗</span></a>
-</div>
-<div class="lg"><div class="lgt">Track &amp; log</div>
-  <a class="li" href="https://connect.garmin.com/" target="_blank"><div><div class="ln c-amber">Garmin Connect</div><div class="ls">Body Battery · Steps</div></div><span class="la">↗</span></a>
-  <a class="li" href="https://www.myfitnesspal.com/" target="_blank"><div><div class="ln c-amber">MyFitnessPal</div><div class="ls">Food log · 160g protein</div></div><span class="la">↗</span></a>
-</div></div>
+  
+  
 </div>
 
 
@@ -2237,25 +1511,8 @@ body.s2-canvas-on .tcard .tc-grip,body.s2-canvas-on .tcard .tc-span{display:none
 
 
 <!-- BONUS -->
-<p class="slbl" style="margin-top:4px;">Calorie optimisation</p>
-<div class="bonus-grid">
-  <div class="bonus-card">
-    <div class="bh"><div class="bd" style="background:var(--accent)"></div><div class="bt">Diet</div></div>
-    <div class="ti"><div class="tdot" style="background:var(--accent)"></div><div><div class="tt">Protein first at every meal</div><div class="tb">Burns ~25% of its own calories in digestion. Lead with protein before carbs every meal.</div></div></div>
-    <div class="ti"><div class="tdot" style="background:var(--accent)"></div><div><div class="tt">Eat within 30–60 min post-workout</div><div class="tb">Muscles are primed post-training. Protein shake + banana accelerates recovery.</div></div></div>
-    <div class="ti"><div class="tdot" style="background:var(--accent)"></div><div><div class="tt">500 ml water before each meal</div><div class="tb">Reduces meal calorie intake by ~13%. Free reduction with zero effort.</div></div></div>
-    <div class="ti"><div class="tdot" style="background:var(--accent)"></div><div><div class="tt">No food after 8 pm</div><div class="tb">Late eating raises insulin, blunting overnight fat burning.</div></div></div>
-    <div class="ti"><div class="tdot" style="background:var(--accent)"></div><div><div class="tt">Cycle calories around training</div><div class="tb">+100–150 kcal carbs on Mon/Wed/Fri. Less on Thu/Sun rest days.</div></div></div>
-  </div>
-  <div class="bonus-card">
-    <div class="bh"><div class="bd" style="background:var(--amber)"></div><div class="bt">Workout</div></div>
-    <div class="ti"><div class="tdot" style="background:var(--amber)"></div><div><div class="tt">Never skip warm-up sets</div><div class="tb">Activates more muscle fibres — more calories burned and muscle built per session.</div></div></div>
-    <div class="ti"><div class="tdot" style="background:var(--amber)"></div><div><div class="tt">10-min cardio finisher on lift days</div><div class="tb">Jumping jacks after Mon/Wed/Fri adds ~80 kcal and extends afterburn.</div></div></div>
-    <div class="ti"><div class="tdot" style="background:var(--amber)"></div><div><div class="tt">Supersets on lift days</div><div class="tb">Push + pull back-to-back. Same volume, 30% less time, ~15% more calories.</div></div></div>
-    <div class="ti"><div class="tdot" style="background:var(--amber)"></div><div><div class="tt">Maximise NEAT daily</div><div class="tb">8k–10k Garmin steps = +300–400 kcal/day without any extra workout.</div></div></div>
-    <div class="ti"><div class="tdot" style="background:var(--amber)"></div><div><div class="tt">Train semi-fasted once a week</div><div class="tb">Tue HIIT on a light stomach burns fat as fuel faster.</div></div></div>
-  </div>
-</div>
+
+
 
 <footer style="margin-top:18px;">Stretch: Yoga with Adriene · Mady Morrison · Yoga with Kassandra &nbsp;|&nbsp; HIIT: Heather Robertson HR12WEEK &nbsp;|&nbsp; Target: 2,200 kcal/day · 160g protein · Garmin Venu 5</footer>
 </div></div></div><!-- close days-container / main-grid / .page (day-panels were mis-nested, escaping .page on wide viewports) -->
@@ -3081,10 +2338,6 @@ function togglePlans(){
     <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     <span>Coach</span>
   </button>
-  <button class="tab-btn" data-tab="workout" role="tab" onclick="setTab('workout')" aria-label="Workout">
-    <svg viewBox="0 0 24 24"><path d="M6.5 6.5l11 11"/><path d="M21 21l-1-1"/><path d="M3 3l1 1"/><path d="M18 22l4-4"/><path d="M2 6l4-4"/><path d="M3 10l7-7"/><path d="M14 21l7-7"/></svg>
-    <span>Workout</span>
-  </button>
 </nav>
 
 <script>
@@ -3100,7 +2353,7 @@ function setTab(name){
 }
 (function(){
   var start = 'today';
-  try{ var s = localStorage.getItem('active_tab_v1'); if(s==='today'||s==='tracker'||s==='coach'||s==='workout') start = s; }catch(e){}
+  try{ var s = localStorage.getItem('active_tab_v1'); if(s==='today'||s==='tracker'||s==='coach') start = s; }catch(e){}
   document.body.setAttribute('data-tab', start);
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===start); });
   // if restoring to the coach tab, render its content once all scripts have loaded
@@ -5946,7 +5199,7 @@ if ('serviceWorker' in navigator) {
 (function(){
   // Tab list is a config array — add ['meals','Meals'] / ['health','Health'] here
   // once those screens exist. Keeps the bar in sync with the existing setTab().
-  var TABS = [['today','Today'],['tracker','Tracker'],['coach','Coach'],['workout','Workout']];
+  var TABS = [['today','Today'],['tracker','Tracker'],['coach','Coach']];
   var THEMES = { light:['Light','#f6f6f7'], dark:['Dark','#3a3a40'], iris:['Iris','#33d6e0'], dusk:['Dusk','#e9a24c'] };
   var THEME_KEY='iris_theme_v1';
   var BAR_COLOR={light:'#0b0b0d',dark:'#09090b',iris:'#04080a',dusk:'#120d0a'};
@@ -5990,14 +5243,18 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
-<!-- ─── Workout tab: native "Block 1" port (styles + program data + module) ──── -->
+<!-- ─── Workout module: native "Block 1" port, merged into Tracker (styles + data + module) ─── -->
 <style>
-/* ═══ Workout tab — native "Block 1" port ═════════════════════════════════════ */
-/* visibility: full canvas, hide every other screen (header stays) */
+/* ═══ Workout module — merged into the Tracker tab, non-floating ══════════════ */
+/* The workout cards live on the Tracker tab as a static responsive grid (no drag).
+   Floating/drag is Today-on-desktop only (see the mobile override at the bottom). */
 #workout-section{display:none;}
-body[data-tab="workout"] #workout-section{display:block;}
-body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.plan-edit,.side-toggle,.day-tabs,.progress-card,.main-grid,.day-panel,.plans-section,.slbl,.bonus-grid,footer){display:none!important;}
-#workout-grid{position:relative;}
+body[data-tab="tracker"] #workout-section{display:block;margin-bottom:18px;}
+#workout-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(324px,1fr));gap:14px;align-items:start;}
+#workout-grid .s2-card{max-height:80vh;}
+#workout-grid .s2-card>.s2-card-head{cursor:default;}
+/* Only Daily Habits (day-left) remains in the weekday panels now → single column. */
+.day-panel.visible{grid-template-columns:1fr!important;}
 
 /* card body */
 .wk-body{padding:0!important;}
@@ -6017,7 +5274,7 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
 .wk-title{margin:8px 0 2px;font-size:20px;font-weight:700;letter-spacing:-.01em;}
 .wk-logged{font-size:10px;font-family:var(--mono);text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:middle;margin-left:6px;}
 .wk-logged-best,.wk-logged-must{background:var(--accent);color:var(--on-accent);}
-.wk-logged-missed{background:var(--surface2);color:var(--sub);border:1px solid var(--border);}
+.wk-logged-missed,.wk-logged-skipped{background:var(--surface2);color:var(--sub);border:1px solid var(--border);}
 .wk-focus{color:var(--sub);font-size:13px;margin-bottom:12px;}
 
 /* tier toggle */
@@ -6034,12 +5291,19 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
 
 .wk-sec{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--sub);margin:16px 0 8px;}
 
-/* exercise block */
+/* exercise block + demo animation */
 .wk-list{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
 .wk-ex{border:1px solid var(--border);border-radius:12px;padding:11px 12px;background:var(--surface);}
+.wk-ex-row{display:flex;gap:11px;align-items:flex-start;}
+.wk-ex-info{flex:1;min-width:0;}
+.wk-demo{position:relative;width:84px;height:84px;border-radius:9px;overflow:hidden;background:var(--surface2);border:1px solid var(--border);flex:0 0 auto;}
+.wk-demo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+.wk-demo .f1{animation:wk-flip 1.4s steps(1,end) infinite;}
+@keyframes wk-flip{0%,49.9%{opacity:1;}50%,100%{opacity:0;}}
+@media (prefers-reduced-motion:reduce){ .wk-demo .f1{animation:none;} }
 .wk-ex-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
 .wk-ex-h b{font-size:14px;} .wk-ex-rx{font-family:var(--mono);font-size:11px;color:var(--sub);white-space:nowrap;}
-.wk-cue{font-size:12px;color:var(--sub);margin:3px 0 8px;}
+.wk-cue{font-size:12px;color:var(--sub);margin:3px 0 0;}
 .wk-set{display:flex;align-items:center;gap:8px;padding:4px 0;}
 .wk-setn{font-family:var(--mono);font-size:11px;color:var(--sub);width:14px;flex:0 0 auto;}
 .wk-in{display:flex;align-items:center;gap:3px;} .wk-in input{width:64px;border:1px solid var(--border);background:var(--surface2);color:var(--fg);border-radius:8px;padding:6px 8px;font-size:13px;font-family:var(--mono);}
@@ -6070,12 +5334,12 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
 .wk-missed-b{font-size:13px;color:var(--sub);line-height:1.5;padding-top:6px;}
 .wk-markmissed{margin-top:10px;justify-content:center;} .wk-markmissed.on{border-color:var(--accent);color:var(--accent);}
 
-/* ── chips (plan filter / log tier) ── */
+/* chips (plan filter / log tier) */
 .wk-chips{display:flex;flex-wrap:wrap;gap:6px;padding-top:10px;margin-bottom:6px;}
 .wk-chip{border:1px solid var(--border);background:var(--surface2);color:var(--sub);border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;text-transform:capitalize;}
 .wk-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
 
-/* ── plan list ── */
+/* plan list */
 .wk-plist{display:flex;flex-direction:column;gap:5px;}
 .wk-prow{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:13px;}
 .wk-prow.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
@@ -6084,7 +5348,7 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
 .wk-dot{width:9px;height:9px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);flex:0 0 auto;}
 .wk-dot.done{background:var(--accent);border-color:var(--accent);} .wk-dot.miss{background:var(--muted);border-color:var(--muted);}
 
-/* ── progress: charts / stats / strips / bars ── */
+/* progress: charts / stats / strips / bars */
 .wk-chart{margin:6px 0;} .wk-spark{width:100%;height:68px;display:block;}
 .wk-spk-line{fill:none;stroke:var(--muted);stroke-width:1;opacity:.6;} .wk-spk-trend{fill:none;stroke:var(--accent);stroke-width:2;}
 .wk-spk-dot{fill:var(--muted);} .wk-spk-ref{stroke:var(--border);stroke-dasharray:3 3;stroke-width:1;}
@@ -6104,10 +5368,18 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
 .wk-wt th{text-align:left;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);font-weight:400;padding:4px 6px;border-bottom:1px solid var(--border);}
 .wk-wt td{padding:5px 6px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;}
 
-/* ── log form ── */
+/* log form */
 .wk-frow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;font-size:13px;}
 .wk-frow>span{color:var(--sub);} .wk-frow input{width:110px;border:1px solid var(--border);background:var(--surface2);color:var(--fg);border-radius:8px;padding:7px 9px;font-size:13px;font-family:var(--mono);text-align:right;}
 .wk-pull{border:1px solid var(--border);background:var(--surface2);color:var(--sub);border-radius:8px;padding:3px 8px;font-size:10px;cursor:pointer;text-transform:none;letter-spacing:normal;float:right;}
+
+/* ── mobile: NOTHING floats. Today flows; workout grid single-column. ── */
+@media (max-width:719px){
+  #workout-grid{grid-template-columns:1fr;}
+  #workout-grid .s2-card{max-height:none;}
+  body.s2-canvas-on #today-grid{min-height:auto!important;height:auto!important;}
+  body.s2-canvas-on #today-grid>.tcard.s2-card-pos{position:static!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;margin:0 0 12px;}
+}
 
 </style>
 <script>window.WORKOUT_PLAN={"meta":{"athlete":"Ali","blockName":"Block 1: Re-entry","startDate":"2026-09-14","endDate":"2026-09-30","reviewDate":"2026-10-01","startWeightKg":93.8,"startWeightDate":"2026-09-13","targetWeightKgByEnd":92.6,"targetRateKgPerWeek":0.5,"goal":"Lose fat, keep muscle","equipment":["barbell","plates","bench","dumbbells","kettlebell","treadmill","stationary bike"],"sessionCapMin":50,"fixed":{"football":"Friday nights","volleyball":"Some Thursday nights (confirmed Sep 17, possible Sep 24)","recoveryDay":"Saturday"},"tierLogic":{"must":"The floor. Short and easy on purpose. Designed to be done on a low-energy day, late at night, tired. If this is all that happens, the week still counts.","best":"The full session for a day with energy. Never mandatory.","missed":"What to do instead if the day is gone. Missing is planned for, not punished."},"imageSource":{"dataset":"yuhonas/free-exercise-db (public domain)","jsonUrl":"https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json","imageBaseUrl":"https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/","note":"Each exercise has images like ID/0.jpg (start) and ID/1.jpg (end). Alternate the two frames to animate the movement."}},"exerciseLibrary":{"goblet_squat":{"name":"Goblet Squat","dbId":"Goblet_Squat","equipment":"dumbbell or kettlebell","cue":"Elbows inside knees, chest tall, sit straight down."},"barbell_squat":{"name":"Barbell Back Squat","dbId":"Barbell_Squat","equipment":"barbell","cue":"Brace before you unrack. Knees track over toes. First set is the empty bar."},"db_bench":{"name":"Dumbbell Bench Press","dbId":"Dumbbell_Bench_Press","equipment":"dumbbells, bench","cue":"Shoulder blades pinned to the bench, elbows about 45 degrees, not flared."},"bb_bench":{"name":"Barbell Bench Press","dbId":"Barbell_Bench_Press_-_Medium_Grip","equipment":"barbell, bench","cue":"Bar touches the lower chest, not the neck. Full control down."},"incline_db_press":{"name":"Incline Dumbbell Press","dbId":"Incline_Dumbbell_Press","equipment":"dumbbells, bench","cue":"Bench at about 30 degrees. Any steeper is a shoulder press."},"rdl":{"name":"Romanian Deadlift","dbId":"Romanian_Deadlift","equipment":"barbell or dumbbells","cue":"Push hips back, bar stays close to the legs, stop when hamstrings say stop."},"bb_row":{"name":"Bent Over Barbell Row","dbId":"Bent_Over_Barbell_Row","equipment":"barbell","cue":"Torso near 45 degrees, pull to the belly button, no jerking."},"db_row_two":{"name":"Bent Over Two-Dumbbell Row","dbId":"Bent_Over_Two-Dumbbell_Row","equipment":"dumbbells","cue":"Squeeze the shoulder blades together at the top, pause one second."},"db_row_one":{"name":"One-Arm Dumbbell Row","dbId":"One-Arm_Dumbbell_Row","equipment":"dumbbell, bench","cue":"Flat back, no twisting. Drive the elbow to the back pocket."},"db_shoulder_press":{"name":"Dumbbell Shoulder Press","dbId":"Dumbbell_Shoulder_Press","equipment":"dumbbells","cue":"Ribs down, do not arch the lower back to finish the rep."},"db_rear_lunge":{"name":"Dumbbell Reverse Lunge","dbId":"Dumbbell_Rear_Lunge","equipment":"dumbbells","cue":"Step back, not forward. Easier on the knees and easier to balance."},"kb_swing":{"name":"Kettlebell Swing","dbId":"One-Arm_Kettlebell_Swings","equipment":"kettlebell","cue":"This is a hip snap, not a squat and not a front raise. Two-handed is fine, the demo shows one arm."},"pushups":{"name":"Push-Ups","dbId":"Pushups","equipment":"bodyweight","cue":"Straight line from head to heels. Hands on the bench if full ones are too hard."},"hammer_curl":{"name":"Hammer Curls","dbId":"Hammer_Curls","equipment":"dumbbells","cue":"Thumbs up the whole way, elbows pinned to your sides."},"db_tri_ext":{"name":"One-Arm Overhead Triceps Extension","dbId":"Dumbbell_One-Arm_Triceps_Extension","equipment":"dumbbell","cue":"Elbow points at the ceiling and stays there."},"pullover":{"name":"Straight-Arm Dumbbell Pullover","dbId":"Straight-Arm_Dumbbell_Pullover","equipment":"dumbbell, bench","cue":"Light weight. Feel the stretch across the lats and ribs."},"farmers_walk":{"name":"Farmer's Walk","dbId":"Farmers_Walk","equipment":"dumbbells","cue":"Heavy as you can hold, tall posture, just walk. Brutal and simple."},"plank":{"name":"Plank","dbId":"Plank","equipment":"bodyweight","cue":"Squeeze glutes. If the lower back sags, the set is over."},"side_bridge":{"name":"Side Plank","dbId":"Side_Bridge","equipment":"bodyweight","cue":"Stack the feet, push the hip to the ceiling."},"dead_bug":{"name":"Dead Bug","dbId":"Dead_Bug","equipment":"bodyweight","cue":"Lower back stays glued to the floor. Slow beats far."},"superman":{"name":"Superman","dbId":"Superman","equipment":"bodyweight","cue":"Lift from the upper back, do not crank the neck."},"glute_bridge":{"name":"Single-Leg Glute Bridge","dbId":"Single_Leg_Glute_Bridge","equipment":"bodyweight","cue":"Drive through the heel, squeeze at the top for a second."},"russian_twist":{"name":"Russian Twist","dbId":"Russian_Twist","equipment":"bodyweight or dumbbell","cue":"Rotate the ribcage, not just the arms."},"crunches":{"name":"Crunches","dbId":"Crunches","equipment":"bodyweight","cue":"Short range, slow, no hands behind the head pulling."},"mountain_climbers":{"name":"Mountain Climbers","dbId":"Mountain_Climbers","equipment":"bodyweight","cue":"Hips stay low and level. Do not let them bounce."},"bike_easy":{"name":"Easy Bike","dbId":null,"equipment":"stationary bike","cue":"Zone 2. You should be able to talk in full sentences. Boring on purpose."},"bike_intervals":{"name":"Bike Intervals","dbId":null,"equipment":"stationary bike","cue":"Hard means hard, but you should finish every interval at the same effort."},"treadmill_incline":{"name":"Incline Treadmill Walk","dbId":null,"equipment":"treadmill","cue":"No holding the handrails. If you need them, drop the incline."},"treadmill_intervals":{"name":"Treadmill Intervals","dbId":null,"equipment":"treadmill","cue":"Brisk walk or light jog, not a sprint. Keep the form clean."},"walk_outside":{"name":"Outdoor Walk","dbId":null,"equipment":"none","cue":"Fresh air counts double on a low day. Put a podcast on."},"mobility":{"name":"Mobility Flow","dbId":null,"equipment":"none","cue":"Ankles, hips, thoracic spine. Move through range, do not hold long."},"stretch":{"name":"Stretch","dbId":null,"equipment":"none","cue":"Quads, hamstrings, calves, hip flexors. 30 seconds each."},"foam_roll":{"name":"Foam Roll","dbId":null,"equipment":"foam roller","cue":"Slow passes. Pause on the sore spots and breathe."},"football":{"name":"Football","dbId":null,"equipment":"none","cue":"This is training. It is the hardest session of your week."},"volleyball":{"name":"Volleyball","dbId":null,"equipment":"none","cue":"Lots of jumping. Expect calves and quads to complain tomorrow."},"weigh_in":{"name":"Weigh In","dbId":null,"equipment":"scale","cue":"Same time, after the bathroom, before eating. Trend matters, single days do not."},"test_block":{"name":"Benchmark Tests","dbId":null,"equipment":"none","cue":"Record everything. These numbers set month 2."}},"days":[{"date":"2026-09-14","weekday":"Monday","week":1,"title":"Baseline A: Squat and Press","type":"strength","focus":"Find your working weights. Do not chase soreness.","must":{"durationMin":18,"items":[{"ex":"goblet_squat","sets":2,"reps":"10"},{"ex":"db_bench","sets":2,"reps":"10"},{"ex":"plank","sets":2,"reps":"30 s"}]},"best":{"durationMin":45,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"goblet_squat","sets":3,"reps":"10","rest":"90 s"},{"ex":"db_bench","sets":3,"reps":"10","rest":"90 s"},{"ex":"rdl","sets":3,"reps":"10","rest":"90 s"},{"ex":"db_row_one","sets":3,"reps":"10 each","rest":"60 s"},{"ex":"plank","sets":2,"reps":"40 s","rest":"45 s"},{"ex":"treadmill_incline","sets":1,"reps":"8 min at 10%"}]},"missed":"Do the MUST version tonight even if it is 9pm. It is 18 minutes. If the day is genuinely gone, move it to Tuesday and push Tuesday's cardio to Thursday.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":350,"best":550}},"coachNote":"Every set should end with 3 reps left in the tank. You will think it is too light. That is the plan. Week 1 soreness is what kills week 2. Write down every weight you use."},{"date":"2026-09-15","weekday":"Tuesday","week":1,"title":"Easy Engine","type":"cardio","focus":"Low intensity, high boredom, real fat loss.","must":{"durationMin":15,"items":[{"ex":"bike_easy","sets":1,"reps":"15 min, conversational pace"}]},"best":{"durationMin":40,"items":[{"ex":"bike_easy","sets":1,"reps":"30 min zone 2"},{"ex":"dead_bug","sets":2,"reps":"10 each"},{"ex":"side_bridge","sets":2,"reps":"30 s each"},{"ex":"glute_bridge","sets":2,"reps":"12 each"}]},"missed":"Add 3000 steps to today instead and take a walk after dinner. Cardio is the most replaceable session in the week.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":20,"best":30},"activeKcal":{"must":250,"best":450}},"coachNote":"If your legs are sore from Monday, this is exactly what fixes them. Moving beats resting on day two."},{"date":"2026-09-16","weekday":"Wednesday","week":1,"title":"Baseline B: Hinge and Pull","type":"strength","focus":"The back side of the body. Same rule, stay short of failure.","must":{"durationMin":18,"items":[{"ex":"kb_swing","sets":3,"reps":"12"},{"ex":"db_rear_lunge","sets":2,"reps":"8 each"},{"ex":"db_shoulder_press","sets":2,"reps":"10"}]},"best":{"durationMin":45,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"kb_swing","sets":4,"reps":"12","rest":"60 s"},{"ex":"db_rear_lunge","sets":3,"reps":"8 each","rest":"90 s"},{"ex":"db_shoulder_press","sets":3,"reps":"10","rest":"90 s"},{"ex":"db_row_two","sets":3,"reps":"12","rest":"60 s"},{"ex":"dead_bug","sets":2,"reps":"10 each","rest":"45 s"},{"ex":"bike_intervals","sets":6,"reps":"30 s hard / 90 s easy"}]},"missed":"Move it to Thursday afternoon. Lift early, play volleyball at night, skip the bike finisher. Do not stack it onto Friday.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":350,"best":550}},"coachNote":"Swings are a hip snap, not a squat and not an arm raise. If your shoulders are burning, you are lifting the bell instead of throwing it."},{"date":"2026-09-17","weekday":"Thursday","week":1,"title":"Volleyball Night","type":"sport","focus":"Bonus day. Nothing here is compulsory.","must":{"durationMin":20,"items":[{"ex":"walk_outside","sets":1,"reps":"20 min during the day"},{"ex":"volleyball","sets":1,"reps":"play"}]},"best":{"durationMin":45,"items":[{"ex":"walk_outside","sets":1,"reps":"20 min"},{"ex":"mobility","sets":1,"reps":"10 min before playing"},{"ex":"volleyball","sets":1,"reps":"play"},{"ex":"stretch","sets":1,"reps":"5 min after"}]},"missed":"If volleyball is off, do 30 min on the bike with 5 x 1 min pickups. If you are flat, rest completely. No penalty, this is a bonus day.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":20,"best":30},"activeKcal":{"must":250,"best":600}},"coachNote":"Volleyball is a lot of jumping. Go easy on the calves tomorrow and remember football is the next night."},{"date":"2026-09-18","weekday":"Friday","week":1,"title":"Football Night","type":"sport","focus":"Your hardest session of the week. Treat it like one.","must":{"durationMin":10,"items":[{"ex":"mobility","sets":1,"reps":"5 min ankles and hips before you leave"},{"ex":"football","sets":1,"reps":"play"}]},"best":{"durationMin":25,"items":[{"ex":"mobility","sets":1,"reps":"10 min ankles, hips, hamstrings"},{"ex":"football","sets":1,"reps":"play, with a 10 min easy jog warm-up first"},{"ex":"stretch","sets":1,"reps":"5 min after, calves and quads"}]},"missed":"Not applicable. If football is cancelled, do Thursday's bike session instead.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":10,"best":15},"activeKcal":{"must":600,"best":800}},"coachNote":"No lifting today. Eat a proper protein lunch and drink more water than usual. The warm-up is the difference between playing next week and not."},{"date":"2026-09-19","weekday":"Saturday","week":1,"title":"Repair","type":"recovery","focus":"Real rest. Non-negotiable.","must":{"durationMin":10,"items":[{"ex":"walk_outside","sets":1,"reps":"get to 4000 steps"},{"ex":"stretch","sets":1,"reps":"5 min"}]},"best":{"durationMin":45,"items":[{"ex":"walk_outside","sets":1,"reps":"25 min easy"},{"ex":"stretch","sets":1,"reps":"10 min full body"},{"ex":"foam_roll","sets":1,"reps":"quads and calves"}]},"missed":"At absolute minimum walk 15 minutes. Do not lift today no matter how good you feel.","targets":{"steps":{"must":5500,"best":8000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":150,"best":300}},"coachNote":"Sore for a day after football is normal. Joint pain that is sharp or one-sided is not. Flag it if you get it."},{"date":"2026-09-20","weekday":"Sunday","week":1,"title":"Weigh, Log, Plan","type":"admin","focus":"The five minutes that make next week happen.","must":{"durationMin":10,"items":[{"ex":"weigh_in","sets":1,"reps":"log it"},{"ex":"walk_outside","sets":1,"reps":"get to 5000 steps"}]},"best":{"durationMin":45,"items":[{"ex":"weigh_in","sets":1,"reps":"log it"},{"ex":"bike_easy","sets":1,"reps":"30 min easy, or a 30 min walk"},{"ex":"mobility","sets":1,"reps":"10 min"}]},"missed":"Just weigh in and write Monday's training slot in your calendar. That is the one thing that cannot slip.","targets":{"steps":{"must":5500,"best":8000},"walkMin":{"must":20,"best":35},"activeKcal":{"must":200,"best":400}},"coachNote":"Book Monday's session in your calendar like a meeting, with a real time on it. Your training time varies day to day, which means it needs deciding the night before, not in the moment."},{"date":"2026-09-21","weekday":"Monday","week":2,"title":"Barbell Debut: Lower","type":"strength","focus":"The bar comes out. Technique first, load second.","must":{"durationMin":20,"items":[{"ex":"goblet_squat","sets":2,"reps":"12"},{"ex":"rdl","sets":2,"reps":"10"},{"ex":"farmers_walk","sets":2,"reps":"40 s"}]},"best":{"durationMin":48,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"barbell_squat","sets":4,"reps":"8","rest":"2 min"},{"ex":"incline_db_press","sets":3,"reps":"10","rest":"90 s"},{"ex":"rdl","sets":3,"reps":"12","rest":"90 s"},{"ex":"db_row_one","sets":3,"reps":"12 each","rest":"60 s"},{"ex":"farmers_walk","sets":3,"reps":"40 s","rest":"60 s"},{"ex":"treadmill_incline","sets":1,"reps":"8 min at 11%"}]},"missed":"Tuesday becomes this session and cardio moves to Thursday. Do not cut the barbell squat, it is the reason this day exists.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":350,"best":600}},"coachNote":"First squat set is the empty bar, always. Add weight across the four sets only if reps 6, 7 and 8 still look identical."},{"date":"2026-09-22","weekday":"Tuesday","week":2,"title":"Treadmill Intervals","type":"cardio","focus":"Slightly harder than last Tuesday. Same time cost.","must":{"durationMin":18,"items":[{"ex":"treadmill_incline","sets":1,"reps":"18 min brisk at 6%"}]},"best":{"durationMin":40,"items":[{"ex":"treadmill_intervals","sets":10,"reps":"1 min brisk / 1 min easy, after a 5 min warm-up"},{"ex":"russian_twist","sets":3,"reps":"20"},{"ex":"side_bridge","sets":3,"reps":"30 s each"},{"ex":"superman","sets":2,"reps":"12"}]},"missed":"3000 extra steps outside plus the core block at home. The core block takes six minutes.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":25,"best":40},"activeKcal":{"must":300,"best":500}},"coachNote":"Brisk walk or light jog on the intervals, not a sprint. The point is 20 usable minutes, not one heroic one."},{"date":"2026-09-23","weekday":"Wednesday","week":2,"title":"Upper Volume","type":"strength","focus":"More sets than week 1, same honest effort.","must":{"durationMin":20,"items":[{"ex":"db_bench","sets":2,"reps":"12"},{"ex":"db_row_two","sets":2,"reps":"12"},{"ex":"hammer_curl","sets":2,"reps":"12"}]},"best":{"durationMin":45,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"db_bench","sets":4,"reps":"10","rest":"90 s"},{"ex":"bb_row","sets":4,"reps":"10","rest":"90 s"},{"ex":"db_shoulder_press","sets":3,"reps":"10","rest":"90 s"},{"ex":"pullover","sets":3,"reps":"12","rest":"60 s"},{"ex":"hammer_curl","sets":3,"reps":"12","rest":"45 s","superset":"db_tri_ext"},{"ex":"db_tri_ext","sets":3,"reps":"12 each","rest":"45 s"},{"ex":"kb_swing","sets":5,"reps":"10 on the minute, 5 min total"}]},"missed":"Do the MUST version. It is 20 minutes and covers push, pull and arms.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":350,"best":550}},"coachNote":"Your upper back does most of the work holding posture at a desk all day. The rows matter more than the bench here."},{"date":"2026-09-24","weekday":"Thursday","week":2,"title":"Volleyball or Engine","type":"sport","focus":"Play if it is on. Bike if it is not.","must":{"durationMin":20,"items":[{"ex":"walk_outside","sets":1,"reps":"20 min, then play if volleyball is on"}]},"best":{"durationMin":45,"items":[{"ex":"mobility","sets":1,"reps":"10 min"},{"ex":"volleyball","sets":1,"reps":"play"},{"ex":"stretch","sets":1,"reps":"10 min after"}]},"missed":"No volleyball: 35 min zone 2 bike plus mountain climbers 3 x 30 s. Flat and tired: rest, it is a bonus day.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":20,"best":30},"activeKcal":{"must":250,"best":600}},"coachNote":"Whatever you do here, keep something in reserve. Football is tomorrow night and it is the priority."},{"date":"2026-09-25","weekday":"Friday","week":2,"title":"Football Night","type":"sport","focus":"Play, and pay attention to the last 20 minutes.","must":{"durationMin":10,"items":[{"ex":"mobility","sets":1,"reps":"5 min before you leave"},{"ex":"football","sets":1,"reps":"play"}]},"best":{"durationMin":25,"items":[{"ex":"mobility","sets":1,"reps":"10 min"},{"ex":"football","sets":1,"reps":"play, with a 10 min jog warm-up"},{"ex":"stretch","sets":1,"reps":"5 min after"}]},"missed":"Not applicable.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":10,"best":15},"activeKcal":{"must":600,"best":850}},"coachNote":"Rate your last 20 minutes out of 10 in tonight's log. Compare it to Sep 18. That number tells us more about your conditioning than the scale does."},{"date":"2026-09-26","weekday":"Saturday","week":2,"title":"Repair","type":"recovery","focus":"Same as last Saturday. Still non-negotiable.","must":{"durationMin":10,"items":[{"ex":"walk_outside","sets":1,"reps":"get to 4000 steps"},{"ex":"stretch","sets":1,"reps":"5 min"}]},"best":{"durationMin":45,"items":[{"ex":"walk_outside","sets":1,"reps":"25 min easy"},{"ex":"stretch","sets":1,"reps":"10 min"},{"ex":"foam_roll","sets":1,"reps":"10 min"}]},"missed":"Walk 15 minutes. That is the whole requirement.","targets":{"steps":{"must":5500,"best":8000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":150,"best":300}},"coachNote":"If you feel better today than you did on Sep 19, that is the conditioning working already."},{"date":"2026-09-27","weekday":"Sunday","week":2,"title":"Weigh, Log, Plan","type":"admin","focus":"Two weeks down. Look at the trend line, not yesterday's number.","must":{"durationMin":10,"items":[{"ex":"weigh_in","sets":1,"reps":"log it"},{"ex":"walk_outside","sets":1,"reps":"get to 5000 steps"}]},"best":{"durationMin":45,"items":[{"ex":"weigh_in","sets":1,"reps":"log it"},{"ex":"walk_outside","sets":1,"reps":"35 min, or 35 min easy bike"},{"ex":"mobility","sets":1,"reps":"10 min"}]},"missed":"Weigh in and book Monday. Nothing else required.","targets":{"steps":{"must":5500,"best":8000},"walkMin":{"must":20,"best":35},"activeKcal":{"must":200,"best":400}},"coachNote":"Three training days left in this block. Monday is the heaviest day of the month, so eat and sleep properly tonight and tomorrow."},{"date":"2026-09-28","weekday":"Monday","week":3,"title":"Heaviest Day","type":"strength","focus":"The loading benchmark for month 2.","must":{"durationMin":20,"items":[{"ex":"goblet_squat","sets":3,"reps":"10"},{"ex":"db_bench","sets":2,"reps":"10"},{"ex":"plank","sets":2,"reps":"40 s"}]},"best":{"durationMin":50,"items":[{"ex":"bike_easy","sets":1,"reps":"6 min warm-up"},{"ex":"barbell_squat","sets":4,"reps":"8, heavier than Sep 21","rest":"2 min"},{"ex":"bb_bench","sets":4,"reps":"8","rest":"2 min"},{"ex":"rdl","sets":4,"reps":"10","rest":"90 s"},{"ex":"db_row_one","sets":4,"reps":"10 each","rest":"60 s"},{"ex":"plank","sets":3,"reps":"45 s","rest":"45 s"},{"ex":"treadmill_incline","sets":1,"reps":"10 min at 12%"}]},"missed":"Move it to Tuesday. Do not let this one go entirely, the numbers here set the starting loads for October.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":30},"activeKcal":{"must":400,"best":600}},"coachNote":"Heavier means heavier than Sep 21, not heavy in general. Two and a half kilos more on the bar is a successful day. Still stop 2 reps short."},{"date":"2026-09-29","weekday":"Tuesday","week":3,"title":"Conditioning","type":"cardio","focus":"Hardest cardio of the block, and it is still only 40 minutes.","must":{"durationMin":20,"items":[{"ex":"bike_easy","sets":1,"reps":"20 min easy"}]},"best":{"durationMin":42,"items":[{"ex":"bike_intervals","sets":10,"reps":"30 s hard / 90 s easy, after a 5 min warm-up"},{"ex":"dead_bug","sets":3,"reps":"10 each"},{"ex":"side_bridge","sets":3,"reps":"30 s each"},{"ex":"crunches","sets":3,"reps":"15"}]},"missed":"25 min brisk walk outside. Done.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":25,"best":40},"activeKcal":{"must":300,"best":500}},"coachNote":"Interval 10 should look like interval 1. If you die at number 4, you went too hard at number 1."},{"date":"2026-09-30","weekday":"Wednesday","week":3,"title":"Month Test","type":"strength","focus":"Finish the block and record the benchmarks.","must":{"durationMin":20,"items":[{"ex":"kb_swing","sets":3,"reps":"12"},{"ex":"db_shoulder_press","sets":2,"reps":"12"},{"ex":"test_block","sets":1,"reps":"max push-ups in one set, record it"}]},"best":{"durationMin":45,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"kb_swing","sets":5,"reps":"12","rest":"60 s"},{"ex":"goblet_squat","sets":3,"reps":"15","rest":"90 s"},{"ex":"db_shoulder_press","sets":4,"reps":"10","rest":"90 s"},{"ex":"db_row_two","sets":4,"reps":"12","rest":"60 s"},{"ex":"test_block","sets":1,"reps":"max push-ups, max plank hold, fastest 500 m on the bike"},{"ex":"bike_easy","sets":1,"reps":"5 min cool-down"}]},"missed":"Do the three tests at minimum. They take eight minutes and month 2 is built on them.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":400,"best":600}},"coachNote":"Block done. Bring me four numbers on Oct 1: sessions completed out of 17, weight trend, max push-ups, and how football felt in the last 20 minutes."}],"habits":{"must":["Protein at all three meals, roughly a palm-sized portion each","No calories in a glass: no juice, no soda, no sugary coffee","Weigh in at least 3 mornings a week, same time, after the bathroom","Decide tomorrow's training time the night before and put it in the calendar"],"best":["Protein at every meal plus one snack, roughly 130 to 150 g a day","Half the plate vegetables at lunch and dinner","7 hours of sleep","20 minute walk after dinner","Weigh in every morning"]},"rules":["The MUST tier is short on purpose. On a low-energy day you are allowed to do MUST and call it a win. You are not allowed to decide from the couch: change clothes, do the warm-up, then choose.","Saturday is a full rest day. No lifting, regardless of how good you feel.","Missing one session does not cancel the week. Missing the decision to reschedule does.","Sore for a day or two is expected. Sharp, one-sided or joint pain means stop and flag it.","Judge the scale on a 7-day trend, never on a single morning. A 1 kg jump overnight is water and food, not fat.","Do not add sessions because you feel motivated in week 1. The plan already accounts for football and volleyball."]};</script>
@@ -6264,6 +5536,8 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
   function currentStreak(){ var st=0; for(var i=ORDER.length-1;i>=0;i--){ var t=cache[ORDER[i]]&&cache[ORDER[i]].tier; if(t==null) continue; if(isDone(t)) st++; else break; } return st; }
 
   /* ═══ CARD: Session (Today) ═══════════════════════════════════════════════ */
+  function demoHtml(ex){ if(!ex.dbId) return ''; var b='./exercises/'+ex.dbId+'/';
+    return '<div class="wk-demo" title="'+esc(ex.name)+' demo"><img class="f0" src="'+b+'0.jpg" alt="" loading="lazy"><img class="f1" src="'+b+'1.jpg" alt="" loading="lazy"></div>'; }
   function exBlock(item, log){
     var ex=exercise(item.ex), ms=metricsFor(item.ex), id=item.ex;
     var sets=log.sets&&log.sets[id]||[], fb=(log.feedback&&log.feedback[id])||{};
@@ -6280,9 +5554,11 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
     var feel='';
     for(var f=1;f<=5;f++) feel+='<button class="wk-feel'+(fb.feel===f?' on':'')+'" data-act="feel" data-ex="'+id+'" data-v="'+f+'">'+f+'</button>';
     return '<div class="wk-ex">'
+      +'<div class="wk-ex-row">'+demoHtml(ex)+'<div class="wk-ex-info">'
       +'<div class="wk-ex-h"><b>'+esc(ex.name)+'</b><span class="wk-ex-rx">'+item.sets+'×'+esc(item.reps)+(item.rest?' · rest '+esc(item.rest):'')+'</span></div>'
       +(ex.cue?'<div class="wk-cue">'+esc(ex.cue)+'</div>':'')
       +(item.superset?'<div class="wk-cue">superset with '+esc(exercise(item.superset).name)+'</div>':'')
+      +'</div></div>'
       +rows
       +'<div class="wk-fb"><span class="wk-fb-l">too easy</span>'+feel+'<span class="wk-fb-l">too hard</span>'
       +(rs?'<button class="wk-rest" data-act="rest" data-sec="'+rs+'">rest '+rs+'s</button>':'')+'</div>'
@@ -6457,31 +5733,24 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
     if(act==='lbio'){ var key=t.getAttribute('data-f'), v4=t.value.trim(); var bd={}; bd[key]=(v4===''?null:Number(v4)); queue(iso,{bio:bd}); return; }
   }
 
-  /* ── build cards + mount ──────────────────────────────────────────────────── */
-  function defWorkout(b){
-    var ids=['session','plan','progress','log'];
-    if(b==='m'){ var W=Math.max(384, Math.floor((window.innerWidth-24)/24)*24), y=12, out=[];
-      ids.forEach(function(id){ out.push({id:id,x:12,y:y,w:W,h:id==='session'||id==='progress'?640:520}); y+=(id==='session'||id==='progress'?640:520)+12; }); return out; }
-    return [{id:'session',x:24,y:24,w:456,h:720},{id:'plan',x:504,y:24,w:432,h:560},{id:'progress',x:960,y:24,w:456,h:720},{id:'log',x:504,y:600,w:432,h:600}];
-  }
-  window.s2MountWorkout=function(){
+  /* ── build cards + mount (static grid on the Tracker tab — no floating) ─────── */
+  function mountWorkout(){
     var grid=document.getElementById('workout-grid'); if(!grid) return;
-    if(grid.querySelector(':scope > .s2-card')){ if(window.s2ApplyTab) window.s2ApplyTab('workout'); return; }
-    if(typeof s2RegisterTab==='function') s2RegisterTab('workout',grid,defWorkout);
+    if(grid.querySelector('.s2-card')) return;    // already built
     Object.keys(cards).forEach(function(id){ var c=cards[id];
       var card=document.createElement('section'); card.className='s2-card'; card.setAttribute('data-card',id);
       card.innerHTML='<div class="s2-card-head">'+c.title+' <span class="s2-card-meta"></span></div><div class="s2-card-body wk-body"></div>';
       grid.appendChild(card);
       c.el=card; c.body=card.querySelector('.wk-body'); c.metaEl=c.meta?card.querySelector('.s2-card-meta'):null;
       c.body.addEventListener('click', onAct); c.body.addEventListener('change', onChange);
-      if(typeof s2RegisterCard==='function') s2RegisterCard('workout',id,card,card.querySelector('.s2-card-head'));
     });
-    if(window.s2ApplyTab) window.s2ApplyTab('workout');
     renderAll();
     load(view.date, renderAll); loadAll(renderAll);
-  };
+  }
+  window.s2MountWorkout=mountWorkout;   // keep the name so the existing boot call still fires
+  window.mountWorkout=mountWorkout;
 
-  new MutationObserver(function(){ if(document.body.getAttribute('data-tab')==='workout'){ if(!cards.session.body && window.s2MountWorkout) window.s2MountWorkout(); else window.refreshWorkout(); } })
+  new MutationObserver(function(){ if(document.body.getAttribute('data-tab')==='tracker'){ if(!cards.session.body) mountWorkout(); else window.refreshWorkout(); } })
     .observe(document.body,{attributes:true,attributeFilter:['data-tab']});
 })();
 
