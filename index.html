@@ -6070,6 +6070,45 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
 .wk-missed-b{font-size:13px;color:var(--sub);line-height:1.5;padding-top:6px;}
 .wk-markmissed{margin-top:10px;justify-content:center;} .wk-markmissed.on{border-color:var(--accent);color:var(--accent);}
 
+/* ── chips (plan filter / log tier) ── */
+.wk-chips{display:flex;flex-wrap:wrap;gap:6px;padding-top:10px;margin-bottom:6px;}
+.wk-chip{border:1px solid var(--border);background:var(--surface2);color:var(--sub);border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;text-transform:capitalize;}
+.wk-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
+
+/* ── plan list ── */
+.wk-plist{display:flex;flex-direction:column;gap:5px;}
+.wk-prow{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:13px;}
+.wk-prow.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+.wk-prow-d{font-family:var(--mono);font-size:11px;color:var(--sub);white-space:nowrap;flex:0 0 auto;width:52px;}
+.wk-prow-t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.wk-dot{width:9px;height:9px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);flex:0 0 auto;}
+.wk-dot.done{background:var(--accent);border-color:var(--accent);} .wk-dot.miss{background:var(--muted);border-color:var(--muted);}
+
+/* ── progress: charts / stats / strips / bars ── */
+.wk-chart{margin:6px 0;} .wk-spark{width:100%;height:68px;display:block;}
+.wk-spk-line{fill:none;stroke:var(--muted);stroke-width:1;opacity:.6;} .wk-spk-trend{fill:none;stroke:var(--accent);stroke-width:2;}
+.wk-spk-dot{fill:var(--muted);} .wk-spk-ref{stroke:var(--border);stroke-dasharray:3 3;stroke-width:1;}
+.wk-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0;}
+.wk-stat{text-align:center;} .wk-stat b{display:block;font-size:18px;letter-spacing:-.01em;} .wk-stat small{font-size:10px;color:var(--sub);}
+.wk-foot{font-size:11px;color:var(--sub);margin:6px 0 2px;}
+.wk-strip{display:flex;gap:3px;flex-wrap:wrap;margin:4px 0;}
+.wk-cell{width:14px;height:14px;border-radius:3px;background:var(--surface2);border:1px solid var(--border);}
+.wk-cell-best{background:var(--accent);border-color:var(--accent);} .wk-cell-must{background:color-mix(in srgb,var(--accent) 45%,var(--surface));border-color:transparent;}
+.wk-cell-miss{background:var(--muted);border-color:var(--muted);} .wk-cell-none,.wk-cell-fut{background:var(--surface2);}
+.wk-bars{display:flex;align-items:flex-end;gap:3px;height:60px;margin:4px 0;}
+.wk-bcol{flex:1;min-height:2px;border-radius:2px 2px 0 0;background:var(--surface2);}
+.wk-bcol.wk-ok{background:var(--accent);} .wk-bcol.wk-mid{background:color-mix(in srgb,var(--accent) 45%,var(--surface2));} .wk-bcol.wk-low{background:var(--muted);opacity:.6;} .wk-bcol.wk-none{opacity:.3;}
+.wk-fbrow{padding:7px 0;border-bottom:1px solid var(--border);} .wk-fbrow:last-child{border-bottom:0;}
+.wk-fbrow b{font-size:13px;} .wk-fbavg{font-family:var(--mono);font-size:11px;color:var(--sub);margin-left:8px;}
+.wk-wt{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;}
+.wk-wt th{text-align:left;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);font-weight:400;padding:4px 6px;border-bottom:1px solid var(--border);}
+.wk-wt td{padding:5px 6px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;}
+
+/* ── log form ── */
+.wk-frow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;font-size:13px;}
+.wk-frow>span{color:var(--sub);} .wk-frow input{width:110px;border:1px solid var(--border);background:var(--surface2);color:var(--fg);border-radius:8px;padding:7px 9px;font-size:13px;font-family:var(--mono);text-align:right;}
+.wk-pull{border:1px solid var(--border);background:var(--surface2);color:var(--sub);border-radius:8px;padding:3px 8px;font-size:10px;cursor:pointer;text-transform:none;letter-spacing:normal;float:right;}
+
 </style>
 <script>window.WORKOUT_PLAN={"meta":{"athlete":"Ali","blockName":"Block 1: Re-entry","startDate":"2026-09-14","endDate":"2026-09-30","reviewDate":"2026-10-01","startWeightKg":93.8,"startWeightDate":"2026-09-13","targetWeightKgByEnd":92.6,"targetRateKgPerWeek":0.5,"goal":"Lose fat, keep muscle","equipment":["barbell","plates","bench","dumbbells","kettlebell","treadmill","stationary bike"],"sessionCapMin":50,"fixed":{"football":"Friday nights","volleyball":"Some Thursday nights (confirmed Sep 17, possible Sep 24)","recoveryDay":"Saturday"},"tierLogic":{"must":"The floor. Short and easy on purpose. Designed to be done on a low-energy day, late at night, tired. If this is all that happens, the week still counts.","best":"The full session for a day with energy. Never mandatory.","missed":"What to do instead if the day is gone. Missing is planned for, not punished."},"imageSource":{"dataset":"yuhonas/free-exercise-db (public domain)","jsonUrl":"https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json","imageBaseUrl":"https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/","note":"Each exercise has images like ID/0.jpg (start) and ID/1.jpg (end). Alternate the two frames to animate the movement."}},"exerciseLibrary":{"goblet_squat":{"name":"Goblet Squat","dbId":"Goblet_Squat","equipment":"dumbbell or kettlebell","cue":"Elbows inside knees, chest tall, sit straight down."},"barbell_squat":{"name":"Barbell Back Squat","dbId":"Barbell_Squat","equipment":"barbell","cue":"Brace before you unrack. Knees track over toes. First set is the empty bar."},"db_bench":{"name":"Dumbbell Bench Press","dbId":"Dumbbell_Bench_Press","equipment":"dumbbells, bench","cue":"Shoulder blades pinned to the bench, elbows about 45 degrees, not flared."},"bb_bench":{"name":"Barbell Bench Press","dbId":"Barbell_Bench_Press_-_Medium_Grip","equipment":"barbell, bench","cue":"Bar touches the lower chest, not the neck. Full control down."},"incline_db_press":{"name":"Incline Dumbbell Press","dbId":"Incline_Dumbbell_Press","equipment":"dumbbells, bench","cue":"Bench at about 30 degrees. Any steeper is a shoulder press."},"rdl":{"name":"Romanian Deadlift","dbId":"Romanian_Deadlift","equipment":"barbell or dumbbells","cue":"Push hips back, bar stays close to the legs, stop when hamstrings say stop."},"bb_row":{"name":"Bent Over Barbell Row","dbId":"Bent_Over_Barbell_Row","equipment":"barbell","cue":"Torso near 45 degrees, pull to the belly button, no jerking."},"db_row_two":{"name":"Bent Over Two-Dumbbell Row","dbId":"Bent_Over_Two-Dumbbell_Row","equipment":"dumbbells","cue":"Squeeze the shoulder blades together at the top, pause one second."},"db_row_one":{"name":"One-Arm Dumbbell Row","dbId":"One-Arm_Dumbbell_Row","equipment":"dumbbell, bench","cue":"Flat back, no twisting. Drive the elbow to the back pocket."},"db_shoulder_press":{"name":"Dumbbell Shoulder Press","dbId":"Dumbbell_Shoulder_Press","equipment":"dumbbells","cue":"Ribs down, do not arch the lower back to finish the rep."},"db_rear_lunge":{"name":"Dumbbell Reverse Lunge","dbId":"Dumbbell_Rear_Lunge","equipment":"dumbbells","cue":"Step back, not forward. Easier on the knees and easier to balance."},"kb_swing":{"name":"Kettlebell Swing","dbId":"One-Arm_Kettlebell_Swings","equipment":"kettlebell","cue":"This is a hip snap, not a squat and not a front raise. Two-handed is fine, the demo shows one arm."},"pushups":{"name":"Push-Ups","dbId":"Pushups","equipment":"bodyweight","cue":"Straight line from head to heels. Hands on the bench if full ones are too hard."},"hammer_curl":{"name":"Hammer Curls","dbId":"Hammer_Curls","equipment":"dumbbells","cue":"Thumbs up the whole way, elbows pinned to your sides."},"db_tri_ext":{"name":"One-Arm Overhead Triceps Extension","dbId":"Dumbbell_One-Arm_Triceps_Extension","equipment":"dumbbell","cue":"Elbow points at the ceiling and stays there."},"pullover":{"name":"Straight-Arm Dumbbell Pullover","dbId":"Straight-Arm_Dumbbell_Pullover","equipment":"dumbbell, bench","cue":"Light weight. Feel the stretch across the lats and ribs."},"farmers_walk":{"name":"Farmer's Walk","dbId":"Farmers_Walk","equipment":"dumbbells","cue":"Heavy as you can hold, tall posture, just walk. Brutal and simple."},"plank":{"name":"Plank","dbId":"Plank","equipment":"bodyweight","cue":"Squeeze glutes. If the lower back sags, the set is over."},"side_bridge":{"name":"Side Plank","dbId":"Side_Bridge","equipment":"bodyweight","cue":"Stack the feet, push the hip to the ceiling."},"dead_bug":{"name":"Dead Bug","dbId":"Dead_Bug","equipment":"bodyweight","cue":"Lower back stays glued to the floor. Slow beats far."},"superman":{"name":"Superman","dbId":"Superman","equipment":"bodyweight","cue":"Lift from the upper back, do not crank the neck."},"glute_bridge":{"name":"Single-Leg Glute Bridge","dbId":"Single_Leg_Glute_Bridge","equipment":"bodyweight","cue":"Drive through the heel, squeeze at the top for a second."},"russian_twist":{"name":"Russian Twist","dbId":"Russian_Twist","equipment":"bodyweight or dumbbell","cue":"Rotate the ribcage, not just the arms."},"crunches":{"name":"Crunches","dbId":"Crunches","equipment":"bodyweight","cue":"Short range, slow, no hands behind the head pulling."},"mountain_climbers":{"name":"Mountain Climbers","dbId":"Mountain_Climbers","equipment":"bodyweight","cue":"Hips stay low and level. Do not let them bounce."},"bike_easy":{"name":"Easy Bike","dbId":null,"equipment":"stationary bike","cue":"Zone 2. You should be able to talk in full sentences. Boring on purpose."},"bike_intervals":{"name":"Bike Intervals","dbId":null,"equipment":"stationary bike","cue":"Hard means hard, but you should finish every interval at the same effort."},"treadmill_incline":{"name":"Incline Treadmill Walk","dbId":null,"equipment":"treadmill","cue":"No holding the handrails. If you need them, drop the incline."},"treadmill_intervals":{"name":"Treadmill Intervals","dbId":null,"equipment":"treadmill","cue":"Brisk walk or light jog, not a sprint. Keep the form clean."},"walk_outside":{"name":"Outdoor Walk","dbId":null,"equipment":"none","cue":"Fresh air counts double on a low day. Put a podcast on."},"mobility":{"name":"Mobility Flow","dbId":null,"equipment":"none","cue":"Ankles, hips, thoracic spine. Move through range, do not hold long."},"stretch":{"name":"Stretch","dbId":null,"equipment":"none","cue":"Quads, hamstrings, calves, hip flexors. 30 seconds each."},"foam_roll":{"name":"Foam Roll","dbId":null,"equipment":"foam roller","cue":"Slow passes. Pause on the sore spots and breathe."},"football":{"name":"Football","dbId":null,"equipment":"none","cue":"This is training. It is the hardest session of your week."},"volleyball":{"name":"Volleyball","dbId":null,"equipment":"none","cue":"Lots of jumping. Expect calves and quads to complain tomorrow."},"weigh_in":{"name":"Weigh In","dbId":null,"equipment":"scale","cue":"Same time, after the bathroom, before eating. Trend matters, single days do not."},"test_block":{"name":"Benchmark Tests","dbId":null,"equipment":"none","cue":"Record everything. These numbers set month 2."}},"days":[{"date":"2026-09-14","weekday":"Monday","week":1,"title":"Baseline A: Squat and Press","type":"strength","focus":"Find your working weights. Do not chase soreness.","must":{"durationMin":18,"items":[{"ex":"goblet_squat","sets":2,"reps":"10"},{"ex":"db_bench","sets":2,"reps":"10"},{"ex":"plank","sets":2,"reps":"30 s"}]},"best":{"durationMin":45,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"goblet_squat","sets":3,"reps":"10","rest":"90 s"},{"ex":"db_bench","sets":3,"reps":"10","rest":"90 s"},{"ex":"rdl","sets":3,"reps":"10","rest":"90 s"},{"ex":"db_row_one","sets":3,"reps":"10 each","rest":"60 s"},{"ex":"plank","sets":2,"reps":"40 s","rest":"45 s"},{"ex":"treadmill_incline","sets":1,"reps":"8 min at 10%"}]},"missed":"Do the MUST version tonight even if it is 9pm. It is 18 minutes. If the day is genuinely gone, move it to Tuesday and push Tuesday's cardio to Thursday.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":350,"best":550}},"coachNote":"Every set should end with 3 reps left in the tank. You will think it is too light. That is the plan. Week 1 soreness is what kills week 2. Write down every weight you use."},{"date":"2026-09-15","weekday":"Tuesday","week":1,"title":"Easy Engine","type":"cardio","focus":"Low intensity, high boredom, real fat loss.","must":{"durationMin":15,"items":[{"ex":"bike_easy","sets":1,"reps":"15 min, conversational pace"}]},"best":{"durationMin":40,"items":[{"ex":"bike_easy","sets":1,"reps":"30 min zone 2"},{"ex":"dead_bug","sets":2,"reps":"10 each"},{"ex":"side_bridge","sets":2,"reps":"30 s each"},{"ex":"glute_bridge","sets":2,"reps":"12 each"}]},"missed":"Add 3000 steps to today instead and take a walk after dinner. Cardio is the most replaceable session in the week.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":20,"best":30},"activeKcal":{"must":250,"best":450}},"coachNote":"If your legs are sore from Monday, this is exactly what fixes them. Moving beats resting on day two."},{"date":"2026-09-16","weekday":"Wednesday","week":1,"title":"Baseline B: Hinge and Pull","type":"strength","focus":"The back side of the body. Same rule, stay short of failure.","must":{"durationMin":18,"items":[{"ex":"kb_swing","sets":3,"reps":"12"},{"ex":"db_rear_lunge","sets":2,"reps":"8 each"},{"ex":"db_shoulder_press","sets":2,"reps":"10"}]},"best":{"durationMin":45,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"kb_swing","sets":4,"reps":"12","rest":"60 s"},{"ex":"db_rear_lunge","sets":3,"reps":"8 each","rest":"90 s"},{"ex":"db_shoulder_press","sets":3,"reps":"10","rest":"90 s"},{"ex":"db_row_two","sets":3,"reps":"12","rest":"60 s"},{"ex":"dead_bug","sets":2,"reps":"10 each","rest":"45 s"},{"ex":"bike_intervals","sets":6,"reps":"30 s hard / 90 s easy"}]},"missed":"Move it to Thursday afternoon. Lift early, play volleyball at night, skip the bike finisher. Do not stack it onto Friday.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":350,"best":550}},"coachNote":"Swings are a hip snap, not a squat and not an arm raise. If your shoulders are burning, you are lifting the bell instead of throwing it."},{"date":"2026-09-17","weekday":"Thursday","week":1,"title":"Volleyball Night","type":"sport","focus":"Bonus day. Nothing here is compulsory.","must":{"durationMin":20,"items":[{"ex":"walk_outside","sets":1,"reps":"20 min during the day"},{"ex":"volleyball","sets":1,"reps":"play"}]},"best":{"durationMin":45,"items":[{"ex":"walk_outside","sets":1,"reps":"20 min"},{"ex":"mobility","sets":1,"reps":"10 min before playing"},{"ex":"volleyball","sets":1,"reps":"play"},{"ex":"stretch","sets":1,"reps":"5 min after"}]},"missed":"If volleyball is off, do 30 min on the bike with 5 x 1 min pickups. If you are flat, rest completely. No penalty, this is a bonus day.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":20,"best":30},"activeKcal":{"must":250,"best":600}},"coachNote":"Volleyball is a lot of jumping. Go easy on the calves tomorrow and remember football is the next night."},{"date":"2026-09-18","weekday":"Friday","week":1,"title":"Football Night","type":"sport","focus":"Your hardest session of the week. Treat it like one.","must":{"durationMin":10,"items":[{"ex":"mobility","sets":1,"reps":"5 min ankles and hips before you leave"},{"ex":"football","sets":1,"reps":"play"}]},"best":{"durationMin":25,"items":[{"ex":"mobility","sets":1,"reps":"10 min ankles, hips, hamstrings"},{"ex":"football","sets":1,"reps":"play, with a 10 min easy jog warm-up first"},{"ex":"stretch","sets":1,"reps":"5 min after, calves and quads"}]},"missed":"Not applicable. If football is cancelled, do Thursday's bike session instead.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":10,"best":15},"activeKcal":{"must":600,"best":800}},"coachNote":"No lifting today. Eat a proper protein lunch and drink more water than usual. The warm-up is the difference between playing next week and not."},{"date":"2026-09-19","weekday":"Saturday","week":1,"title":"Repair","type":"recovery","focus":"Real rest. Non-negotiable.","must":{"durationMin":10,"items":[{"ex":"walk_outside","sets":1,"reps":"get to 4000 steps"},{"ex":"stretch","sets":1,"reps":"5 min"}]},"best":{"durationMin":45,"items":[{"ex":"walk_outside","sets":1,"reps":"25 min easy"},{"ex":"stretch","sets":1,"reps":"10 min full body"},{"ex":"foam_roll","sets":1,"reps":"quads and calves"}]},"missed":"At absolute minimum walk 15 minutes. Do not lift today no matter how good you feel.","targets":{"steps":{"must":5500,"best":8000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":150,"best":300}},"coachNote":"Sore for a day after football is normal. Joint pain that is sharp or one-sided is not. Flag it if you get it."},{"date":"2026-09-20","weekday":"Sunday","week":1,"title":"Weigh, Log, Plan","type":"admin","focus":"The five minutes that make next week happen.","must":{"durationMin":10,"items":[{"ex":"weigh_in","sets":1,"reps":"log it"},{"ex":"walk_outside","sets":1,"reps":"get to 5000 steps"}]},"best":{"durationMin":45,"items":[{"ex":"weigh_in","sets":1,"reps":"log it"},{"ex":"bike_easy","sets":1,"reps":"30 min easy, or a 30 min walk"},{"ex":"mobility","sets":1,"reps":"10 min"}]},"missed":"Just weigh in and write Monday's training slot in your calendar. That is the one thing that cannot slip.","targets":{"steps":{"must":5500,"best":8000},"walkMin":{"must":20,"best":35},"activeKcal":{"must":200,"best":400}},"coachNote":"Book Monday's session in your calendar like a meeting, with a real time on it. Your training time varies day to day, which means it needs deciding the night before, not in the moment."},{"date":"2026-09-21","weekday":"Monday","week":2,"title":"Barbell Debut: Lower","type":"strength","focus":"The bar comes out. Technique first, load second.","must":{"durationMin":20,"items":[{"ex":"goblet_squat","sets":2,"reps":"12"},{"ex":"rdl","sets":2,"reps":"10"},{"ex":"farmers_walk","sets":2,"reps":"40 s"}]},"best":{"durationMin":48,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"barbell_squat","sets":4,"reps":"8","rest":"2 min"},{"ex":"incline_db_press","sets":3,"reps":"10","rest":"90 s"},{"ex":"rdl","sets":3,"reps":"12","rest":"90 s"},{"ex":"db_row_one","sets":3,"reps":"12 each","rest":"60 s"},{"ex":"farmers_walk","sets":3,"reps":"40 s","rest":"60 s"},{"ex":"treadmill_incline","sets":1,"reps":"8 min at 11%"}]},"missed":"Tuesday becomes this session and cardio moves to Thursday. Do not cut the barbell squat, it is the reason this day exists.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":350,"best":600}},"coachNote":"First squat set is the empty bar, always. Add weight across the four sets only if reps 6, 7 and 8 still look identical."},{"date":"2026-09-22","weekday":"Tuesday","week":2,"title":"Treadmill Intervals","type":"cardio","focus":"Slightly harder than last Tuesday. Same time cost.","must":{"durationMin":18,"items":[{"ex":"treadmill_incline","sets":1,"reps":"18 min brisk at 6%"}]},"best":{"durationMin":40,"items":[{"ex":"treadmill_intervals","sets":10,"reps":"1 min brisk / 1 min easy, after a 5 min warm-up"},{"ex":"russian_twist","sets":3,"reps":"20"},{"ex":"side_bridge","sets":3,"reps":"30 s each"},{"ex":"superman","sets":2,"reps":"12"}]},"missed":"3000 extra steps outside plus the core block at home. The core block takes six minutes.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":25,"best":40},"activeKcal":{"must":300,"best":500}},"coachNote":"Brisk walk or light jog on the intervals, not a sprint. The point is 20 usable minutes, not one heroic one."},{"date":"2026-09-23","weekday":"Wednesday","week":2,"title":"Upper Volume","type":"strength","focus":"More sets than week 1, same honest effort.","must":{"durationMin":20,"items":[{"ex":"db_bench","sets":2,"reps":"12"},{"ex":"db_row_two","sets":2,"reps":"12"},{"ex":"hammer_curl","sets":2,"reps":"12"}]},"best":{"durationMin":45,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"db_bench","sets":4,"reps":"10","rest":"90 s"},{"ex":"bb_row","sets":4,"reps":"10","rest":"90 s"},{"ex":"db_shoulder_press","sets":3,"reps":"10","rest":"90 s"},{"ex":"pullover","sets":3,"reps":"12","rest":"60 s"},{"ex":"hammer_curl","sets":3,"reps":"12","rest":"45 s","superset":"db_tri_ext"},{"ex":"db_tri_ext","sets":3,"reps":"12 each","rest":"45 s"},{"ex":"kb_swing","sets":5,"reps":"10 on the minute, 5 min total"}]},"missed":"Do the MUST version. It is 20 minutes and covers push, pull and arms.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":350,"best":550}},"coachNote":"Your upper back does most of the work holding posture at a desk all day. The rows matter more than the bench here."},{"date":"2026-09-24","weekday":"Thursday","week":2,"title":"Volleyball or Engine","type":"sport","focus":"Play if it is on. Bike if it is not.","must":{"durationMin":20,"items":[{"ex":"walk_outside","sets":1,"reps":"20 min, then play if volleyball is on"}]},"best":{"durationMin":45,"items":[{"ex":"mobility","sets":1,"reps":"10 min"},{"ex":"volleyball","sets":1,"reps":"play"},{"ex":"stretch","sets":1,"reps":"10 min after"}]},"missed":"No volleyball: 35 min zone 2 bike plus mountain climbers 3 x 30 s. Flat and tired: rest, it is a bonus day.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":20,"best":30},"activeKcal":{"must":250,"best":600}},"coachNote":"Whatever you do here, keep something in reserve. Football is tomorrow night and it is the priority."},{"date":"2026-09-25","weekday":"Friday","week":2,"title":"Football Night","type":"sport","focus":"Play, and pay attention to the last 20 minutes.","must":{"durationMin":10,"items":[{"ex":"mobility","sets":1,"reps":"5 min before you leave"},{"ex":"football","sets":1,"reps":"play"}]},"best":{"durationMin":25,"items":[{"ex":"mobility","sets":1,"reps":"10 min"},{"ex":"football","sets":1,"reps":"play, with a 10 min jog warm-up"},{"ex":"stretch","sets":1,"reps":"5 min after"}]},"missed":"Not applicable.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":10,"best":15},"activeKcal":{"must":600,"best":850}},"coachNote":"Rate your last 20 minutes out of 10 in tonight's log. Compare it to Sep 18. That number tells us more about your conditioning than the scale does."},{"date":"2026-09-26","weekday":"Saturday","week":2,"title":"Repair","type":"recovery","focus":"Same as last Saturday. Still non-negotiable.","must":{"durationMin":10,"items":[{"ex":"walk_outside","sets":1,"reps":"get to 4000 steps"},{"ex":"stretch","sets":1,"reps":"5 min"}]},"best":{"durationMin":45,"items":[{"ex":"walk_outside","sets":1,"reps":"25 min easy"},{"ex":"stretch","sets":1,"reps":"10 min"},{"ex":"foam_roll","sets":1,"reps":"10 min"}]},"missed":"Walk 15 minutes. That is the whole requirement.","targets":{"steps":{"must":5500,"best":8000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":150,"best":300}},"coachNote":"If you feel better today than you did on Sep 19, that is the conditioning working already."},{"date":"2026-09-27","weekday":"Sunday","week":2,"title":"Weigh, Log, Plan","type":"admin","focus":"Two weeks down. Look at the trend line, not yesterday's number.","must":{"durationMin":10,"items":[{"ex":"weigh_in","sets":1,"reps":"log it"},{"ex":"walk_outside","sets":1,"reps":"get to 5000 steps"}]},"best":{"durationMin":45,"items":[{"ex":"weigh_in","sets":1,"reps":"log it"},{"ex":"walk_outside","sets":1,"reps":"35 min, or 35 min easy bike"},{"ex":"mobility","sets":1,"reps":"10 min"}]},"missed":"Weigh in and book Monday. Nothing else required.","targets":{"steps":{"must":5500,"best":8000},"walkMin":{"must":20,"best":35},"activeKcal":{"must":200,"best":400}},"coachNote":"Three training days left in this block. Monday is the heaviest day of the month, so eat and sleep properly tonight and tomorrow."},{"date":"2026-09-28","weekday":"Monday","week":3,"title":"Heaviest Day","type":"strength","focus":"The loading benchmark for month 2.","must":{"durationMin":20,"items":[{"ex":"goblet_squat","sets":3,"reps":"10"},{"ex":"db_bench","sets":2,"reps":"10"},{"ex":"plank","sets":2,"reps":"40 s"}]},"best":{"durationMin":50,"items":[{"ex":"bike_easy","sets":1,"reps":"6 min warm-up"},{"ex":"barbell_squat","sets":4,"reps":"8, heavier than Sep 21","rest":"2 min"},{"ex":"bb_bench","sets":4,"reps":"8","rest":"2 min"},{"ex":"rdl","sets":4,"reps":"10","rest":"90 s"},{"ex":"db_row_one","sets":4,"reps":"10 each","rest":"60 s"},{"ex":"plank","sets":3,"reps":"45 s","rest":"45 s"},{"ex":"treadmill_incline","sets":1,"reps":"10 min at 12%"}]},"missed":"Move it to Tuesday. Do not let this one go entirely, the numbers here set the starting loads for October.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":30},"activeKcal":{"must":400,"best":600}},"coachNote":"Heavier means heavier than Sep 21, not heavy in general. Two and a half kilos more on the bar is a successful day. Still stop 2 reps short."},{"date":"2026-09-29","weekday":"Tuesday","week":3,"title":"Conditioning","type":"cardio","focus":"Hardest cardio of the block, and it is still only 40 minutes.","must":{"durationMin":20,"items":[{"ex":"bike_easy","sets":1,"reps":"20 min easy"}]},"best":{"durationMin":42,"items":[{"ex":"bike_intervals","sets":10,"reps":"30 s hard / 90 s easy, after a 5 min warm-up"},{"ex":"dead_bug","sets":3,"reps":"10 each"},{"ex":"side_bridge","sets":3,"reps":"30 s each"},{"ex":"crunches","sets":3,"reps":"15"}]},"missed":"25 min brisk walk outside. Done.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":25,"best":40},"activeKcal":{"must":300,"best":500}},"coachNote":"Interval 10 should look like interval 1. If you die at number 4, you went too hard at number 1."},{"date":"2026-09-30","weekday":"Wednesday","week":3,"title":"Month Test","type":"strength","focus":"Finish the block and record the benchmarks.","must":{"durationMin":20,"items":[{"ex":"kb_swing","sets":3,"reps":"12"},{"ex":"db_shoulder_press","sets":2,"reps":"12"},{"ex":"test_block","sets":1,"reps":"max push-ups in one set, record it"}]},"best":{"durationMin":45,"items":[{"ex":"bike_easy","sets":1,"reps":"5 min warm-up"},{"ex":"kb_swing","sets":5,"reps":"12","rest":"60 s"},{"ex":"goblet_squat","sets":3,"reps":"15","rest":"90 s"},{"ex":"db_shoulder_press","sets":4,"reps":"10","rest":"90 s"},{"ex":"db_row_two","sets":4,"reps":"12","rest":"60 s"},{"ex":"test_block","sets":1,"reps":"max push-ups, max plank hold, fastest 500 m on the bike"},{"ex":"bike_easy","sets":1,"reps":"5 min cool-down"}]},"missed":"Do the three tests at minimum. They take eight minutes and month 2 is built on them.","targets":{"steps":{"must":3500,"best":5000},"walkMin":{"must":15,"best":25},"activeKcal":{"must":400,"best":600}},"coachNote":"Block done. Bring me four numbers on Oct 1: sessions completed out of 17, weight trend, max push-ups, and how football felt in the last 20 minutes."}],"habits":{"must":["Protein at all three meals, roughly a palm-sized portion each","No calories in a glass: no juice, no soda, no sugary coffee","Weigh in at least 3 mornings a week, same time, after the bathroom","Decide tomorrow's training time the night before and put it in the calendar"],"best":["Protein at every meal plus one snack, roughly 130 to 150 g a day","Half the plate vegetables at lunch and dinner","7 hours of sleep","20 minute walk after dinner","Weigh in every morning"]},"rules":["The MUST tier is short on purpose. On a low-energy day you are allowed to do MUST and call it a win. You are not allowed to decide from the couch: change clothes, do the warm-up, then choose.","Saturday is a full rest day. No lifting, regardless of how good you feel.","Missing one session does not cancel the week. Missing the decision to reschedule does.","Sore for a day or two is expected. Sharp, one-sided or joint pain means stop and flag it.","Judge the scale on a 7-day trend, never on a single morning. A 1 kg jump overnight is water and food, not fat.","Do not add sessions because you feel motivated in week 1. The plan already accounts for football and volleyball."]};</script>
 <script>
@@ -6077,6 +6116,7 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
   var PLAN = window.WORKOUT_PLAN; if(!PLAN) return;
   var DAYS = PLAN.days, LIB = PLAN.exerciseLibrary, META = PLAN.meta, HABITS = PLAN.habits;
   var FIRST = DAYS[0].date, LAST = DAYS[DAYS.length-1].date;
+  var ORDER = DAYS.map(function(d){ return d.date; });
 
   /* ── dates (ported from dates.ts) ─────────────────────────────────────────── */
   function pad(n){ return String(n).padStart(2,'0'); }
@@ -6084,15 +6124,19 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
   function todayISO(){ return isoOf(new Date()); }
   function parseISO(iso){ var p=iso.split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); }
   function addDays(iso,n){ var d=parseISO(iso); d.setDate(d.getDate()+n); return isoOf(d); }
+  function daysBetween(a,b){ return Math.round((parseISO(b).getTime()-parseISO(a).getTime())/86400000); }
   function clampToBlock(iso){ return iso<FIRST?FIRST:(iso>LAST?LAST:iso); }
   var WD=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function shortDate(iso){ var d=parseISO(iso); return WD[d.getDay()].slice(0,3)+' '+d.getDate()+' '+MO[d.getMonth()]; }
+  function dayMonth(iso){ var d=parseISO(iso); return d.getDate()+' '+MO[d.getMonth()]; }
+  function isFriday(iso){ return parseISO(iso).getDay()===5; }
 
   /* ── program (ported from program.ts) ─────────────────────────────────────── */
   function dayFor(iso){ for(var i=0;i<DAYS.length;i++) if(DAYS[i].date===iso) return DAYS[i]; return null; }
   function exercise(key){ return LIB[key] || {name:key,dbId:null,equipment:'',cue:''}; }
   function restSeconds(rest){ if(!rest) return null; var m=String(rest).match(/([\d.]+)\s*(s|sec|min|m)\b/i); if(!m) return null; var n=parseFloat(m[1]); var u=m[2].toLowerCase(); return Math.round(u.charAt(0)==='m'&&u!=='s'?n*60:n); }
+  var WEEKS=DAYS.map(function(d){return d.week;}).filter(function(v,i,a){return a.indexOf(v)===i;}).sort(function(a,b){return a-b;});
   var METRIC={ weightKg:{suffix:'kg',step:0.5}, reps:{suffix:'reps',step:1}, seconds:{suffix:'s',step:5}, minutes:{suffix:'min',step:1}, km:{suffix:'km',step:0.1} };
   var LOADED=['weightKg','reps'],BODY=['reps'],HOLD=['seconds'],CARDIO=['minutes','km'],DUR=['minutes'];
   var METRICS={ goblet_squat:LOADED,barbell_squat:LOADED,db_bench:LOADED,bb_bench:LOADED,incline_db_press:LOADED,rdl:LOADED,bb_row:LOADED,db_row_two:LOADED,db_row_one:LOADED,db_shoulder_press:LOADED,db_rear_lunge:LOADED,kb_swing:LOADED,hammer_curl:LOADED,db_tri_ext:LOADED,pullover:LOADED,farmers_walk:['weightKg','seconds'],pushups:BODY,crunches:BODY,russian_twist:BODY,superman:BODY,dead_bug:BODY,glute_bridge:BODY,mountain_climbers:BODY,plank:HOLD,side_bridge:HOLD,bike_easy:CARDIO,bike_intervals:CARDIO,treadmill_incline:CARDIO,treadmill_intervals:CARDIO,walk_outside:CARDIO,mobility:DUR,stretch:DUR,foam_roll:DUR,football:DUR,volleyball:DUR,weigh_in:[],test_block:['reps','seconds'] };
@@ -6108,9 +6152,8 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
 
   var pending={}, pushT=null;
   function queue(iso, delta){
-    // optimistic local merge (same one-level semantics as the Worker)
     var log=cache[iso]||{date:iso};
-    ['tier','rpe','notes','stretch'].forEach(function(k){ if(k in delta) log[k]=delta[k]; });
+    ['tier','rpe','notes','stretch','footballLast20'].forEach(function(k){ if(k in delta) log[k]=delta[k]; });
     ['sets','feedback','habits','bio'].forEach(function(m){ if(m in delta){
       if(delta[m]===null){ log[m]={}; return; }
       var base2=(log[m]&&typeof log[m]==='object')?log[m]:{};
@@ -6118,14 +6161,13 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
       log[m]=base2;
     }});
     cache[iso]=log; persist();
-    // accumulate the pending server patch
     var p=pending[iso]||(pending[iso]={date:iso});
-    ['tier','rpe','notes','stretch'].forEach(function(k){ if(k in delta) p[k]=delta[k]; });
+    ['tier','rpe','notes','stretch','footballLast20'].forEach(function(k){ if(k in delta) p[k]=delta[k]; });
     ['sets','feedback','habits','bio'].forEach(function(m){ if(m in delta) p[m]=Object.assign({}, p[m]||{}, delta[m]); });
     clearTimeout(pushT); pushT=setTimeout(flush, 450);
   }
   function flush(){
-    var b=base(), t=token(); if(!b||!t) return;        // offline: cache holds it
+    var b=base(), t=token(); if(!b||!t) return;
     var batch=pending; pending={};
     Object.keys(batch).forEach(function(iso){
       try{ fetch(b+'/workout-log',{method:'POST',headers:{'content-type':'application/json','x-edit-token':t},body:JSON.stringify(batch[iso])})
@@ -6139,28 +6181,93 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
       .then(function(d){ if(d&&('log' in d)){ if(d.log) cache[iso]=d.log; else if(!cache[iso]) cache[iso]={date:iso}; persist(); } cb&&cb(); })
       .catch(function(){ cb&&cb(); }); }catch(e){ cb&&cb(); }
   }
+  var allLoaded=false;
+  function loadAll(cb){
+    var b=base(); if(!b){ cb&&cb(); return; }
+    try{ fetch(b+'/workout?all=1',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(d){ if(d&&d.logs&&typeof d.logs==='object'){ Object.keys(d.logs).forEach(function(k){ cache[k]=d.logs[k]; }); persist(); allLoaded=true; } cb&&cb(); })
+      .catch(function(){ cb&&cb(); }); }catch(e){ cb&&cb(); }
+  }
   function health(iso){ return (window.__health && window.__health[iso]) || null; }
+  function bioVal(iso, field, healthKeys){
+    var l=cache[iso], b=l&&l.bio;
+    if(b&&b[field]!=null) return b[field];
+    var h=health(iso); if(h){ for(var i=0;i<(healthKeys||[]).length;i++){ if(h[healthKeys[i]]!=null) return h[healthKeys[i]]; } }
+    return null;
+  }
 
   /* ── view state ───────────────────────────────────────────────────────────── */
-  var view={ date: clampToBlock(todayISO()), tier:'best' };
+  var view={ date: clampToBlock(todayISO()), tier:'best', planFilter:'all' };
   (function(){ var l=logFor(view.date); if(l.tier==='must'||l.tier==='best') view.tier=l.tier; })();
 
-  /* ── tiny html helpers ────────────────────────────────────────────────────── */
+  /* ── html helpers ─────────────────────────────────────────────────────────── */
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function kfmt(n){ return n>=1000?(Math.round(n/100)/10)+'k':(''+n); }
   function bar(label, actual, must, best){
     var a=(actual==null)?null:Number(actual), pct=(a==null||!best)?0:Math.max(0,Math.min(100, a/best*100));
     var mustPct=best?Math.max(0,Math.min(100, must/best*100)):0;
-    var got=(a==null)?'—':(a>=1000?Math.round(a/100)/10+'k':a);
-    return '<div class="wk-t"><div class="wk-t-top"><span>'+esc(label)+'</span><span class="wk-t-n">'+got+' / '+(best>=1000?Math.round(best/100)/10+'k':best)+'</span></div>'
+    return '<div class="wk-t"><div class="wk-t-top"><span>'+esc(label)+'</span><span class="wk-t-n">'+(a==null?'—':kfmt(a))+' / '+kfmt(best)+'</span></div>'
       +'<div class="wk-t-bar"><i style="width:'+pct+'%"></i><b style="left:'+mustPct+'%" title="must"></b></div></div>';
   }
+  // tiny SVG sparkline/line chart. series: [{x,y}] in data space; lines: extra dashed h-lines at y.
+  function spark(w,h,series,opts){
+    opts=opts||{}; if(!series.length) return '';
+    var xs=series.map(function(p){return p.x;}), ys=series.map(function(p){return p.y;});
+    var extra=(opts.lines||[]).concat(opts.band?[opts.band.lo,opts.band.hi]:[]);
+    var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+    var minY=Math.min.apply(null,ys.concat(extra)), maxY=Math.max.apply(null,ys.concat(extra));
+    if(maxX===minX) maxX=minX+1; var padY=(maxY-minY)*0.1||1; minY-=padY; maxY+=padY;
+    var sx=function(x){ return ((x-minX)/(maxX-minX))*(w-8)+4; };
+    var sy=function(y){ return h-4-((y-minY)/(maxY-minY))*(h-8); };
+    var out='<svg class="wk-spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">';
+    (opts.lines||[]).forEach(function(y){ out+='<line x1="4" x2="'+(w-4)+'" y1="'+sy(y)+'" y2="'+sy(y)+'" class="wk-spk-ref"/>'; });
+    if(opts.trend){ var td=opts.trend.map(function(p,i){return (i?'L':'M')+sx(p.x)+' '+sy(p.y);}).join(' '); out+='<path d="'+td+'" class="wk-spk-trend"/>'; }
+    var d=series.map(function(p,i){return (i?'L':'M')+sx(p.x)+' '+sy(p.y);}).join(' ');
+    out+='<path d="'+d+'" class="wk-spk-line"/>';
+    series.forEach(function(p){ out+='<circle cx="'+sx(p.x)+'" cy="'+sy(p.y)+'" r="1.7" class="wk-spk-dot"/>'; });
+    return out+'</svg>';
+  }
 
-  /* ── render one exercise block ────────────────────────────────────────────── */
+  /* ── weight trend (ported from trend.ts) ──────────────────────────────────── */
+  function weightPoints(){
+    var byDate={}; byDate[META.startWeightDate]={date:META.startWeightDate,weightKg:META.startWeightKg};
+    Object.keys(cache).forEach(function(d){ var b=cache[d].bio; if(b&&typeof b.weightKg==='number') byDate[d]={date:d,weightKg:b.weightKg}; });
+    return Object.keys(byDate).sort().map(function(d){ return byDate[d]; });
+  }
+  function weightTrend(){
+    var pts=weightPoints(), alpha=2/8, out=[], trend=null, prev=null;
+    pts.forEach(function(p){
+      if(trend==null) trend=p.weightKg;
+      else { var gap=Math.max(1,daysBetween(prev,p.date)); var a=1-Math.pow(1-alpha,gap); trend=trend+a*(p.weightKg-trend); }
+      prev=p.date; out.push({date:p.date,weightKg:p.weightKg,trend:Math.round(trend*10)/10});
+    });
+    return out;
+  }
+  function targetWeightOn(date){
+    var span=daysBetween(META.startWeightDate,META.endDate);
+    var elapsed=Math.min(Math.max(daysBetween(META.startWeightDate,date),0),span);
+    var drop=META.startWeightKg-META.targetWeightKgByEnd;
+    return META.startWeightKg-(drop*elapsed)/span;
+  }
+  function weightSummary(){
+    var s=weightTrend(); if(!s.length) return {points:0};
+    var last=s[s.length-1], change=Math.round((last.trend-META.startWeightKg)*10)/10;
+    var span=daysBetween(s[0].date,last.date);
+    if(s.length<3||span<7) return {trendNow:last.trend,change:change,projectedEnd:null,slopePerWeek:null,points:s.length};
+    var xs=s.map(function(p){return daysBetween(s[0].date,p.date);}), ys=s.map(function(p){return p.trend;}), n=xs.length;
+    var mx=xs.reduce(function(a,b){return a+b;},0)/n, my=ys.reduce(function(a,b){return a+b;},0)/n, num=0, den=0;
+    for(var i=0;i<n;i++){ num+=(xs[i]-mx)*(ys[i]-my); den+=Math.pow(xs[i]-mx,2); }
+    var slope=den===0?0:num/den, daysToEnd=Math.max(daysBetween(last.date,META.endDate),0);
+    return {trendNow:last.trend,change:change,projectedEnd:Math.round((last.trend+slope*daysToEnd)*10)/10,slopePerWeek:Math.round(slope*7*100)/100,points:s.length};
+  }
+  function isDone(t){ return t==='best'||t==='must'; }
+  function currentStreak(){ var st=0; for(var i=ORDER.length-1;i>=0;i--){ var t=cache[ORDER[i]]&&cache[ORDER[i]].tier; if(t==null) continue; if(isDone(t)) st++; else break; } return st; }
+
+  /* ═══ CARD: Session (Today) ═══════════════════════════════════════════════ */
   function exBlock(item, log){
     var ex=exercise(item.ex), ms=metricsFor(item.ex), id=item.ex;
     var sets=log.sets&&log.sets[id]||[], fb=(log.feedback&&log.feedback[id])||{};
-    var n=Math.max(1, item.sets|0), rs=restSeconds(item.rest);
-    var rows='';
+    var n=Math.max(1, item.sets|0), rs=restSeconds(item.rest), rows='';
     for(var i=0;i<n;i++){
       var s=sets[i]||{}, fields='';
       if(ms.length===0){ fields='<span class="wk-noinput">tick when done</span>'; }
@@ -6182,108 +6289,199 @@ body[data-tab="workout"] :is(#today-section,.trk-datebar,.trk-hist,.trk-hrings,.
       +'<textarea class="wk-note" data-act="note" data-ex="'+id+'" rows="1" placeholder="note…">'+esc(fb.note||'')+'</textarea>'
       +'</div>';
   }
-
-  /* ── render the whole Session card body ───────────────────────────────────── */
-  var bodyEl=null, metaEl=null, timer={id:null,left:0};
-  function render(){
-    if(!bodyEl) return;
+  var timer={id:null,left:0};
+  function paintTimer(){ var el=document.getElementById('wk-timer'); if(!el) return; if(timer.left>0){ el.hidden=false; el.textContent='Rest '+timer.left+'s'; } else el.hidden=true; }
+  function startRest(sec){ stopRest(); timer.left=sec; paintTimer(); timer.id=setInterval(function(){ timer.left--; if(timer.left<=0){ stopRest(); } paintTimer(); },1000); }
+  function stopRest(){ if(timer.id){ clearInterval(timer.id); timer.id=null; } }
+  function renderSession(el){
     var iso=view.date, day=dayFor(iso), log=logFor(iso);
-    if(metaEl) metaEl.textContent = shortDate(iso);
-    if(!day){ bodyEl.innerHTML='<div class="wk-pad">No session — outside the block.</div>'; return; }
-    var tier=view.tier, block=day[tier]||day.best;
-    var h=health(iso), tg=day.targets;
-    var logged = (log.tier==='must'||log.tier==='best'||log.tier==='missed') ? log.tier : null;
-    var html='';
-    // header
+    if(!day){ el.innerHTML='<div class="wk-pad">No session — outside the block.</div>'; return; }
+    var tier=view.tier, block=day[tier]||day.best, h=health(iso), tg=day.targets;
+    var logged=(log.tier==='must'||log.tier==='best'||log.tier==='missed'||log.tier==='skipped')?log.tier:null;
+    var html='<div class="wk-timer" id="wk-timer" hidden></div>';
     html+='<div class="wk-nav"><button class="wk-navb" data-act="nav" data-d="-1"'+(iso<=FIRST?' disabled':'')+'>‹</button>'
       +'<div class="wk-day"><span class="wk-week">Week '+day.week+' · '+esc(day.weekday)+'</span><span class="wk-date">'+shortDate(iso)+'</span></div>'
       +'<button class="wk-navb" data-act="nav" data-d="1"'+(iso>=LAST?' disabled':'')+'>›</button></div>';
     html+='<div class="wk-type wk-type-'+esc(day.type)+'">'+esc(day.type)+'</div>';
     html+='<h3 class="wk-title">'+esc(day.title)+(logged?' <span class="wk-logged wk-logged-'+logged+'">'+logged+'</span>':'')+'</h3>';
     html+='<div class="wk-focus">'+esc(day.focus)+'</div>';
-    // tier toggle
     html+='<div class="wk-tiers">'
       +'<button class="wk-tier'+(tier==='must'?' on':'')+'" data-act="tier" data-t="must"><b>MUST</b><span>'+day.must.durationMin+' min · the floor</span></button>'
-      +'<button class="wk-tier'+(tier==='best'?' on':'')+'" data-act="tier" data-t="best"><b>BEST</b><span>'+day.best.durationMin+' min · full day</span></button>'
-      +'</div>';
-    // morning stretch
+      +'<button class="wk-tier'+(tier==='best'?' on':'')+'" data-act="tier" data-t="best"><b>BEST</b><span>'+day.best.durationMin+' min · full day</span></button></div>';
     html+='<button class="wk-stretch'+(log.stretch?' on':'')+'" data-act="stretch"><i>✓</i> Morning mobility done</button>';
-    // exercises
-    html+='<div class="wk-list">';
-    (block.items||[]).forEach(function(it){ html+=exBlock(it, log); });
-    html+='</div>';
-    // targets
+    html+='<div class="wk-list">'; (block.items||[]).forEach(function(it){ html+=exBlock(it, log); }); html+='</div>';
     if(tg){ html+='<div class="wk-sec">Targets ('+tier+')</div>'
-      +bar('Steps', h&&(h.steps), tg.steps.must, tg.steps.best)
-      +bar('Active kcal', h&&(h.active_kcal!=null?h.active_kcal:(h.activeKcal!=null?h.activeKcal:h.active_calories)), tg.activeKcal.must, tg.activeKcal.best)
-      +bar('Walk min', (log.bio&&log.bio.walkMin!=null)?log.bio.walkMin:(h&&h.walk_min), tg.walkMin.must, tg.walkMin.best); }
-    // habits
+      +bar('Steps', bioVal(iso,'steps',['steps']), tg.steps.must, tg.steps.best)
+      +bar('Active kcal', bioVal(iso,'activeKcal',['active_kcal','activeKcal','active_calories']), tg.activeKcal.must, tg.activeKcal.best)
+      +bar('Walk min', bioVal(iso,'walkMin',['walk_min']), tg.walkMin.must, tg.walkMin.best); }
     html+='<div class="wk-sec">Habits</div><div class="wk-habits">';
     ['must','best'].forEach(function(grp){ (HABITS[grp]||[]).forEach(function(txt,i){ var key=grp+'-'+i, on=log.habits&&log.habits[key];
       html+='<button class="wk-hab'+(on?' on':'')+'" data-act="habit" data-h="'+key+'"><i>✓</i><span>'+esc(txt)+'</span><em>'+grp+'</em></button>'; }); });
     html+='</div>';
-    // coach note + missed
     if(day.coachNote) html+='<div class="wk-coach">'+esc(day.coachNote)+'</div>';
     html+='<details class="wk-missed"><summary>Can’t do it today</summary><div class="wk-missed-b">'+esc(day.missed)
       +'<button class="wk-markmissed'+(logged==='missed'?' on':'')+'" data-act="missed">'+(logged==='missed'?'Marked missed':'Mark missed')+'</button></div></details>';
-    // rest timer readout (hidden until started)
-    html='<div class="wk-timer" id="wk-timer" hidden></div>'+html;
-    bodyEl.innerHTML=html;
-    paintTimer();
+    el.innerHTML=html; paintTimer();
   }
 
-  /* ── rest timer ───────────────────────────────────────────────────────────── */
-  function paintTimer(){ var el=document.getElementById('wk-timer'); if(!el) return;
-    if(timer.left>0){ el.hidden=false; el.textContent='Rest '+timer.left+'s'; } else el.hidden=true; }
-  function startRest(sec){ stopRest(); timer.left=sec; paintTimer();
-    timer.id=setInterval(function(){ timer.left--; if(timer.left<=0){ stopRest(); } paintTimer(); },1000); }
-  function stopRest(){ if(timer.id){ clearInterval(timer.id); timer.id=null; } }
+  /* ═══ CARD: Plan ══════════════════════════════════════════════════════════ */
+  var PTYPES=['all','strength','cardio','sport','recovery','admin'];
+  function tierDot(t){ var c=(t==='best'||t==='must')?'done':(t==='missed'||t==='skipped')?'miss':''; return '<span class="wk-dot '+c+'"></span>'; }
+  function renderPlan(el){
+    var f=view.planFilter, html='<div class="wk-chips">';
+    PTYPES.forEach(function(t){ html+='<button class="wk-chip'+(f===t?' on':'')+'" data-act="pfilter" data-t="'+t+'">'+t+'</button>'; });
+    html+='</div>';
+    WEEKS.forEach(function(wk){
+      var rows=DAYS.filter(function(d){ return d.week===wk && (f==='all'||d.type===f); });
+      if(!rows.length) return;
+      html+='<div class="wk-sec">Week '+wk+'</div><div class="wk-plist">';
+      rows.forEach(function(d){ var lg=cache[d.date], t=lg&&lg.tier, sel=d.date===view.date;
+        html+='<button class="wk-prow'+(sel?' sel':'')+'" data-act="pday" data-d="'+d.date+'">'
+          +tierDot(t)+'<span class="wk-prow-d">'+esc(d.weekday.slice(0,3))+' '+dayMonth(d.date)+'</span>'
+          +'<span class="wk-prow-t">'+esc(d.title)+'</span>'
+          +'<span class="wk-type wk-type-'+esc(d.type)+'">'+esc(d.type)+'</span></button>';
+      });
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  }
 
-  /* ── interactions (event delegation on the card body) ─────────────────────── */
+  /* ═══ CARD: Progress ══════════════════════════════════════════════════════ */
+  function threshColor(v,must,best){ return v==null?'':v>=best?'ok':v>=must?'mid':'low'; }
+  function renderProgress(el){
+    var html='';
+    // weight
+    var ws=weightSummary(), series=weightTrend();
+    html+='<div class="wk-sec">Weight trend</div>';
+    if(series.length){
+      var pts=series.map(function(p){ return {x:daysBetween(series[0].date,p.date), y:p.weightKg}; });
+      var trend=series.map(function(p){ return {x:daysBetween(series[0].date,p.date), y:p.trend}; });
+      var tgt=[{x:0,y:targetWeightOn(series[0].date)},{x:daysBetween(series[0].date,series[series.length-1].date),y:targetWeightOn(series[series.length-1].date)}];
+      html+='<div class="wk-chart">'+spark(240,68,pts,{trend:trend,lines:[]})+'</div>';
+      html+='<div class="wk-stats">'
+        +'<div class="wk-stat"><b>'+(ws.trendNow!=null?ws.trendNow+'kg':'—')+'</b><small>trend now</small></div>'
+        +'<div class="wk-stat"><b>'+(ws.change!=null?(ws.change>0?'+':'')+ws.change+'kg':'—')+'</b><small>since start</small></div>'
+        +'<div class="wk-stat"><b>'+(ws.projectedEnd!=null?ws.projectedEnd+'kg':'—')+'</b><small>projected end</small></div></div>';
+      if(ws.slopePerWeek!=null) html+='<div class="wk-foot">'+(ws.slopePerWeek>0?'+':'')+ws.slopePerWeek+' kg/week · target '+META.targetWeightKgByEnd+'kg by '+dayMonth(META.endDate)+'</div>';
+    } else html+='<div class="wk-foot">Log a morning weight to start the trend.</div>';
+    // adherence strip
+    var completed=0; ORDER.forEach(function(d){ if(isDone(cache[d]&&cache[d].tier)) completed++; });
+    html+='<div class="wk-sec">Sessions · '+completed+'/'+ORDER.length+' · streak '+currentStreak()+'</div><div class="wk-strip">';
+    ORDER.forEach(function(d){ var t=cache[d]&&cache[d].tier, cls=t==='best'?'best':t==='must'?'must':(t==='missed'||t==='skipped')?'miss':(d>todayISO()?'fut':'none');
+      html+='<span class="wk-cell wk-cell-'+cls+'" title="'+d+(t?' · '+t:'')+'"></span>'; });
+    html+='</div>';
+    // steps vs goal
+    html+='<div class="wk-sec">Steps vs goal</div><div class="wk-bars">';
+    DAYS.forEach(function(d){ var v=bioVal(d.date,'steps',['steps']), best=d.targets.steps.best, must=d.targets.steps.must;
+      var pct=v==null?0:Math.max(3,Math.min(100,v/best*100)); html+='<i class="wk-bcol wk-'+(threshColor(v,must,best)||'none')+'" style="height:'+pct+'%" title="'+dayMonth(d.date)+': '+(v==null?'—':v)+'"></i>'; });
+    html+='</div>';
+    // active kcal vs goal
+    html+='<div class="wk-sec">Active kcal vs goal</div><div class="wk-bars">';
+    DAYS.forEach(function(d){ var v=bioVal(d.date,'activeKcal',['active_kcal','activeKcal','active_calories']), best=d.targets.activeKcal.best, must=d.targets.activeKcal.must;
+      var pct=v==null?0:Math.max(3,Math.min(100,v/best*100)); html+='<i class="wk-bcol wk-'+(threshColor(v,must,best)||'none')+'" style="height:'+pct+'%" title="'+dayMonth(d.date)+': '+(v==null?'—':v)+'"></i>'; });
+    html+='</div>';
+    // per-exercise feedback (hardest first)
+    var agg={}; Object.keys(cache).forEach(function(d){ var fb=cache[d].feedback; if(!fb) return; Object.keys(fb).forEach(function(ex){ var f=fb[ex]; if(f.feel==null&&!f.note) return; var a=agg[ex]||(agg[ex]={sum:0,n:0,notes:[]}); if(f.feel!=null){a.sum+=f.feel;a.n++;} if(f.note)a.notes.push(f.note); }); });
+    var exs=Object.keys(agg).sort(function(a,b){ return (agg[b].n?agg[b].sum/agg[b].n:0)-(agg[a].n?agg[a].sum/agg[a].n:0); });
+    if(exs.length){ html+='<div class="wk-sec">Exercise feedback</div>';
+      exs.forEach(function(ex){ var a=agg[ex], avg=a.n?Math.round(a.sum/a.n*10)/10:'—';
+        html+='<div class="wk-fbrow"><b>'+esc(exercise(ex).name)+'</b><span class="wk-fbavg">feel '+avg+' · '+a.n+'×</span>'
+          +(a.notes.length?'<div class="wk-cue">'+esc(a.notes.slice(-2).join(' · '))+'</div>':'')+'</div>'; });
+    }
+    // weekly table
+    html+='<div class="wk-sec">By week</div><table class="wk-wt"><tr><th>Wk</th><th>Done</th><th>Wt</th><th>Steps</th></tr>';
+    WEEKS.forEach(function(wk){ var ds=DAYS.filter(function(d){return d.week===wk;}); var done=0,wsum=0,wn=0,stp=0;
+      ds.forEach(function(d){ if(isDone(cache[d.date]&&cache[d.date].tier)) done++; var b=cache[d.date]&&cache[d.date].bio; if(b&&b.weightKg!=null){wsum+=b.weightKg;wn++;} var s=bioVal(d.date,'steps',['steps']); if(s!=null)stp+=s; });
+      html+='<tr><td>'+wk+'</td><td>'+done+'/'+ds.length+'</td><td>'+(wn?Math.round(wsum/wn*10)/10:'—')+'</td><td>'+(stp?kfmt(stp):'—')+'</td></tr>'; });
+    html+='</table>';
+    el.innerHTML=html;
+  }
+
+  /* ═══ CARD: Log ═══════════════════════════════════════════════════════════ */
+  var BIO_FIELDS=[['weightKg','Weight','kg',null],['steps','Steps','',['steps']],['activeKcal','Active kcal','',['active_kcal','activeKcal','active_calories']],['sleepScore','Sleep score','',['sleep_score','sleepScore']],['bodyBattery','Body battery','',['body_battery','bodyBattery']],['restingHr','Resting HR','',['resting_hr','restingHr']],['intensityMin','Intensity min','',['intensity_min','intensityMin']]];
+  var LTIERS=['best','must','missed','skipped'];
+  function renderLog(el){
+    var iso=view.date, log=logFor(iso), h=health(iso);
+    var html='<div class="wk-nav"><button class="wk-navb" data-act="nav" data-d="-1"'+(iso<=FIRST?' disabled':'')+'>‹</button>'
+      +'<div class="wk-day"><span class="wk-week">Log</span><span class="wk-date">'+shortDate(iso)+'</span></div>'
+      +'<button class="wk-navb" data-act="nav" data-d="1"'+(iso>=LAST?' disabled':'')+'>›</button></div>';
+    html+='<div class="wk-sec">Session verdict</div><div class="wk-chips">';
+    LTIERS.forEach(function(t){ html+='<button class="wk-chip'+(log.tier===t?' on':'')+'" data-act="ltier" data-t="'+t+'">'+t+'</button>'; });
+    html+='</div>';
+    html+='<label class="wk-frow"><span>RPE (1–10)</span><input type="number" min="0" max="10" step="1" data-act="lrpe" value="'+esc(log.rpe==null?'':log.rpe)+'" placeholder="—"></label>';
+    if(isFriday(iso)) html+='<label class="wk-frow"><span>Football last 20 (1–10)</span><input type="number" min="0" max="10" step="1" data-act="lfootball" value="'+esc(log.footballLast20==null?'':log.footballLast20)+'" placeholder="—"></label>';
+    html+='<div class="wk-sec">Body metrics <button class="wk-pull" data-act="lpull" title="Copy today\'s Garmin/Health values">↥ from Health</button></div>';
+    BIO_FIELDS.forEach(function(f){ var key=f[0], hv=(h&&f[3])?(function(){for(var i=0;i<f[3].length;i++)if(h[f[3][i]]!=null)return h[f[3][i]];return null;})():null;
+      var v=(log.bio&&log.bio[key]!=null)?log.bio[key]:'';
+      html+='<label class="wk-frow"><span>'+f[1]+(f[2]?' ('+f[2]+')':'')+'</span><input type="number" step="any" data-act="lbio" data-f="'+key+'" value="'+esc(v)+'" placeholder="'+(hv!=null?hv+' · Health':'—')+'"></label>'; });
+    html+='<div class="wk-sec">Notes</div><textarea class="wk-note" data-act="lnotes" rows="3" placeholder="How did it go?">'+esc(log.notes||'')+'</textarea>';
+    html+='<div class="wk-foot">Steps, kcal &amp; sleep come from Apple Health / Garmin via Iris (window.__health). Type a value only to override.</div>';
+    el.innerHTML=html;
+  }
+
+  /* ── card registry + render ───────────────────────────────────────────────── */
+  var cards={
+    session:{title:'Session', meta:true, render:renderSession},
+    plan:{title:'Plan', meta:false, render:renderPlan},
+    progress:{title:'Progress', meta:false, render:renderProgress},
+    log:{title:'Log', meta:true, render:renderLog}
+  };
+  function renderAll(){ Object.keys(cards).forEach(function(id){ var c=cards[id]; if(c.body) c.render(c.body); if(c.metaEl) c.metaEl.textContent=shortDate(view.date); }); }
+  window.refreshWorkout=function(){ load(view.date, renderAll); if(!allLoaded) loadAll(renderAll); else renderAll(); };
+
+  /* ── interactions (delegated on each card body) ───────────────────────────── */
   function onAct(e){
     var t=e.target.closest('[data-act]'); if(!t) return;
     var act=t.getAttribute('data-act'), iso=view.date;
-    if(act==='nav'){ view.date=clampToBlock(addDays(iso, +t.getAttribute('data-d'))); var l=logFor(view.date); if(l.tier==='must'||l.tier==='best') view.tier=l.tier; load(view.date, render); render(); return; }
-    if(act==='tier'){ view.tier=t.getAttribute('data-t'); queue(iso,{tier:view.tier}); render(); return; }
-    if(act==='stretch'){ var l2=logFor(iso); queue(iso,{stretch:!l2.stretch}); render(); return; }
-    if(act==='done'){ var ex=t.getAttribute('data-ex'), i=+t.getAttribute('data-i'); var l3=logFor(iso); var arr=(l3.sets&&l3.sets[ex]||[]).slice(); var s=Object.assign({},arr[i]||{}); s.done=!s.done; arr[i]=s; var d={}; d[ex]=arr; queue(iso,{sets:d}); render(); return; }
-    if(act==='feel'){ var ex2=t.getAttribute('data-ex'), v=+t.getAttribute('data-v'); var l4=logFor(iso); var fb=Object.assign({},(l4.feedback&&l4.feedback[ex2])||{}); fb.feel=(fb.feel===v?null:v); var fd={}; fd[ex2]=fb; queue(iso,{feedback:fd}); render(); return; }
-    if(act==='habit'){ var key=t.getAttribute('data-h'); var l5=logFor(iso); var on=!(l5.habits&&l5.habits[key]); var hd={}; hd[key]=on?true:null; queue(iso,{habits:hd}); render(); return; }
+    if(act==='nav'){ view.date=clampToBlock(addDays(iso,+t.getAttribute('data-d'))); var l=logFor(view.date); if(l.tier==='must'||l.tier==='best') view.tier=l.tier; load(view.date, renderAll); renderAll(); return; }
+    if(act==='tier'){ view.tier=t.getAttribute('data-t'); queue(iso,{tier:view.tier}); renderAll(); return; }
+    if(act==='stretch'){ queue(iso,{stretch:!logFor(iso).stretch}); renderAll(); return; }
+    if(act==='done'){ var ex=t.getAttribute('data-ex'), i=+t.getAttribute('data-i'); var arr=(logFor(iso).sets&&logFor(iso).sets[ex]||[]).slice(); var s=Object.assign({},arr[i]||{}); s.done=!s.done; arr[i]=s; var d={}; d[ex]=arr; queue(iso,{sets:d}); renderAll(); return; }
+    if(act==='feel'){ var ex2=t.getAttribute('data-ex'), v=+t.getAttribute('data-v'); var fb=Object.assign({},(logFor(iso).feedback&&logFor(iso).feedback[ex2])||{}); fb.feel=(fb.feel===v?null:v); var fd={}; fd[ex2]=fb; queue(iso,{feedback:fd}); renderAll(); return; }
+    if(act==='habit'){ var key=t.getAttribute('data-h'); var on=!(logFor(iso).habits&&logFor(iso).habits[key]); var hd={}; hd[key]=on?true:null; queue(iso,{habits:hd}); renderAll(); return; }
     if(act==='rest'){ startRest(+t.getAttribute('data-sec')); return; }
-    if(act==='missed'){ var l6=logFor(iso); var cur=l6.tier==='missed'?null:'missed'; queue(iso,{tier:cur}); render(); return; }
+    if(act==='missed'){ var cur=logFor(iso).tier==='missed'?null:'missed'; queue(iso,{tier:cur}); renderAll(); return; }
+    if(act==='pfilter'){ view.planFilter=t.getAttribute('data-t'); if(cards.plan.body) renderPlan(cards.plan.body); return; }
+    if(act==='pday'){ view.date=t.getAttribute('data-d'); var l2=logFor(view.date); if(l2.tier==='must'||l2.tier==='best') view.tier=l2.tier; load(view.date, renderAll); renderAll(); return; }
+    if(act==='ltier'){ var tt=t.getAttribute('data-t'); queue(iso,{tier:logFor(iso).tier===tt?null:tt}); renderAll(); return; }
+    if(act==='lpull'){ var hh=health(iso)||{}; var bio={}; BIO_FIELDS.forEach(function(f){ if(!f[3]) return; for(var i=0;i<f[3].length;i++){ if(hh[f[3][i]]!=null){ bio[f[0]]=hh[f[3][i]]; break; } } }); if(Object.keys(bio).length){ queue(iso,{bio:bio}); renderAll(); } return; }
   }
   function onChange(e){
-    var t=e.target; if(!t.matches('[data-act]')) return;
+    var t=e.target; if(!t.matches||!t.matches('[data-act]')) return;
     var act=t.getAttribute('data-act'), iso=view.date;
-    if(act==='set'){ var ex=t.getAttribute('data-ex'), i=+t.getAttribute('data-i'), f=t.getAttribute('data-f'); var l=logFor(iso);
-      var arr=(l.sets&&l.sets[ex]||[]).slice(); var s=Object.assign({},arr[i]||{}); var val=t.value.trim(); s[f]=(val===''?null:Number(val)); arr[i]=s; var d={}; d[ex]=arr; queue(iso,{sets:d}); return; }
-    if(act==='note'){ var ex2=t.getAttribute('data-ex'); var l2=logFor(iso); var fb=Object.assign({},(l2.feedback&&l2.feedback[ex2])||{}); fb.note=t.value; var fd={}; fd[ex2]=fb; queue(iso,{feedback:fd}); return; }
+    if(act==='set'){ var ex=t.getAttribute('data-ex'), i=+t.getAttribute('data-i'), f=t.getAttribute('data-f'); var arr=(logFor(iso).sets&&logFor(iso).sets[ex]||[]).slice(); var s=Object.assign({},arr[i]||{}); var val=t.value.trim(); s[f]=(val===''?null:Number(val)); arr[i]=s; var d={}; d[ex]=arr; queue(iso,{sets:d}); return; }
+    if(act==='note'){ var ex2=t.getAttribute('data-ex'); var fb=Object.assign({},(logFor(iso).feedback&&logFor(iso).feedback[ex2])||{}); fb.note=t.value; var fd={}; fd[ex2]=fb; queue(iso,{feedback:fd}); return; }
+    if(act==='lrpe'){ var val2=t.value.trim(); queue(iso,{rpe:val2===''?null:Number(val2)}); return; }
+    if(act==='lfootball'){ var v3=t.value.trim(); queue(iso,{footballLast20:v3===''?null:Number(v3)}); return; }
+    if(act==='lnotes'){ queue(iso,{notes:t.value}); return; }
+    if(act==='lbio'){ var key=t.getAttribute('data-f'), v4=t.value.trim(); var bd={}; bd[key]=(v4===''?null:Number(v4)); queue(iso,{bio:bd}); return; }
   }
 
-  /* ── build card + mount on the workout canvas ─────────────────────────────── */
+  /* ── build cards + mount ──────────────────────────────────────────────────── */
   function defWorkout(b){
-    if(b==='m'){ var W=Math.max(384, Math.floor((window.innerWidth-24)/24)*24); return [{id:'session',x:12,y:12,w:W,h:640}]; }
-    return [{id:'session',x:24,y:24,w:456,h:700}];
+    var ids=['session','plan','progress','log'];
+    if(b==='m'){ var W=Math.max(384, Math.floor((window.innerWidth-24)/24)*24), y=12, out=[];
+      ids.forEach(function(id){ out.push({id:id,x:12,y:y,w:W,h:id==='session'||id==='progress'?640:520}); y+=(id==='session'||id==='progress'?640:520)+12; }); return out; }
+    return [{id:'session',x:24,y:24,w:456,h:720},{id:'plan',x:504,y:24,w:432,h:560},{id:'progress',x:960,y:24,w:456,h:720},{id:'log',x:504,y:600,w:432,h:600}];
   }
   window.s2MountWorkout=function(){
     var grid=document.getElementById('workout-grid'); if(!grid) return;
-    if(grid.querySelector(':scope > .s2-card[data-card="session"]')){ if(window.s2ApplyTab) window.s2ApplyTab('workout'); return; }
-    var card=document.createElement('section');
-    card.className='s2-card'; card.setAttribute('data-card','session');
-    card.innerHTML='<div class="s2-card-head">Session <span class="s2-card-meta" id="wk-head-meta"></span></div><div class="s2-card-body wk-body"></div>';
-    grid.appendChild(card);
-    bodyEl=card.querySelector('.wk-body'); metaEl=card.querySelector('#wk-head-meta');
-    bodyEl.addEventListener('click', onAct);
-    bodyEl.addEventListener('change', onChange);
-    if(typeof s2RegisterTab==='function'){ s2RegisterTab('workout',grid,defWorkout); s2RegisterCard('workout','session',card,card.querySelector('.s2-card-head')); }
+    if(grid.querySelector(':scope > .s2-card')){ if(window.s2ApplyTab) window.s2ApplyTab('workout'); return; }
+    if(typeof s2RegisterTab==='function') s2RegisterTab('workout',grid,defWorkout);
+    Object.keys(cards).forEach(function(id){ var c=cards[id];
+      var card=document.createElement('section'); card.className='s2-card'; card.setAttribute('data-card',id);
+      card.innerHTML='<div class="s2-card-head">'+c.title+' <span class="s2-card-meta"></span></div><div class="s2-card-body wk-body"></div>';
+      grid.appendChild(card);
+      c.el=card; c.body=card.querySelector('.wk-body'); c.metaEl=c.meta?card.querySelector('.s2-card-meta'):null;
+      c.body.addEventListener('click', onAct); c.body.addEventListener('change', onChange);
+      if(typeof s2RegisterCard==='function') s2RegisterCard('workout',id,card,card.querySelector('.s2-card-head'));
+    });
     if(window.s2ApplyTab) window.s2ApplyTab('workout');
-    render();
-    load(view.date, render);
+    renderAll();
+    load(view.date, renderAll); loadAll(renderAll);
   };
-  window.refreshWorkout=function(){ load(view.date, render); };
 
-  // Re-render (and pull fresh KV/health) whenever the Workout tab becomes active.
-  new MutationObserver(function(){ if(document.body.getAttribute('data-tab')==='workout'){ if(!bodyEl && window.s2MountWorkout) window.s2MountWorkout(); else window.refreshWorkout(); } })
+  new MutationObserver(function(){ if(document.body.getAttribute('data-tab')==='workout'){ if(!cards.session.body && window.s2MountWorkout) window.s2MountWorkout(); else window.refreshWorkout(); } })
     .observe(document.body,{attributes:true,attributeFilter:['data-tab']});
 })();
 
