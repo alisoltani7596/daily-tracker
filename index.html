@@ -4479,7 +4479,7 @@ function voiceMaybeSpeakReply(rawText){
     { id:'wake',         test:function(e){ var m=healthMins(healthWakeTime(e)); return m==null?undefined:(m<=8*60); } },      // woke ≤ 08:00
     // "in bed by midnight": bedtime in the evening (≥12:00) counts, or exactly 00:00; 00:01–11:59 does not.
     { id:'sleep',        test:function(e){ var m=healthMins(healthBedTime(e));  return m==null?undefined:(m>=12*60 || m===0); } },
-    { id:'steps',        test:function(e){ return typeof e.steps==='number' ? (e.steps>=8000) : undefined; } },
+    { id:'steps',        test:function(e){ return typeof e.steps==='number' ? (e.steps >= (Number(localStorage.getItem('steps_goal_v1')) || 6000)) : undefined; } },
     { id:'garmin_sleep', test:function(e){ return typeof e.sleep_score==='number' ? (e.sleep_score>90) : undefined; } },
     { id:'garmin_wake',  test:function(e){ return typeof e.body_battery_wake==='number' ? (e.body_battery_wake>=100) : undefined; } },
     { id:'garmin_bed',   test:function(e){ return typeof e.body_battery_bed==='number' ? (e.body_battery_bed<30) : undefined; } },

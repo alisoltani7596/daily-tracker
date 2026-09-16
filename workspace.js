@@ -285,6 +285,7 @@ function habitDone(h) {
   return typeof recHabits === "function" ? !!recHabits(dateKey())[h.legacyId || h.id] : !!h.days?.[dateKey()];
 }
 function bridgeHabits() {
+  try { localStorage.setItem('steps_goal_v1', String(state.settings.stepsGoal)); } catch {}
   if (typeof HABITS === "undefined")
     return;
   for (const h of state.habits) {
@@ -703,3 +704,9 @@ async function boot() {
   await loadCloud();
 }
 boot();
+
+// Advance the schedule without interrupting an editor or an unfinished capture.
+setInterval(() => {
+  if (route === 'today' && !document.hidden && !busy && !dialog.open &&
+      !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) render();
+}, 60000);
