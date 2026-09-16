@@ -5683,7 +5683,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
   }
 
   /* ═══ CARD: Log ═══════════════════════════════════════════════════════════ */
-  var BIO_FIELDS=[['weightKg','Weight','kg',null],['steps','Steps','',['steps']],['activeKcal','Active kcal','',['active_kcal','activeKcal','active_calories']],['sleepScore','Sleep score','',['sleep_score','sleepScore']],['bodyBattery','Body battery','',['body_battery','bodyBattery']],['restingHr','Resting HR','',['resting_hr','restingHr']],['intensityMin','Intensity min','',['intensity_min','intensityMin']]];
+  var BIO_FIELDS=[['weightKg','Weight','kg',null],['steps','Steps','',['steps']],['activeKcal','Active kcal','',['active_kcal','activeKcal','active_calories']],['sleepScore','Sleep score · Apple Health','',['sleep_score','sleepScore']],['restingHr','Resting HR','',['resting_hr','restingHr']],['walkingMin','Walk','min',['walking_min','walkingMin']],['workoutCount','Workouts','count',['workout_count','workoutCount']]];
   var LTIERS=['best','must','missed','skipped'];
   function renderLog(el){
     var iso=view.date, log=logFor(iso), h=health(iso);

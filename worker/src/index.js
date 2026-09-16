@@ -689,7 +689,7 @@ export default {
         const base = (log[map] && typeof log[map] === "object") ? log[map] : {};
         for (const k of Object.keys(body[map])) {
           if (body[map][k] === null) delete base[k];
-          else if (map === "bio" && ["steps", "activeKcal", "restingHr", "weightKg", "sleepScore", "sleepHours", "bodyBattery", "intensityMin"].includes(k)) {
+          else if (map === "bio" && ["steps", "activeKcal", "restingHr", "weightKg", "sleepScore", "sleepHours", "bodyBattery", "intensityMin", "walkingMin", "workoutCount"].includes(k)) {
             const raw = body[map][k];
             // Shortcuts text tokens retain their values reliably; reject blanks instead of coercing to zero.
             const validText = typeof raw === "string" && /^\d+(?:\.\d+)?$/.test(raw.trim());
