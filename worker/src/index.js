@@ -422,14 +422,24 @@ export default {
 
       // Merge each pushed record into its per-date key (per-field LWW).
       const dates = Object.keys(records).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).slice(0, 400);
+      let wrote = 0;
       await Promise.all(dates.map(async (date) => {
         const inc = records[date];
         if (!inc || typeof inc !== "object" || Array.isArray(inc)) return;
         const key = "records:" + date;
         const existing = safeParse(await env.TODAY_KV.get(key));
+        // Snapshot BEFORE merging — mergeRecordServer mutates `existing` in place and
+        // returns that same object, so this must be captured first.
+        const before = existing ? canonRecord(existing) : null;
         const merged = mergeRecordServer(existing, inc, date);
+        // Idempotent write: the client re-pushes the whole recent window on every
+        // focus/visibility/online event, so rewriting unchanged dates is what burns
+        // the daily KV write quota. Only write when the merge actually changed the
+        // record (comparing canonically, ignoring the _srv timestamp).
+        if (before !== null && before === canonRecord(merged)) return;
         merged._srv = now;
         await env.TODAY_KV.put(key, JSON.stringify(merged), { expirationTtl: 60 * 24 * 3600, metadata: { srv: now } });
+        wrote++;
       }));
 
       // Return records changed since `since` (metadata carries the server stamp, so
@@ -1304,6 +1314,14 @@ function computeSleepScore(entry, priorBeds) {
 // value with the newer updated-at stamp (in `at`: h=habits, c=checks, k=kcal).
 // `>=` means an incoming stamp wins ties, so the last push to reach the server is
 // authoritative and every client converges once it pulls.
+// Canonical, order-independent JSON of a record, ignoring the _srv timestamp — used
+// to detect "nothing actually changed" so /records-sync can skip a redundant KV write.
+function canonRecord(o) {
+  if (o === null || typeof o !== "object") return JSON.stringify(o);
+  if (Array.isArray(o)) return "[" + o.map(canonRecord).join(",") + "]";
+  return "{" + Object.keys(o).filter((k) => k !== "_srv").sort()
+    .map((k) => JSON.stringify(k) + ":" + canonRecord(o[k])).join(",") + "}";
+}
 function mergeRecordServer(existing, inc, date) {
   const out = (existing && typeof existing === "object" && !Array.isArray(existing))
     ? existing : { v: 1, date, habits: {}, checks: [], kcal: 0, at: { h: {}, c: {}, k: 0 } };
