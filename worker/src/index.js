@@ -702,6 +702,35 @@ export default {
       return json({ ok: true, date }, 200, corsHeaders(allowOrigin));
     }
 
+    // ═══ Calendar device push (Apple Shortcut → every calendar on the device) ═════
+    // The Mac/iPhone Calendar app already merges all accounts (Google, iCloud, UVic),
+    // so a Shortcut reads them all and POSTs them here. Read-only overlay for display.
+    //
+    // POST /calendar-push — token-gated ONLY (the Shortcut sends no browser Origin,
+    // same convention as /meal-log & /health-push). Replaces the whole device set.
+    if (request.method === "POST" && url.pathname === "/calendar-push") {
+      if (!env.TODAY_KV) return json({ error: "calendar store not configured" }, 500, corsHeaders(allowOrigin));
+      if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
+      const token = request.headers.get("x-edit-token") || "";
+      if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
+      if (!body || !Array.isArray(body.events)) return json({ error: "`events` array is required" }, 400, corsHeaders(allowOrigin));
+      const events = normalizeCalEvents(body.events);
+      const payload = { events, generatedAt: new Date().toISOString(), count: events.length };
+      await env.TODAY_KV.put("calendar:device", JSON.stringify(payload));
+      return json({ ok: true, count: events.length }, 200, corsHeaders(allowOrigin));
+    }
+
+    // GET /calendar-device — the pushed device events. CORS-locked to the Iris origin
+    // like GET /today; the browser reads this and overlays it on the calendar.
+    if (request.method === "GET" && url.pathname === "/calendar-device") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.TODAY_KV) return json({ error: "calendar store not configured" }, 500, corsHeaders(allowOrigin));
+      const payload = safeParse(await env.TODAY_KV.get("calendar:device")) || { events: [], generatedAt: null, count: 0 };
+      return json(payload, 200, corsHeaders(allowOrigin));
+    }
+
     // POST /today-refresh — the Cowork scheduled task pushes the freshly generated
     // Today data into the TODAY_KV `today` key. This is a server-to-server call
     // (curl, no browser Origin), so it is gated purely by the REFRESH_TOKEN secret
@@ -932,6 +961,44 @@ async function readAllWorkout(env) {
     const rec = safeParse(await env.TODAY_KV.get(k.name));
     if (rec) out[k.name.slice("workout:".length)] = rec;
   }));
+  return out;
+}
+
+// ─── Calendar (device push) helpers ──────────────────────────────────────────
+const CAL_TZ = "America/Vancouver", CAL_MAX = 4000;
+// An ISO datetime → its date (YYYY-MM-DD) and HH:MM in Vancouver time.
+function calVanParts(iso) {
+  const d = new Date(iso); if (isNaN(d.getTime())) return null;
+  const p = {};
+  new Intl.DateTimeFormat("en-CA", { timeZone: CAL_TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
+    .formatToParts(d).forEach((x) => { p[x.type] = x.value; });
+  return { date: `${p.year}-${p.month}-${p.day}`, hm: `${p.hour === "24" ? "00" : p.hour}:${p.minute}` };
+}
+// Coerce the Shortcut's raw events into the frontend event model (Vancouver-local).
+function normalizeCalEvents(arr) {
+  const out = [];
+  for (const e of arr) {
+    if (!e || typeof e !== "object") continue;
+    const title = typeof e.title === "string" ? e.title.trim().slice(0, 300) : "";
+    if (!title) continue;
+    const s = calVanParts(e.start); if (!s) continue;
+    const en = e.end ? calVanParts(e.end) : null;
+    const allDay = !!e.allDay;
+    const ev = {
+      id: (typeof e.id === "string" && e.id) ? "device:" + e.id.slice(0, 200) : "device:" + title + "|" + s.date + "|" + s.hm,
+      title,
+      date: s.date,
+      start: allDay ? "00:00" : s.hm,
+      end: allDay ? "00:00" : (en ? en.hm : s.hm),
+      allDay,
+      calendarName: typeof e.calendar === "string" ? e.calendar.slice(0, 120) : (typeof e.calendarName === "string" ? e.calendarName.slice(0, 120) : "Calendar"),
+      accountLabel: typeof e.account === "string" ? e.account.slice(0, 120) : "",
+      source: "device", readOnly: true,
+    };
+    if (en && en.date !== s.date) ev.endDate = en.date;   // all-day exclusive end / overnight span
+    out.push(ev);
+    if (out.length >= CAL_MAX) break;
+  }
   return out;
 }
 

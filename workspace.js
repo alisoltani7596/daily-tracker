@@ -19,6 +19,7 @@ try {
 let state = envelope?.state || emptyState(), revision = envelope?.revision || 0;
 let dirty = read(QUEUE, false), busy = false, generation = 0, saveTimer, undoState = null, status = "Saved on this device", cloudReady = false, googleReady = false, cloudConflict = false;
 let calendarDate = dateKey(), calendarExpanded = false, layoutGesture = false;
+let deviceEvents = read("iris_calendar_device_v1", []);
 let route = "today", view = localStorage.getItem("iris_workspace_view") || "list", filter = "open", project = "all", query = "", customize = false, showTrash = false;
 const root = document.createElement("main");
 root.id = "workspace";
@@ -294,11 +295,17 @@ function renderCalendar() {
   const dates = calendarExpanded ? weekDates(calendarDate) : [calendarDate], today = dateKey();
   const sources = state.settings.calendarSources || [];
   const sourceLabel = (e) => e.calendarName || e.accountLabel || (e.source === "snapshot" ? "Dashboard snapshot" : e.source === "google" ? "Google Calendar" : "IRIS");
+  const dkey = (e) => (e.title || "") + "|" + e.date + "|" + (e.allDay ? "all" : e.start || "");
+  const have = new Set(state.events.filter((e) => !e.deletedAt).map(dkey));
+  const merged = state.events.concat(deviceEvents.filter((e) => !have.has(dkey(e))));
+  const deviceSourceMap = {};
+  deviceEvents.forEach((e) => { if (e.calendarKey && !deviceSourceMap[e.calendarKey]) deviceSourceMap[e.calendarKey] = { key: e.calendarKey, accountLabel: e.accountLabel || "Device", name: e.calendarName || "Calendar" }; });
+  const allSources = sources.concat(Object.values(deviceSourceMap));
   const colors = {};
-  sources.forEach((source, i) => colors[source.key] = COLORS[i % COLORS.length]);
-  const columns = dates.map((day) => `<section class="ws-calendar-day ${day === today ? "is-today" : ""}"><header class="ws-calendar-date"><span>${(/* @__PURE__ */ new Date(day + "T12:00:00")).toLocaleDateString("en-US", { weekday: "short" })}</span><b>${Number(day.slice(-2))}</b></header><div class="ws-calendar-events">${eventsForDay(state.events, day).map((e) => `<button class="ws-calendar-event" data-edit-event="${e.id}" style="--event-color:${colors[e.calendarKey] || COLORS[0]}"><time>${e.allDay ? "All day" : e.date < day ? "Continues" : esc(e.start)}${!e.allDay && (!e.endDate || e.endDate === day) ? "\u2013" + esc(e.end) : ""}</time><strong>${esc(e.title)}</strong><small>${esc(sourceLabel(e))}</small></button>`).join("") || '<span class="ws-calendar-empty">No events</span>'}</div></section>`).join("");
+  allSources.forEach((source, i) => colors[source.key] = COLORS[i % COLORS.length]);
+  const columns = dates.map((day) => `<section class="ws-calendar-day ${day === today ? "is-today" : ""}"><header class="ws-calendar-date"><span>${(/* @__PURE__ */ new Date(day + "T12:00:00")).toLocaleDateString("en-US", { weekday: "short" })}</span><b>${Number(day.slice(-2))}</b></header><div class="ws-calendar-events">${eventsForDay(merged, day).map((e) => `<button class="ws-calendar-event" data-edit-event="${e.id}" style="--event-color:${colors[e.calendarKey] || COLORS[0]}"><time>${e.allDay ? "All day" : e.date < day ? "Continues" : esc(e.start)}${!e.allDay && (!e.endDate || e.endDate === day) ? "\u2013" + esc(e.end) : ""}</time><strong>${esc(e.title)}</strong><small>${esc(sourceLabel(e))}</small></button>`).join("") || '<span class="ws-calendar-empty">No events</span>'}</div></section>`).join("");
   const range = (/* @__PURE__ */ new Date(dates[0] + "T12:00:00")).toLocaleDateString("en-US", { month: "long", day: "numeric" }) + " \u2013 " + (/* @__PURE__ */ new Date(dates[dates.length - 1] + "T12:00:00")).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  return `<section class="ws-panel ws-calendar ${calendarExpanded ? "is-week" : "is-day"}"><div class="ws-panel-head"><div><h2>${calendarExpanded ? "Your week" : calendarDate === today ? "Today\u2019s schedule" : "Daily schedule"}</h2><p class="ws-subtitle">${esc(calendarExpanded ? range : (/* @__PURE__ */ new Date(calendarDate + "T12:00:00")).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }))} \xB7 Vancouver time</p></div><div class="ws-calendar-actions"><button class="ws-btn small" data-action="calendar-prev" aria-label="Previous calendar ${calendarExpanded ? "week" : "day"}">\u2039</button>${button("Today", "calendar-today", "small")}<button class="ws-btn small" data-action="calendar-next" aria-label="Next calendar ${calendarExpanded ? "week" : "day"}">\u203A</button><button class="ws-btn small" data-action="calendar-expand" aria-expanded="${calendarExpanded}">${calendarExpanded ? "Collapse to day" : "Expand to week"}</button>${button("+ Event", "add-event", "small")}${button("Refresh calendars", "import-calendar", "small")}</div></div><div class="ws-calendar-sources">${sources.length ? sources.map((source) => `<span><i class="ws-dot" style="--project-color:${colors[source.key]}"></i>${esc(source.accountLabel)} \xB7 ${esc(source.name)}${source.error ? " \xB7 needs attention" : ""}</span>`).join("") : "<span>Showing your saved schedule. Connect your accounts to include every calendar.</span>"}<button class="ws-link" data-action="calendar-connections">Manage connections</button></div><div class="ws-calendar-scroll"><div class="ws-calendar-week">${columns}</div></div></section>`;
+  return `<section class="ws-panel ws-calendar ${calendarExpanded ? "is-week" : "is-day"}"><div class="ws-panel-head"><div><h2>${calendarExpanded ? "Your week" : calendarDate === today ? "Today\u2019s schedule" : "Daily schedule"}</h2><p class="ws-subtitle">${esc(calendarExpanded ? range : (/* @__PURE__ */ new Date(calendarDate + "T12:00:00")).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }))} \xB7 Vancouver time</p></div><div class="ws-calendar-actions"><button class="ws-btn small" data-action="calendar-prev" aria-label="Previous calendar ${calendarExpanded ? "week" : "day"}">\u2039</button>${button("Today", "calendar-today", "small")}<button class="ws-btn small" data-action="calendar-next" aria-label="Next calendar ${calendarExpanded ? "week" : "day"}">\u203A</button><button class="ws-btn small" data-action="calendar-expand" aria-expanded="${calendarExpanded}">${calendarExpanded ? "Collapse to day" : "Expand to week"}</button>${button("+ Event", "add-event", "small")}${button("Refresh calendars", "import-calendar", "small")}</div></div><div class="ws-calendar-sources">${allSources.length ? allSources.map((source) => `<span><i class="ws-dot" style="--project-color:${colors[source.key]}"></i>${esc(source.accountLabel)} \xB7 ${esc(source.name)}${source.error ? " \xB7 needs attention" : ""}</span>`).join("") : "<span>Showing your saved schedule. Connect your accounts to include every calendar.</span>"}<button class="ws-link" data-action="calendar-connections">Manage connections</button></div><div class="ws-calendar-scroll"><div class="ws-calendar-week">${columns}</div></div></section>`;
 }
 function renderHabitColumns() {
   return `<section class="ws-panel ws-habits"><div class="ws-panel-head"><div><h2>Daily habits</h2><p class="ws-subtitle">A rhythm for your whole day. Edit a habit to change its time.</p></div>${button("+ Habit", "add-habit", "small")}</div><div class="ws-habit-columns">${Object.entries(HABIT_PERIODS).map(([period, label]) => {
@@ -343,7 +350,7 @@ function cardControls() {
   return state.settings.cardOrder.filter((id) => FLOAT_CARDS.includes(id)).map((id, i) => `<div class="ws-setting-row"><label><input type="checkbox" data-card-toggle="${id}" ${state.settings.hiddenCards.includes(id) ? "" : "checked"}>${{ tasks: "Your focus", schedule: "Schedule", deadlines: "Coming up", habits: "Daily habits", inbox: "Inbox", slack: "Messages" }[id]}</label><span><button class="ws-btn small" data-card-up="${id}" ${i === 0 ? "disabled" : ""} aria-label="Move ${id} up">\u2191</button> <button class="ws-btn small" data-card-down="${id}" ${i === state.settings.cardOrder.filter((id2) => FLOAT_CARDS.includes(id2)).length - 1 ? "disabled" : ""} aria-label="Move ${id} down">\u2193</button></span></div>`).join("");
 }
 function renderSettings() {
-  return header("Make IRIS yours.", "Your workspace, your preferences.") + `<div class="ws-settings-grid">${panel("Connections", `<p class="ws-note">${esc(status)}</p><label>Workspace access token<input type="password" autocomplete="off" class="ws-input" id="ws-token" placeholder="${token() ? "Token saved on this device" : "Enter your existing edit token"}"></label>${button("Save connection", "connect")}<p class="ws-note">Google Calendar & Docs: ${googleReady ? "connected" : "not connected to the new sync service yet"}. ${googleReady ? "Linked items sync automatically after edits." : "Connect your Google account to enable syncing. Your edits remain saved in IRIS."}</p>${button("Sync now", "sync")}${button("Refresh all Google calendars", "import-calendar")}<p class="ws-note">Calendar coverage: Google accounts require server authorization. Phone/iCloud and UVic accounts are not connected yet. Refresh loads the past 30 days and next 180 days from every configured Google calendar. Project documents keep their existing content. Only the labeled IRIS section is synchronized. Calendar edits apply only to events you explicitly link.</p>`)}${panel("Appearance & goals", `<label>Appearance<select class="ws-input" id="ws-theme">${["light", "dark", "iris", "dusk"].map((t) => `<option ${document.documentElement.dataset.theme === t ? "selected" : ""}>${t}</option>`).join("")}</select></label><label>Daily steps goal<input class="ws-input" id="ws-steps" type="number" min="1" max="100000" value="${state.settings.stepsGoal}"></label>${button("Save goal", "save-goal")}<label>Coach voice<select class="ws-input" id="ws-coach-voice">${Array.from(document.getElementById("coach-voice-select")?.options || []).map((o) => `<option value="${esc(o.value)}" ${o.selected ? "selected" : ""}>${esc(o.text)}</option>`).join("")}</select></label><p class="ws-note">Workout plans can have separate session targets. This is your everyday goal.</p>`)}${panel("Dashboard", cardControls())}${panel("Habits & projects", `${state.habits.filter((h) => !h.deletedAt).map((h) => `<button class="ws-link" data-edit-habit="${h.id}">${esc(h.title)}</button>`).join("")}${button("+ Habit", "add-habit")}<p class="ws-note">Archived projects</p>${state.projects.filter((p) => p.archived).map((p) => `<div class="ws-setting-row"><span>${esc(p.name)}</span><button class="ws-btn small" data-restore-project="${p.id}">Restore</button></div>`).join("") || '<p class="ws-note">None archived.</p>'}`)}${panel("Backup & recovery", `${button("Export workspace backup", "export")}<label>Restore a workspace backup<input class="ws-input" type="file" accept="application/json,.json" id="ws-import"></label><p class="ws-note">Restoring replaces this workspace. Export first to keep a copy. Removed tasks can also be restored from Projects \u2192 Trash.</p>${button("Undo last change", "undo")}`)}${panel("Recent changes", `<ul class="ws-history">${state.history.slice(0, 12).map((h) => `<li>${esc(h.label)}<small>${esc(new Date(h.at).toLocaleString())}</small></li>`).join("") || "<li>No edits yet.</li>"}</ul>`)}</div>`;
+  return header("Make IRIS yours.", "Your workspace, your preferences.") + `<div class="ws-settings-grid">${panel("Connections", `<p class="ws-note">${esc(status)}</p><label>Workspace access token<input type="password" autocomplete="off" class="ws-input" id="ws-token" placeholder="${token() ? "Token saved on this device" : "Enter your existing edit token"}"></label>${button("Save connection", "connect")}<p class="ws-note">Google Calendar & Docs: ${googleReady ? "connected" : "not connected to the new sync service yet"}. ${googleReady ? "Linked items sync automatically after edits." : "Connect your Google account to enable syncing. Your edits remain saved in IRIS."}</p>${button("Sync now", "sync")}${button("Refresh all Google calendars", "import-calendar")}<p class="ws-note">Calendar coverage: iCloud, UVic and every calendar on your Mac/iPhone sync (read-only) via the IRIS Calendar Shortcut — run it or add an automation. Google calendars can additionally sync live once server authorization is configured. Project documents keep their existing content; only the labeled IRIS section is synchronized. Calendar edits apply only to events you explicitly link.</p>`)}${panel("Appearance & goals", `<label>Appearance<select class="ws-input" id="ws-theme">${["light", "dark", "iris", "dusk"].map((t) => `<option ${document.documentElement.dataset.theme === t ? "selected" : ""}>${t}</option>`).join("")}</select></label><label>Daily steps goal<input class="ws-input" id="ws-steps" type="number" min="1" max="100000" value="${state.settings.stepsGoal}"></label>${button("Save goal", "save-goal")}<label>Coach voice<select class="ws-input" id="ws-coach-voice">${Array.from(document.getElementById("coach-voice-select")?.options || []).map((o) => `<option value="${esc(o.value)}" ${o.selected ? "selected" : ""}>${esc(o.text)}</option>`).join("")}</select></label><p class="ws-note">Workout plans can have separate session targets. This is your everyday goal.</p>`)}${panel("Dashboard", cardControls())}${panel("Habits & projects", `${state.habits.filter((h) => !h.deletedAt).map((h) => `<button class="ws-link" data-edit-habit="${h.id}">${esc(h.title)}</button>`).join("")}${button("+ Habit", "add-habit")}<p class="ws-note">Archived projects</p>${state.projects.filter((p) => p.archived).map((p) => `<div class="ws-setting-row"><span>${esc(p.name)}</span><button class="ws-btn small" data-restore-project="${p.id}">Restore</button></div>`).join("") || '<p class="ws-note">None archived.</p>'}`)}${panel("Backup & recovery", `${button("Export workspace backup", "export")}<label>Restore a workspace backup<input class="ws-input" type="file" accept="application/json,.json" id="ws-import"></label><p class="ws-note">Restoring replaces this workspace. Export first to keep a copy. Removed tasks can also be restored from Projects \u2192 Trash.</p>${button("Undo last change", "undo")}`)}${panel("Recent changes", `<ul class="ws-history">${state.history.slice(0, 12).map((h) => `<li>${esc(h.label)}<small>${esc(new Date(h.at).toLocaleString())}</small></li>`).join("") || "<li>No edits yet.</li>"}</ul>`)}</div>`;
 }
 function input(label, name, value = "", type = "text", extra = "") {
   return `<label>${label}<input class="ws-input" name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
@@ -411,7 +418,7 @@ function editProject(id = "") {
   appendResolution("project", p);
 }
 function editEvent(id = "") {
-  const existing = state.events.find((e2) => e2.id === id);
+  const existing = state.events.find((e2) => e2.id === id) || deviceEvents.find((e2) => e2.id === id);
   const e = existing || { id: uid(), title: "", date: dateKey(), start: "09:00", end: "09:30", notes: "", syncEnabled: false };
   if (e.readOnly) {
     modal("Calendar event", `<h3>${esc(e.title)}</h3><p>${esc(e.date)} \u2013 ${esc(e.endDate || e.date)} \xB7 ${e.allDay ? "All day" : esc(e.start) + "\u2013" + esc(e.end)}</p><p>${esc(e.notes)}</p><p class="ws-note">${esc(e.accountLabel)} \xB7 ${esc(e.calendarName)} \xB7 Read-only calendar</p>`, () => {
@@ -500,6 +507,18 @@ async function request(path, options = {}) {
     throw e;
   }
   return body;
+}
+async function fetchDeviceCalendar() {
+  if (!base()) return;
+  try {
+    const r = await fetch(base() + "/calendar-device", { headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(15e3) });
+    if (!r.ok) return;
+    const d = await r.json();
+    deviceEvents = (d.events || []).map((e) => ({ ...e, source: "device", readOnly: true, calendarKey: "device:" + (e.accountLabel || "") + "/" + (e.calendarName || "") }));
+    try { localStorage.setItem("iris_calendar_device_v1", JSON.stringify(deviceEvents)); } catch {}
+    render();
+  } catch (e) {
+  }
 }
 async function loadCloud(force = false) {
   if (!base() || !token()) {
@@ -744,8 +763,10 @@ function clicks(e) {
     navigate("settings");
   if (act === "reset-canvas")
     mutate("Reset card layout", () => delete state.settings.canvasLayout);
-  if (act === "import-calendar")
+  if (act === "import-calendar") {
+    fetchDeviceCalendar();
     saveCloud({ action: "import-calendar" });
+  }
   if (act === "events")
     showEvents();
   if (act === "load-server")
@@ -823,6 +844,7 @@ let lastRefresh = 0;
 window.addEventListener("focus", () => {
   if (!busy && !dirty && token() && Date.now() - lastRefresh > 6e4) {
     lastRefresh = Date.now();
+    fetchDeviceCalendar();
     loadCloud().then(() => {
       if (googleReady && !cloudConflict)
         saveCloud();
@@ -879,6 +901,7 @@ async function boot() {
   root.inert = false;
   navigate(["projects", "settings", "tracker", "coach"].includes(document.body.dataset.tab) ? document.body.dataset.tab : "today");
   await loadCloud();
+  fetchDeviceCalendar();
 }
 boot();
 setInterval(() => {
