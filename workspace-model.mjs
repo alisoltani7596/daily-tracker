@@ -72,9 +72,11 @@ function validateState(s) {
   for (const p of s.projects)
     if (typeof p.name !== "string" || !p.name.trim() || p.name.length > 200 || p.color && !/^#[0-9a-f]{6}$/i.test(p.color) || p.docUrl && !docId(p.docUrl))
       throw new Error("Enter a valid Google Docs or Drive document link");
-  for (const e of s.events)
-    if (!e.title?.trim() || !validDate(e.date) || !e.date || !/^([01]\d|2[0-3]):[0-5]\d$/.test(e.start) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(e.end) || e.end <= e.start)
-      throw new Error("Events must end after they start on the same day");
+  for (const e of s.events) {
+    const time = (t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+    if (!e.title?.trim() || !e.date || !validDate(e.date) || !validDate(e.endDate || "") || e.endDate && e.endDate < e.date || (e.allDay ? !e.endDate || e.endDate <= e.date : !time(e.start) || !time(e.end) || (!e.endDate || e.endDate === e.date) && e.end <= e.start))
+      throw new Error("Events must end after they start");
+  }
   for (const h of s.habits)
     if (!h.title?.trim())
       throw new Error("Habit needs a name");
@@ -103,7 +105,7 @@ function taskFingerprint(tasks) {
   return JSON.stringify(tasks.filter((t) => !t.deletedAt).map((t) => ({ id: t.id, title: t.title, status: t.status, due: t.due || "", priority: t.priority || "normal", notes: t.notes || "" })));
 }
 function eventFingerprint(e) {
-  return JSON.stringify({ title: e.title, date: e.date, start: e.start, end: e.end, notes: e.notes || "", deletedAt: e.deletedAt || "" });
+  return JSON.stringify({ title: e.title, date: e.date, start: e.start, end: e.end, notes: e.notes || "", deletedAt: e.deletedAt || "", ...e.allDay ? { allDay: true, endDate: e.endDate } : e.endDate && e.endDate !== e.date ? { endDate: e.endDate } : {} });
 }
 function docText(tasks) {
   return tasks.filter((t) => !t.deletedAt).map((t) => `[${t.status === "done" ? "x" : " "}] ${t.title.replace(/[\r\n]/g, " ")}

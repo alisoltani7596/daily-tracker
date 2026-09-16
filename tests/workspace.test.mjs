@@ -184,3 +184,29 @@ test("workspace route rejects unauthenticated reads and writes", async () => {
     assert.equal(r.status, 403);
   }
 });
+
+test('dashboard geometry stays in bounds and survives narrow widths', async()=>{
+  const {fitFloatRect,normalizedFloatRect,habitPeriod,weekDates,eventsForDay}=await import('../workspace-layout.mjs');
+  assert.deepEqual(fitFloatRect({x:2,w:2,y:-4,h:1},500),{x:0,y:0,w:500,h:190});
+  assert.equal(normalizedFloatRect({x:50,y:30,w:400,h:300},1000).w,.4);
+  assert.equal(habitPeriod({legacyId:'s_mag'}),'night');assert.equal(habitPeriod({period:'midday'}),'midday');
+  assert.deepEqual(weekDates('2026-09-20'),['2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-19','2026-09-20']);
+  const events=[{title:'Away',date:'2026-09-14',endDate:'2026-09-17',allDay:true}];
+  assert.equal(eventsForDay(events,'2026-09-16').length,1);assert.equal(eventsForDay(events,'2026-09-17').length,0);
+});
+test('all calendars keep distinct event identities and refresh remote changes',async()=>{
+  const {importAllCalendars,calendarValues}=await import('../worker/src/workspace.js');
+  const state=emptyState();let title='Meeting';let empty=false;
+  const google=async url=>url.includes('calendarList')?{items:[{id:'one',summary:'Personal',accessRole:'owner'},{id:'two',summary:'School',accessRole:'reader'}]}:{items:empty?[]:[{id:'same-id',etag:title,summary:title,start:{date:'2026-09-15'},end:{date:'2026-09-17'}}]};
+  await importAllCalendars(state,google,{}, {id:'a',label:'Account A'});
+  assert.equal(state.events.length,2);assert.notEqual(state.events[0].calendarKey,state.events[1].calendarKey);assert.equal(state.events[1].readOnly,true);validateState(state);
+  title='Updated';await importAllCalendars(state,google,{}, {id:'a',label:'Account A'});assert.equal(state.events[0].title,'Updated');
+  await importAllCalendars(state,google,{}, {id:'b',label:'Account B'});assert.equal(state.events.length,4);
+  const overnight=calendarValues({summary:'Overnight',start:{dateTime:'2026-09-15T23:00:00-07:00'},end:{dateTime:'2026-09-16T01:00:00-07:00'}});assert.equal(overnight.endDate,'2026-09-16');
+});
+test('linked secondary calendar writes target the original calendar',async()=>{
+  const e={id:'secondary',title:'Work',date:'2026-09-15',endDate:'2026-09-16',allDay:true,start:'',end:'',calendarId:'school@example.com',googleId:'ev',googleEtag:'v1'};
+  let path,payload;
+  await syncEvent(e,async(url,options)=>{path=url;if(options){payload=JSON.parse(options.body);return{id:'ev',etag:'v2'};}return{id:'ev',etag:'v1',summary:'Work',start:{date:e.date},end:{date:e.endDate}};},{});
+  assert.match(path,/school%40example.com/);assert.deepEqual(payload.start,{date:'2026-09-15'});assert.deepEqual(payload.end,{date:'2026-09-16'});
+});

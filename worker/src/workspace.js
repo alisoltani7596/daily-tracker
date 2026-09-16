@@ -1,6 +1,18 @@
 import { clone, validateState, docId, taskFingerprint, eventFingerprint, docText, parseDocText, uid } from "../../workspace-model.mjs";
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
-const configured = (env) => !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_REFRESH_TOKEN);
+function googleAccounts(env) {
+  const accounts = env.GOOGLE_ACCOUNTS_JSON ? JSON.parse(env.GOOGLE_ACCOUNTS_JSON) : [];
+  if (env.GOOGLE_REFRESH_TOKEN)
+    accounts.unshift({ id: "default", label: "Google", refreshToken: env.GOOGLE_REFRESH_TOKEN });
+  return accounts.map((a) => ({ ...a, env: { ...env, GOOGLE_CLIENT_ID: a.clientId || env.GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: a.clientSecret || env.GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN: a.refreshToken } }));
+}
+const configured = (env) => {
+  try {
+    return googleAccounts(env).some((a) => a.env.GOOGLE_CLIENT_ID && a.env.GOOGLE_CLIENT_SECRET && a.env.GOOGLE_REFRESH_TOKEN);
+  } catch {
+    return false;
+  }
+};
 class Workspace {
   constructor(ctx, env) {
     this.ctx = ctx;
@@ -51,7 +63,7 @@ class Workspace {
       }
       for (const e of state.events) {
         const old = saved.state?.events.find((x) => x.id === e.id);
-        for (const key of ["googleId", "googleEtag", "googleBase", "lastSynced", "syncError"]) {
+        for (const key of ["googleId", "googleEtag", "googleBase", "lastSynced", "syncError", "accountId", "calendarId", "calendarKey", "calendarName", "accountLabel", "readOnly"]) {
           delete e[key];
           if (old?.[key] != null)
             e[key] = old[key];
@@ -62,11 +74,28 @@ class Workspace {
       await this.ctx.storage.put("workspace", saved);
       if (configured(this.env)) {
         try {
-          const google = await googleClient(this.env);
-          if (body.action === "import-calendar")
-            await importCalendar(state, google, this.env);
+          const accounts = googleAccounts(this.env), clients = /* @__PURE__ */ new Map();
+          const client = async (account) => {
+            if (!clients.has(account.id))
+              clients.set(account.id, await googleClient(account.env));
+            return clients.get(account.id);
+          };
+          const google = await client(accounts[0]);
+          if (body.action === "import-calendar") {
+            for (const account of accounts) {
+              try {
+                await importAllCalendars(state, await client(account), account.env, account);
+              } catch (error) {
+                syncErrors.push(`${account.label || account.id}: ${error.message}`);
+              }
+            }
+          }
           if (body.resolve) {
-            await resolveConflict(state, google, this.env, body.resolve);
+            const event = state.events.find((e) => e.id === body.resolve.id);
+            const account = accounts.find((a) => a.id === (event?.accountId || accounts[0].id));
+            if (!account)
+              throw Error("Calendar account is no longer connected.");
+            await resolveConflict(state, await client(account), account.env, body.resolve);
           }
           for (const p of state.projects.filter((p2) => p2.syncEnabled && !p2.archived)) {
             try {
@@ -80,7 +109,12 @@ class Workspace {
           }
           for (const e of state.events.filter((e2) => e2.syncEnabled && !e2.deletedAt)) {
             try {
-              await syncEvent(e, google, this.env);
+              const account = accounts.find((a) => a.id === (e.accountId || accounts[0].id));
+              if (!account)
+                throw Error("Calendar account is no longer connected.");
+              await syncEvent(e, await client(account), account.env);
+              e.accountId = account.id;
+              e.calendarId = e.calendarId || account.env.GOOGLE_CALENDAR_ID || "primary";
               delete e.syncError;
             } catch (err) {
               e.syncError = err.message;
@@ -226,15 +260,19 @@ function eventPath(env, id = "") {
   return `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(env.GOOGLE_CALENDAR_ID || "primary")}/events${id ? "/" + encodeURIComponent(id) : ""}`;
 }
 function calendarValues(event) {
+  const common = { title: event.summary || "Untitled event", notes: event.description || "" };
+  if (event.start?.date && event.end?.date)
+    return { ...common, date: event.start.date, endDate: event.end.date, allDay: true, start: "", end: "" };
   if (!event.start?.dateTime || !event.end?.dateTime)
-    throw Error("Only timed, same-day events can be edited in this version.");
+    throw Error("Event has no supported dates.");
   const date = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Vancouver", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
   const time = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "America/Vancouver", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(d));
-  if (date(event.start.dateTime) !== date(event.end.dateTime))
-    throw Error("Multi-day events stay in Google Calendar.");
-  return { title: event.summary || "Untitled event", date: date(event.start.dateTime), start: time(event.start.dateTime), end: time(event.end.dateTime), notes: event.description || "" };
+  return { ...common, date: date(event.start.dateTime), endDate: date(event.end.dateTime), allDay: false, start: time(event.start.dateTime), end: time(event.end.dateTime) };
 }
 async function syncEvent(event, google, env) {
+  if (event.readOnly)
+    throw Error("This calendar is read-only.");
+  env = { ...env, GOOGLE_CALENDAR_ID: event.calendarId || env.GOOGLE_CALENDAR_ID };
   let remote = null;
   if (event.googleId) {
     remote = await google(eventPath(env, event.googleId));
@@ -256,7 +294,7 @@ async function syncEvent(event, google, env) {
       return;
     }
   }
-  const payload = { summary: event.title, description: event.notes || "", start: { dateTime: `${event.date}T${event.start}:00`, timeZone: "America/Vancouver" }, end: { dateTime: `${event.date}T${event.end}:00`, timeZone: "America/Vancouver" } };
+  const payload = { summary: event.title, description: event.notes || "", start: event.allDay ? { date: event.date } : { dateTime: `${event.date}T${event.start}:00`, timeZone: "America/Vancouver" }, end: event.allDay ? { date: event.endDate } : { dateTime: `${event.endDate || event.date}T${event.end}:00`, timeZone: "America/Vancouver" } };
   let result;
   if (event.googleId)
     result = await google(eventPath(env, event.googleId) + "?sendUpdates=none", { method: "PATCH", headers: { "If-Match": remote.etag }, body: JSON.stringify(payload) });
@@ -278,12 +316,14 @@ async function syncEvent(event, google, env) {
   event.googleBase = eventFingerprint(event);
   event.lastSynced = (/* @__PURE__ */ new Date()).toISOString();
 }
-async function importCalendar(state, google, env) {
+async function importCalendar(state, google, env, source = {}) {
   const now = /* @__PURE__ */ new Date();
-  const until = new Date(now.getTime() + 30 * 864e5);
+  const until = new Date(now.getTime() + 180 * 864e5);
+  const since = new Date(now.getTime() - 30 * 864e5);
+  const seen = /* @__PURE__ */ new Set();
   let page = "";
   do {
-    const params = new URLSearchParams({ timeMin: now.toISOString(), timeMax: until.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "250" });
+    const params = new URLSearchParams({ timeMin: since.toISOString(), timeMax: until.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "250" });
     if (page)
       params.set("pageToken", page);
     const data = await google(eventPath(env) + "?" + params);
@@ -296,18 +336,57 @@ async function importCalendar(state, google, env) {
       } catch {
         continue;
       }
-      let local = state.events.find((e) => e.googleId === remote.id);
-      if (local)
+      seen.add(remote.id);
+      let local = state.events.find((e) => e.googleId === remote.id && (!source.key || e.calendarKey === source.key || !e.calendarKey && source.primary));
+      if (local) {
+        if (!local.deletedAt && (!local.googleBase || eventFingerprint(local) === local.googleBase))
+          Object.assign(local, values, { googleEtag: remote.etag, googleBase: eventFingerprint(values) });
+        Object.assign(local, sourceMetadata(source));
         continue;
+      }
       local = state.events.find((e) => !e.googleId && !e.deletedAt && e.title === values.title && e.date === values.date && e.start === values.start);
       if (!local) {
         local = { id: uid(), ...values, syncEnabled: false, source: "google" };
         state.events.push(local);
       }
-      Object.assign(local, { googleId: remote.id, googleEtag: remote.etag, googleBase: eventFingerprint(values), source: "google" });
+      Object.assign(local, { googleId: remote.id, googleEtag: remote.etag, googleBase: eventFingerprint(values), source: "google", ...sourceMetadata(source) });
     }
     page = data.nextPageToken || "";
   } while (page);
+  if (source.key) {
+    for (const e of state.events) {
+      if (e.calendarKey === source.key && !e.deletedAt && e.googleBase === eventFingerprint(e) && e.date >= since.toISOString().slice(0, 10) && e.date < until.toISOString().slice(0, 10) && !seen.has(e.googleId)) {
+        e.deletedAt = (/* @__PURE__ */ new Date()).toISOString();
+        e.syncEnabled = false;
+      }
+    }
+  }
+}
+function sourceMetadata(source) {
+  return source.key ? { calendarKey: source.key, calendarId: source.calendarId, accountId: source.accountId, calendarName: source.name, accountLabel: source.accountLabel, readOnly: source.readOnly } : {};
+}
+async function importAllCalendars(state, google, env, account) {
+  let page = "", sources = [];
+  do {
+    const params = new URLSearchParams({ maxResults: "250", showHidden: "true", minAccessRole: "reader" });
+    if (page)
+      params.set("pageToken", page);
+    const data = await google("https://www.googleapis.com/calendar/v3/users/me/calendarList?" + params);
+    for (const calendar of data.items || []) {
+      if (calendar.deleted)
+        continue;
+      const source = { key: account.id + ":" + calendar.id, accountId: account.id, accountLabel: account.label || account.id, calendarId: calendar.id, name: calendar.summaryOverride || calendar.summary || calendar.id, primary: !!calendar.primary, readOnly: !["owner", "writer"].includes(calendar.accessRole) };
+      try {
+        await importCalendar(state, google, { ...env, GOOGLE_CALENDAR_ID: calendar.id }, source);
+        source.refreshedAt = (/* @__PURE__ */ new Date()).toISOString();
+      } catch (error) {
+        source.error = error.message;
+      }
+      sources.push(source);
+    }
+    page = data.nextPageToken || "";
+  } while (page);
+  state.settings.calendarSources = [...(state.settings.calendarSources || []).filter((s) => s.accountId !== account.id), ...sources];
 }
 async function resolveConflict(state, google, env, resolve) {
   if (!["iris", "google"].includes(resolve.choice))
@@ -327,7 +406,7 @@ async function resolveConflict(state, google, env, resolve) {
     const e = state.events.find((e2) => e2.id === resolve.id);
     if (!e?.googleId)
       throw Error("Event is not linked.");
-    const remote = await google(eventPath(env, e.googleId));
+    const remote = await google(eventPath({ ...env, GOOGLE_CALENDAR_ID: e.calendarId || env.GOOGLE_CALENDAR_ID }, e.googleId));
     if (resolve.choice === "google")
       Object.assign(e, calendarValues(remote));
     e.googleEtag = remote.etag;
@@ -339,6 +418,7 @@ export {
   calendarValues,
   documentSection,
   googleClient,
+  importAllCalendars,
   importCalendar,
   syncDocument,
   syncEvent

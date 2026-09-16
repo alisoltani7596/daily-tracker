@@ -5598,10 +5598,6 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
       +bar('Steps', bioVal(iso,'steps',['steps']), tg.steps.must, tg.steps.best)
       +bar('Active kcal', bioVal(iso,'activeKcal',['active_kcal','activeKcal','active_calories']), tg.activeKcal.must, tg.activeKcal.best)
       +bar('Walk min', bioVal(iso,'walkMin',['walk_min']), tg.walkMin.must, tg.walkMin.best); }
-    html+='<div class="wk-sec">Habits</div><div class="wk-habits">';
-    ['must','best'].forEach(function(grp){ (HABITS[grp]||[]).forEach(function(txt,i){ var key=grp+'-'+i, on=log.habits&&log.habits[key];
-      html+='<button class="wk-hab'+(on?' on':'')+'" data-act="habit" data-h="'+key+'"><i>✓</i><span>'+esc(txt)+'</span><em>'+grp+'</em></button>'; }); });
-    html+='</div>';
     if(day.coachNote) html+='<div class="wk-coach">'+esc(day.coachNote)+'</div>';
     html+='<details class="wk-missed"><summary>Can’t do it today</summary><div class="wk-missed-b">'+esc(day.missed)
       +'<button class="wk-markmissed'+(logged==='missed'?' on':'')+'" data-act="missed">'+(logged==='missed'?'Marked missed':'Mark missed')+'</button></div></details>';
@@ -5618,14 +5614,14 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
     WEEKS.forEach(function(wk){
       var rows=DAYS.filter(function(d){ return d.week===wk && (f==='all'||d.type===f); });
       if(!rows.length) return;
-      html+='<div class="wk-sec">Week '+wk+'</div><div class="wk-plist">';
+      html+='<div class="wk-week-group"><div class="wk-sec">Week '+wk+'</div><div class="wk-plist">';
       rows.forEach(function(d){ var lg=cache[d.date], t=lg&&lg.tier, sel=d.date===view.date;
         html+='<button class="wk-prow'+(sel?' sel':'')+'" data-act="pday" data-d="'+d.date+'">'
           +tierDot(t)+'<span class="wk-prow-d">'+esc(d.weekday.slice(0,3))+' '+dayMonth(d.date)+'</span>'
           +'<span class="wk-prow-t">'+esc(d.title)+'</span>'
           +'<span class="wk-type wk-type-'+esc(d.type)+'">'+esc(d.type)+'</span></button>';
       });
-      html+='</div>';
+      html+='</div></div>';
     });
     el.innerHTML=html;
   }
@@ -5914,7 +5910,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
 </script>
 
 <!-- Personal workspace; legacy Health and Coach retain their data stores. -->
-<link rel="stylesheet" href="workspace.css?v=62">
-<script type="module" src="workspace.js?v=62"></script>
+<link rel="stylesheet" href="workspace.css?v=63">
+<script type="module" src="workspace.js?v=63"></script>
 
 </body></html>

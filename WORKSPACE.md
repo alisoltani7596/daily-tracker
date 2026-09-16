@@ -4,7 +4,7 @@ The workspace adds Today, Projects, Health, Coach, and Settings without replacin
 existing workout logs, health records, or conversations. Tasks support list/board
 views, status, project, due date, priority, notes, Today selection, search, trash,
 and undo. Projects can be created, renamed, archived, restored, and linked to Docs.
-Events and habits have editors. Dashboard cards can be hidden and reordered.
+Events and habits have editors. Today has a horizontal weekly calendar, Morning/Midday/Night habit columns, and dashboard cards that can be hidden, reordered, moved, and resized. Layouts persist with the workspace. The sidebar and full-session preference persist on the device. Health shows workout plan, session, then Log/Progress; habits remain on Today.
 
 ## Storage and migration
 
@@ -35,6 +35,7 @@ Calendar APIs enabled, authorize the owner with offline access and these scopes:
 
 - `https://www.googleapis.com/auth/documents`
 - `https://www.googleapis.com/auth/calendar.events`
+- `https://www.googleapis.com/auth/calendar.calendarlist.readonly`
 
 Store these **only as Worker secrets**, never in a tracked file or browser source:
 
@@ -68,12 +69,11 @@ first document body is used. Keep the managed section in that body.
 
 ## Google Calendar behavior
 
-Settings → Import upcoming calendar events imports timed, same-day events for
-30 days, handles pagination, and deduplicates matching dashboard snapshots. Imported
-events are not write-enabled automatically. Enable sync in the event editor when
-you want IRIS to update that event. All-day and overnight events stay in Calendar.
-Times are shown in America/Vancouver. Dashboard snapshots have no event IDs;
-linking a snapshot creates a new event, so import first to edit the original.
+Today → Refresh calendars imports all calendars (including hidden calendars with at least reader access) from every configured Google account. The window is 30 days back and 180 days ahead; pagination is handled. All-day and overnight events are supported. Times are shown in America/Vancouver. Imported events are not write-enabled automatically, and reader calendars remain read-only. Event identity includes account, calendar, and event IDs. Refresh updates clean local copies, preserves unsynced edits, and removes disappeared clean copies within the window from IRIS only.
+
+For additional accounts, store `GOOGLE_ACCOUNTS_JSON` as a Worker secret containing an array of `{id,label,refreshToken,clientId?,clientSecret?}`. Use unique stable IDs, excluding reserved `default`; credentials default to the shared client secrets. The existing `GOOGLE_REFRESH_TOKEN` remains the default account for Docs and newly created events. If it is absent, the first configured account is the default. Linked events write back through their original account and calendar. Keep tokens out of tracked files and client storage.
+
+Phone/iCloud and UVic/Outlook are **not connected or implemented** in this revision. Their provider details and authorization are required. Google account authorization is also still pending; no live provider test has occurred. CalendarList API reference: https://developers.google.com/workspace/calendar/api/v3/reference/calendarList/list
 
 Calendar updates use PATCH and `If-Match`, preserve unedited fields, and use
 `sendUpdates=none`; IRIS does not send invitations. New event IDs are deterministic

@@ -927,3 +927,422 @@ body.ws-on .s2-grid {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.ws-today-top,
+.ws-dashboard-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.ws-today-top h1 {
+  font-size: 32px;
+  margin: 6px 0;
+}
+.ws-calendar,
+.ws-habits-panel {
+  margin-bottom: 24px;
+}
+.ws-calendar-scroll {
+  overflow-x: auto;
+}
+.ws-calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(130px, 1fr));
+  min-width: 910px;
+}
+.ws-calendar-day {
+  border-right: 1px solid var(--ws-line,#e0e5e3);
+  min-height: 180px;
+  padding: 12px;
+}
+.ws-calendar-day:last-child {
+  border: 0;
+}
+.ws-calendar-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: #65736d;
+}
+.ws-calendar-date b {
+  font-size: 21px;
+}
+.ws-calendar-day.is-today {
+  background: #f0f6f0;
+}
+.ws-calendar-day.is-today .ws-calendar-date {
+  color: #34593f;
+}
+.ws-calendar-event {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  width: 100%;
+  background: white;
+  border: 1px solid #dce4dd;
+  border-left: 3px solid var(--event-color);
+  border-radius: 7px;
+  padding: 9px;
+  margin: 0 0 8px;
+  cursor: pointer;
+  color: #24342b;
+  overflow-wrap: anywhere;
+}
+.ws-calendar-event time,
+.ws-calendar-event small {
+  font-size: 10px;
+  color: #647168;
+}
+.ws-calendar-event strong {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.ws-calendar-empty {
+  font-size: 11px;
+  color: #89948c;
+}
+.ws-calendar-sources {
+  padding: 12px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #e1e7e1;
+  font-size: 12px;
+}
+.ws-habit-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+.ws-habit-period {
+  padding: 8px 20px 20px;
+  border-right: 1px solid #e1e7e1;
+}
+.ws-habit-period:last-child {
+  border: 0;
+}
+.ws-habit-period h3 {
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+.ws-habit-period h3 small {
+  font-weight: 400;
+  color: #7a867c;
+}
+.ws-float-canvas {
+  position: relative;
+  min-height: 200px;
+}
+.ws-float-card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+}
+.ws-float-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border-bottom: 1px solid #e1e7e1;
+  flex: none;
+}
+.ws-float-title {
+  flex: 1;
+  min-width: 0;
+}
+.ws-float-title h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.ws-float-title p {
+  margin: 4px 0 0;
+}
+.ws-drag-handle {
+  border: 0;
+  background: transparent;
+  color: #7c897e;
+  font-size: 26px;
+  padding: 4px;
+  cursor: grab;
+  touch-action: none;
+}
+.ws-drag-handle:active {
+  cursor: grabbing;
+}
+.ws-float-content {
+  overflow: auto;
+  padding: 4px 20px 24px;
+  flex: 1;
+  min-height: 0;
+}
+.ws-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 27px;
+  height: 27px;
+  background: #eef3ee;
+  color: #5d715f;
+  border: 0;
+  border-radius: 8px 0 0;
+  cursor: nwse-resize;
+  touch-action: none;
+  font-size: 23px;
+}
+.ws-sidebar-toggle {
+  position: fixed;
+  top: 18px;
+  left: 194px;
+  z-index: 110;
+  width: 30px;
+  height: 32px;
+  padding: 0;
+  box-shadow: 0 2px 8px #22332212;
+}
+.ws-sidebar-hidden .ws-sidebar {
+  display: none;
+}
+.ws-sidebar-hidden .ws-sidebar-toggle {
+  left: 8px;
+}
+body.ws-on.ws-sidebar-hidden #workspace,
+body.ws-on.ws-sidebar-hidden .page {
+  margin-left: 0;
+  padding-left: 52px;
+  max-width: none;
+}
+body.ws-on.ws-sidebar-hidden #coach-drawer {
+  left: 52px !important;
+}
+body.ws-on[data-tab=tracker] .day-panel,
+body.ws-on[data-tab=tracker] .trk-datebar,
+body.ws-on[data-tab=tracker] .trk-hist,
+body.ws-on[data-tab=tracker] .plan-edit {
+  display: none !important;
+}
+body.ws-on[data-tab=tracker] #workout-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start;
+  gap: 22px;
+}
+body.ws-on[data-tab=tracker] #workout-grid .s2-card {
+  width: auto !important;
+  min-width: 0;
+  max-height: none;
+  position: relative !important;
+  transform: none !important;
+}
+body.ws-on[data-tab=tracker] [data-card=plan] {
+  grid-column: 1/-1;
+  order: 0;
+  height: auto !important;
+}
+body.ws-on[data-tab=tracker] [data-card=plan] .s2-card-body {
+  max-height: 410px;
+  overflow: auto;
+}
+.wk-week-group {
+  padding-bottom: 12px;
+}
+.wk-week-group .wk-plist {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 14px 12px;
+}
+.wk-week-group .wk-prow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1 0 130px;
+  min-height: 110px;
+  border: 1px solid #dde5dd;
+  border-radius: 8px;
+  padding: 12px;
+}
+.wk-week-group .wk-prow-t {
+  white-space: normal;
+}
+.wk-week-group .wk-dot {
+  display: none;
+}
+body.ws-on[data-tab=tracker] [data-card=session] {
+  grid-column: 1/-1;
+  order: 1;
+  height: 650px !important;
+  resize: vertical;
+  overflow: auto;
+  min-height: 350px;
+}
+body.ws-on[data-tab=tracker] [data-card=session].ws-session-full {
+  height: auto !important;
+  resize: none;
+}
+body.ws-on[data-tab=tracker] [data-card=session].ws-session-full .s2-card-body {
+  height: auto !important;
+  max-height: none;
+  overflow: visible;
+}
+body.ws-on[data-tab=tracker] [data-card=log] {
+  order: 2;
+  height: auto !important;
+  min-height: 480px;
+}
+body.ws-on[data-tab=tracker] [data-card=progress] {
+  order: 3;
+  height: auto !important;
+  min-height: 480px;
+}
+.ws-session-expand {
+  margin-left: auto;
+}
+@media (max-width:699px) {
+  .ws-today-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .ws-habit-period {
+    padding: 8px;
+  }
+  .ws-habit-period h3 {
+    font-size: 12px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .ws-habit-period .ws-habit {
+    font-size: 11px;
+  }
+  .ws-float-card {
+    position: relative;
+    width: 100%;
+    height: auto;
+    margin-bottom: 16px;
+  }
+  .ws-float-content {
+    overflow: visible;
+  }
+  .ws-drag-handle,
+  .ws-resize-handle,
+  .ws-fit-card {
+    display: none;
+  }
+  .ws-float-head {
+    flex-wrap: wrap;
+  }
+  .ws-sidebar-toggle {
+    left: auto;
+    right: 10px;
+    top: 10px;
+  }
+  .ws-sidebar-hidden .ws-sidebar-toggle {
+    left: auto;
+    right: 10px;
+  }
+  body.ws-on.ws-sidebar-hidden #workspace,
+  body.ws-on.ws-sidebar-hidden .page {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  body.ws-on[data-tab=tracker] #workout-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .ws-dashboard-heading {
+    align-items: flex-start;
+  }
+  .ws-calendar .ws-panel-head {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+body.ws-on #workspace .ws-calendar-date {
+  display: flex !important;
+  position: static;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  z-index: auto;
+}
+body.ws-on .ws-sidebar-toggle {
+  z-index: 10010;
+  min-height: 32px;
+}
+.ws-habits {
+  margin-bottom: 26px;
+}
+.ws-period-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ws-period-head span {
+  font-size: 12px;
+  color: #7b877e;
+}
+.ws-calendar-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.wk-week-group .wk-plist {
+  flex-direction: row;
+}
+.wk-week-group .wk-prow {
+  width: auto;
+  flex-basis: 130px;
+}
+.wk-week-group .wk-prow .wk-type {
+  margin-left: 0;
+}
+.ws-calendar-day.is-today {
+  background: var(--ws-soft);
+}
+.ws-calendar-event {
+  background: var(--ws-panel);
+  color: var(--ws-ink);
+  border-color: var(--ws-line);
+  border-left-color: var(--event-color);
+}
+.ws-calendar-event time,
+.ws-calendar-event small,
+.ws-calendar-date,
+.ws-calendar-empty {
+  color: var(--ws-muted);
+}
+.ws-calendar-day.is-today .ws-calendar-date {
+  color: var(--ws-accent);
+}
+.ws-calendar-sources,
+.ws-habit-period,
+.ws-float-head {
+  border-color: var(--ws-line);
+}
+.ws-resize-handle {
+  background: var(--ws-soft);
+  color: var(--ws-accent);
+}
+@media (max-width:699px) {
+  .ws-habit-period .ws-task {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ws-habit-period .ws-task-title {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .ws-habit-period .ws-link {
+    font-size: 11px;
+  }
+}
