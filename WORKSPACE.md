@@ -96,3 +96,9 @@ Browser QA: quick capture → edit status/notes → board; global search; remove
 undo → reload; Today at 390px and board at 1440px; Health initialization and Coach
 navigation. The local preview saves test edits only in its own browser origin.
 The service worker bypasses local preview requests to avoid stale test assets.
+
+## Display refinements (v64)
+
+Today defaults to a horizontal daily agenda; Expand to week shows seven day columns. Health defaults to Week 1 with week navigation; Expand to month shows the full calendar month, with unplanned dates explicitly labeled. The existing program only contains 17 planned days, so expansion does not invent workouts. Exercise demonstrations open in a large keyboard-dismissable dialog with pause/play. These are the existing two-frame movement demos, not new video assets. Log and Progress have consistent body insets in light and dark themes.
+
+Browser checks: daily/weekly toggle (1/7 days), workout week/month toggle (7/30 dates in September), demo open/pause/close, and dark-theme Log/Progress padding.

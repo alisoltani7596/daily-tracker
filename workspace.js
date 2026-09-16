@@ -1,5 +1,5 @@
-import { FLOAT_CARDS, HABIT_PERIODS, habitPeriod, shiftDate, weekDates, eventsForDay, defaultFloatLayout, fitFloatRect, normalizedFloatRect } from "./workspace-layout.mjs?v=63";
-import { STATUSES, STATUS_LABELS, COLORS, clone, uid, dateKey, emptyState, seedState, visibleTasks, validateState } from "./workspace-model.mjs?v=63";
+import { FLOAT_CARDS, HABIT_PERIODS, habitPeriod, shiftDate, weekDates, eventsForDay, defaultFloatLayout, fitFloatRect, normalizedFloatRect } from "./workspace-layout.mjs?v=64";
+import { STATUSES, STATUS_LABELS, COLORS, clone, uid, dateKey, emptyState, seedState, visibleTasks, validateState } from "./workspace-model.mjs?v=64";
 const KEY = "iris_workspace_v1", QUEUE = "iris_workspace_pending_v1";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const read = (k, f) => {
@@ -18,7 +18,7 @@ try {
 }
 let state = envelope?.state || emptyState(), revision = envelope?.revision || 0;
 let dirty = read(QUEUE, false), busy = false, generation = 0, saveTimer, undoState = null, status = "Saved on this device", cloudReady = false, googleReady = false, cloudConflict = false;
-let calendarDate = dateKey(), layoutGesture = false;
+let calendarDate = dateKey(), calendarExpanded = false, layoutGesture = false;
 let route = "today", view = localStorage.getItem("iris_workspace_view") || "list", filter = "open", project = "all", query = "", customize = false, showTrash = false;
 const root = document.createElement("main");
 root.id = "workspace";
@@ -291,14 +291,14 @@ root.addEventListener("keydown", (e) => {
   root.querySelector(`[${selector}="${id}"]`)?.focus();
 });
 function renderCalendar() {
-  const dates = weekDates(calendarDate), today = dateKey();
+  const dates = calendarExpanded ? weekDates(calendarDate) : [calendarDate], today = dateKey();
   const sources = state.settings.calendarSources || [];
   const sourceLabel = (e) => e.calendarName || e.accountLabel || (e.source === "snapshot" ? "Dashboard snapshot" : e.source === "google" ? "Google Calendar" : "IRIS");
   const colors = {};
   sources.forEach((source, i) => colors[source.key] = COLORS[i % COLORS.length]);
   const columns = dates.map((day) => `<section class="ws-calendar-day ${day === today ? "is-today" : ""}"><header class="ws-calendar-date"><span>${(/* @__PURE__ */ new Date(day + "T12:00:00")).toLocaleDateString("en-US", { weekday: "short" })}</span><b>${Number(day.slice(-2))}</b></header><div class="ws-calendar-events">${eventsForDay(state.events, day).map((e) => `<button class="ws-calendar-event" data-edit-event="${e.id}" style="--event-color:${colors[e.calendarKey] || COLORS[0]}"><time>${e.allDay ? "All day" : e.date < day ? "Continues" : esc(e.start)}${!e.allDay && (!e.endDate || e.endDate === day) ? "\u2013" + esc(e.end) : ""}</time><strong>${esc(e.title)}</strong><small>${esc(sourceLabel(e))}</small></button>`).join("") || '<span class="ws-calendar-empty">No events</span>'}</div></section>`).join("");
-  const range = (/* @__PURE__ */ new Date(dates[0] + "T12:00:00")).toLocaleDateString("en-US", { month: "long", day: "numeric" }) + " \u2013 " + (/* @__PURE__ */ new Date(dates[6] + "T12:00:00")).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  return `<section class="ws-panel ws-calendar"><div class="ws-panel-head"><div><h2>Your calendars</h2><p class="ws-subtitle">${esc(range)} \xB7 Vancouver time</p></div><div class="ws-calendar-actions"><button class="ws-btn small" data-action="calendar-prev" aria-label="Previous calendar week">\u2039</button>${button("Today", "calendar-today", "small")}<button class="ws-btn small" data-action="calendar-next" aria-label="Next calendar week">\u203A</button>${button("+ Event", "add-event", "small")}${button("Refresh calendars", "import-calendar", "small")}</div></div><div class="ws-calendar-sources">${sources.length ? sources.map((source) => `<span><i class="ws-dot" style="--project-color:${colors[source.key]}"></i>${esc(source.accountLabel)} \xB7 ${esc(source.name)}${source.error ? " \xB7 needs attention" : ""}</span>`).join("") : "<span>Showing your saved schedule. Connect your accounts to include every calendar.</span>"}<button class="ws-link" data-action="calendar-connections">Manage connections</button></div><div class="ws-calendar-scroll"><div class="ws-calendar-week">${columns}</div></div></section>`;
+  const range = (/* @__PURE__ */ new Date(dates[0] + "T12:00:00")).toLocaleDateString("en-US", { month: "long", day: "numeric" }) + " \u2013 " + (/* @__PURE__ */ new Date(dates[dates.length - 1] + "T12:00:00")).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return `<section class="ws-panel ws-calendar ${calendarExpanded ? "is-week" : "is-day"}"><div class="ws-panel-head"><div><h2>${calendarExpanded ? "Your week" : calendarDate === today ? "Today\u2019s schedule" : "Daily schedule"}</h2><p class="ws-subtitle">${esc(calendarExpanded ? range : (/* @__PURE__ */ new Date(calendarDate + "T12:00:00")).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }))} \xB7 Vancouver time</p></div><div class="ws-calendar-actions"><button class="ws-btn small" data-action="calendar-prev" aria-label="Previous calendar ${calendarExpanded ? "week" : "day"}">\u2039</button>${button("Today", "calendar-today", "small")}<button class="ws-btn small" data-action="calendar-next" aria-label="Next calendar ${calendarExpanded ? "week" : "day"}">\u203A</button><button class="ws-btn small" data-action="calendar-expand" aria-expanded="${calendarExpanded}">${calendarExpanded ? "Collapse to day" : "Expand to week"}</button>${button("+ Event", "add-event", "small")}${button("Refresh calendars", "import-calendar", "small")}</div></div><div class="ws-calendar-sources">${sources.length ? sources.map((source) => `<span><i class="ws-dot" style="--project-color:${colors[source.key]}"></i>${esc(source.accountLabel)} \xB7 ${esc(source.name)}${source.error ? " \xB7 needs attention" : ""}</span>`).join("") : "<span>Showing your saved schedule. Connect your accounts to include every calendar.</span>"}<button class="ws-link" data-action="calendar-connections">Manage connections</button></div><div class="ws-calendar-scroll"><div class="ws-calendar-week">${columns}</div></div></section>`;
 }
 function renderHabitColumns() {
   return `<section class="ws-panel ws-habits"><div class="ws-panel-head"><div><h2>Daily habits</h2><p class="ws-subtitle">A rhythm for your whole day. Edit a habit to change its time.</p></div>${button("+ Habit", "add-habit", "small")}</div><div class="ws-habit-columns">${Object.entries(HABIT_PERIODS).map(([period, label]) => {
@@ -724,12 +724,16 @@ function clicks(e) {
     exportBackup();
   if (act === "sync")
     saveCloud();
+  if (act === "calendar-expand") {
+    calendarExpanded = !calendarExpanded;
+    render();
+  }
   if (act === "calendar-prev") {
-    calendarDate = shiftDate(calendarDate, -7);
+    calendarDate = shiftDate(calendarDate, calendarExpanded ? -7 : -1);
     render();
   }
   if (act === "calendar-next") {
-    calendarDate = shiftDate(calendarDate, 7);
+    calendarDate = shiftDate(calendarDate, calendarExpanded ? 7 : 1);
     render();
   }
   if (act === "calendar-today") {

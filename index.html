@@ -5477,7 +5477,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
   }
 
   /* ── view state ───────────────────────────────────────────────────────────── */
-  var view={ date: clampToBlock(todayISO()), tier:'best', planFilter:'all' };
+  var view={ date: clampToBlock(todayISO()), tier:'best', planFilter:'all', planExpanded:false, planWeek:1 };
   (function(){ var l=logFor(view.date); if(l.tier==='must'||l.tier==='best') view.tier=l.tier; })();
 
   /* ── html helpers ─────────────────────────────────────────────────────────── */
@@ -5545,7 +5545,15 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
 
   /* ═══ CARD: Session (Today) ═══════════════════════════════════════════════ */
   function demoHtml(ex){ if(!ex.dbId) return ''; var b='./exercises/'+ex.dbId+'/';
-    return '<div class="wk-demo" title="'+esc(ex.name)+' demo"><img class="f0" src="'+b+'0.jpg" alt="" loading="lazy"><img class="f1" src="'+b+'1.jpg" alt="" loading="lazy"></div>'; }
+    return '<button class="wk-demo" type="button" data-act="demo" data-demo="'+esc(ex.dbId)+'" data-name="'+esc(ex.name)+'" aria-label="Expand '+esc(ex.name)+' demo"><img class="f0" src="'+b+'0.jpg" alt="" loading="lazy"><img class="f1" src="'+b+'1.jpg" alt="" loading="lazy"><span class="wk-demo-expand">Expand ↗</span></button>'; }
+  function expandDemo(t){
+    var viewer=document.createElement('dialog');viewer.className='wk-demo-dialog';viewer.setAttribute('aria-label',t.getAttribute('data-name')+' demonstration');
+    var b='./exercises/'+encodeURIComponent(t.getAttribute('data-demo'))+'/';
+    viewer.innerHTML='<div class="wk-viewer-head"><div><small>EXERCISE DEMO</small><h2>'+esc(t.getAttribute('data-name'))+'</h2></div><button class="ws-btn" data-close>Close ×</button></div><div class="wk-demo wk-demo-large"><img class="f0" src="'+b+'0.jpg" alt="Starting position"><img class="f1" src="'+b+'1.jpg" alt="Finishing position"></div><div class="wk-viewer-tools"><button class="ws-btn" data-pause>Pause animation</button><span>Two-position movement guide</span></div>';
+    document.body.append(viewer);viewer.querySelector('[data-close]').onclick=function(){viewer.close();};
+    viewer.querySelector('[data-pause]').onclick=function(){var paused=viewer.classList.toggle('is-paused');this.textContent=paused?'Play animation':'Pause animation';};
+    viewer.addEventListener('close',function(){viewer.remove();t.focus();});viewer.showModal();
+  }
   function exBlock(item, log){
     var ex=exercise(item.ex), ms=metricsFor(item.ex), id=item.ex;
     var sets=log.sets&&log.sets[id]||[], fb=(log.feedback&&log.feedback[id])||{};
@@ -5608,22 +5616,19 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
   var PTYPES=['all','strength','cardio','sport','recovery','admin'];
   function tierDot(t){ var c=(t==='best'||t==='must')?'done':(t==='missed'||t==='skipped')?'miss':''; return '<span class="wk-dot '+c+'"></span>'; }
   function renderPlan(el){
-    var f=view.planFilter, html='<div class="wk-chips">';
-    PTYPES.forEach(function(t){ html+='<button class="wk-chip'+(f===t?' on':'')+'" data-act="pfilter" data-t="'+t+'">'+t+'</button>'; });
-    html+='</div>';
-    WEEKS.forEach(function(wk){
-      var rows=DAYS.filter(function(d){ return d.week===wk && (f==='all'||d.type===f); });
-      if(!rows.length) return;
-      html+='<div class="wk-week-group"><div class="wk-sec">Week '+wk+'</div><div class="wk-plist">';
-      rows.forEach(function(d){ var lg=cache[d.date], t=lg&&lg.tier, sel=d.date===view.date;
-        html+='<button class="wk-prow'+(sel?' sel':'')+'" data-act="pday" data-d="'+d.date+'">'
-          +tierDot(t)+'<span class="wk-prow-d">'+esc(d.weekday.slice(0,3))+' '+dayMonth(d.date)+'</span>'
-          +'<span class="wk-prow-t">'+esc(d.title)+'</span>'
-          +'<span class="wk-type wk-type-'+esc(d.type)+'">'+esc(d.type)+'</span></button>';
-      });
-      html+='</div></div>';
-    });
-    el.innerHTML=html;
+    var f=view.planFilter, month=FIRST.slice(0,7), monthName=new Date(FIRST+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    var html='<div class="wk-plan-toolbar"><div><h3>'+ (view.planExpanded?monthName:'Week '+view.planWeek)+'</h3><p>'+(view.planExpanded?'Your month of movement':'One week. A clear plan.')+'</p></div><div class="ws-toolbar">';
+    if(!view.planExpanded)html+='<button class="ws-btn small" data-act="pweek" data-d="-1" aria-label="Previous workout week"'+(view.planWeek===1?' disabled':'')+'>‹</button><button class="ws-btn small" data-act="pweek" data-d="1" aria-label="Next workout week"'+(view.planWeek===WEEKS.length?' disabled':'')+'>›</button>';
+    html+='<button class="ws-btn small" data-act="pexpand" aria-expanded="'+view.planExpanded+'">'+(view.planExpanded?'Collapse to week':'Expand to month')+'</button></div></div><div class="wk-chips">';
+    PTYPES.forEach(function(t){html+='<button class="wk-chip'+(f===t?' on':'')+'" data-act="pfilter" data-t="'+t+'">'+t+'</button>';});html+='</div>';
+    var dates=[];
+    if(view.planExpanded){var first=month+'-01', offset=(new Date(first+'T12:00:00').getDay()+6)%7;for(var n=0;n<offset;n++)dates.push(null);var count=new Date(+month.slice(0,4),+month.slice(5,7),0).getDate();for(var n=1;n<=count;n++)dates.push(month+'-'+String(n).padStart(2,'0'));}
+    else dates=DAYS.filter(function(d){return d.week===view.planWeek;}).map(function(d){return d.date;});
+    html+='<div class="wk-plan-scroll"><div class="wk-plan-calendar '+(view.planExpanded?'is-month':'is-week')+'">';
+    if(view.planExpanded)['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(function(day){html+='<div class="wk-month-label">'+day+'</div>';});
+    dates.forEach(function(date){if(!date){html+='<div class="wk-plan-blank"></div>';return;}var d=DAYS.find(function(x){return x.date===date;}),matches=d&&(f==='all'||d.type===f),lg=cache[date],t=lg&&lg.tier;
+      html+='<button class="wk-prow'+(date===view.date?' sel':'')+(!matches?' is-unplanned':'')+'"'+(matches?' data-act="pday" data-d="'+date+'"':' disabled')+'><span class="wk-prow-d">'+new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',day:'numeric'})+'</span><span class="wk-prow-t">'+(matches?esc(d.title):d?'Filtered out':'No workout planned')+'</span>'+(matches?'<span class="wk-type wk-type-'+esc(d.type)+'">'+esc(d.type)+'</span>'+tierDot(t):'')+'</button>';
+    });html+='</div></div>';el.innerHTML=html;
   }
 
   /* ═══ CARD: Progress ══════════════════════════════════════════════════════ */
@@ -5695,7 +5700,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
       var v=(log.bio&&log.bio[key]!=null)?log.bio[key]:'';
       html+='<label class="wk-frow"><span>'+f[1]+(f[2]?' ('+f[2]+')':'')+'</span><input type="number" step="any" data-act="lbio" data-f="'+key+'" value="'+esc(v)+'" placeholder="'+(hv!=null?hv+' · Health':'—')+'"></label>'; });
     html+='<div class="wk-sec">Notes</div><textarea class="wk-note" data-act="lnotes" rows="3" placeholder="How did it go?">'+esc(log.notes||'')+'</textarea>';
-    html+='<div class="wk-foot">Steps, kcal &amp; sleep come from Apple Health / Garmin via Iris (window.__health). Type a value only to override.</div>';
+    html+='<div class="wk-foot">Connected health data fills available metrics. Enter a value to add or correct a reading.</div>';
     el.innerHTML=html;
   }
 
@@ -5713,6 +5718,9 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
   function onAct(e){
     var t=e.target.closest('[data-act]'); if(!t) return;
     var act=t.getAttribute('data-act'), iso=view.date;
+    if(act==='demo'){expandDemo(t);return;}
+    if(act==='pexpand'){view.planExpanded=!view.planExpanded;renderPlan(cards.plan.body);return;}
+    if(act==='pweek'){view.planWeek=Math.max(1,Math.min(WEEKS.length,view.planWeek+Number(t.getAttribute('data-d'))));renderPlan(cards.plan.body);return;}
     if(act==='nav'){ view.date=clampToBlock(addDays(iso,+t.getAttribute('data-d'))); var l=logFor(view.date); if(l.tier==='must'||l.tier==='best') view.tier=l.tier; load(view.date, renderAll); renderAll(); return; }
     if(act==='tier'){ view.tier=t.getAttribute('data-t'); queue(iso,{tier:view.tier}); renderAll(); return; }
     if(act==='stretch'){ queue(iso,{stretch:!logFor(iso).stretch}); renderAll(); return; }
@@ -5910,7 +5918,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
 </script>
 
 <!-- Personal workspace; legacy Health and Coach retain their data stores. -->
-<link rel="stylesheet" href="workspace.css?v=63">
-<script type="module" src="workspace.js?v=63"></script>
+<link rel="stylesheet" href="workspace.css?v=64">
+<script type="module" src="workspace.js?v=64"></script>
 
 </body></html>
