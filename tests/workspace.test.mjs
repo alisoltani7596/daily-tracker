@@ -220,3 +220,12 @@ test('workout upload reports exhausted KV quota and avoids unchanged writes',asy
  r=await worker.fetch(req(101),env);assert.equal(r.status,503);const result=await r.json();assert.equal(result.ok,false);assert.match(result.error,/Nothing was saved/);assert.match(result.retryAfter,/T00:00:00.000Z$/);
  env.TODAY_KV.put=async(k,v)=>{stored=v;};r=await worker.fetch(req(101),env);assert.equal((await r.json()).ok,true);assert.equal(JSON.parse(stored).bio.steps,101);
 });
+
+test('Shortcuts text readings retain their values and empty values cannot become zero',async()=>{
+ const worker=(await import('../worker/src/index.js')).default;let stored=null;
+ const env={ALLOWED_ORIGINS:'https://example',EDIT_TOKEN:'test',TODAY_KV:{get:async()=>stored,put:async(k,v)=>{stored=v;}}};
+ const send=bio=>worker.fetch(new Request('https://example/workout-log',{method:'POST',headers:{origin:'https://example','x-edit-token':'test'},body:JSON.stringify({date:'2026-09-15',bio})}),env);
+ const r=await send({restingHr:'43',steps:'1234',activeKcal:'321',weightKg:'93.8'});assert.equal(r.status,200);
+ assert.deepEqual(JSON.parse(stored).bio,{restingHr:43,steps:1234,activeKcal:321,weightKg:93.8});
+ const previous=stored;for(const value of ['',{},'abc','1,234']){assert.equal((await send({steps:value})).status,400);assert.equal(stored,previous);}
+});
