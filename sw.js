@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION whenever the shell changes to force a clean re-cache.
  */
 
-const CACHE_VERSION = 'daily-tracker-v61';
+const CACHE_VERSION = 'daily-tracker-v62';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const FONT_CACHE  = `${CACHE_VERSION}-fonts`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
@@ -18,9 +18,9 @@ const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const APP_SHELL = [
   './',
   './index.html',
-  './workspace.css?v=61',
-  './workspace.js?v=61',
-  './workspace-model.mjs?v=61',
+  './workspace.css?v=62',
+  './workspace.js?v=62',
+  './workspace-model.mjs?v=62',
   './style-1.css',
   './manifest.webmanifest',
   './icons/icon-192.png',

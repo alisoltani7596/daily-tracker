@@ -1,4 +1,4 @@
-import { STATUSES, STATUS_LABELS, COLORS, clone, uid, dateKey, emptyState, seedState, visibleTasks, validateState } from "./workspace-model.mjs?v=61";
+import { STATUSES, STATUS_LABELS, COLORS, clone, uid, dateKey, emptyState, seedState, visibleTasks, validateState } from "./workspace-model.mjs?v=62";
 const KEY = "iris_workspace_v1", QUEUE = "iris_workspace_pending_v1";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const read = (k, f) => {
