@@ -667,6 +667,7 @@ export default {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "`date` (YYYY-MM-DD) is required" }, 400, corsHeaders(allowOrigin));
 
       const log = (await readWorkout(env, date)) || { date };
+      const before = JSON.stringify(log);
       if (body.tier !== undefined) {
         if (body.tier === null) log.tier = null;
         else if (WORKOUT_TIERS.has(body.tier)) log.tier = body.tier;
@@ -692,9 +693,18 @@ export default {
         }
         log[map] = base;
       }
+      if (JSON.stringify(log) === before) return json({ ok: true, unchanged: true, date, log }, 200, corsHeaders(allowOrigin));
       log.updated = new Date().toISOString();
-      await writeWorkout(env, date, log);
-      return json({ date, log }, 200, corsHeaders(allowOrigin));
+      try { await writeWorkout(env, date, log); }
+      catch (error) {
+        const daily = /limit exceeded for the day/i.test(String(error.message));
+        const retry = new Date(); retry.setUTCHours(24, 0, 0, 0);
+        return json({ ok: false, error: daily
+          ? "Today's server storage allowance is full. Nothing was saved for this upload. Retry after " + retry.toISOString() + "."
+          : "The server could not save this upload. Please retry shortly.",
+          ...(daily ? { retryAfter: retry.toISOString() } : {}) }, 503, corsHeaders(allowOrigin));
+      }
+      return json({ ok: true, date, log }, 200, corsHeaders(allowOrigin));
     }
 
     // POST /workout-delete — remove a whole day's log. CORS + token.

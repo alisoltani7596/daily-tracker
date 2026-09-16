@@ -210,3 +210,13 @@ test('linked secondary calendar writes target the original calendar',async()=>{
   await syncEvent(e,async(url,options)=>{path=url;if(options){payload=JSON.parse(options.body);return{id:'ev',etag:'v2'};}return{id:'ev',etag:'v1',summary:'Work',start:{date:e.date},end:{date:e.endDate}};},{});
   assert.match(path,/school%40example.com/);assert.deepEqual(payload.start,{date:'2026-09-15'});assert.deepEqual(payload.end,{date:'2026-09-16'});
 });
+
+test('workout upload reports exhausted KV quota and avoids unchanged writes',async()=>{
+ const worker=(await import('../worker/src/index.js')).default;
+ let stored=JSON.stringify({date:'2026-09-15',bio:{steps:100},updated:'old'}),writes=0;
+ const env={ALLOWED_ORIGINS:'https://example',EDIT_TOKEN:'test',TODAY_KV:{get:async()=>stored,put:async()=>{writes++;throw Error('KV put() limit exceeded for the day.');}}};
+ const req=n=>new Request('https://example/workout-log',{method:'POST',headers:{origin:'https://example','x-edit-token':'test'},body:JSON.stringify({date:'2026-09-15',bio:{steps:n}})});
+ let r=await worker.fetch(req(100),env);assert.equal(r.status,200);assert.equal((await r.json()).unchanged,true);assert.equal(writes,0);
+ r=await worker.fetch(req(101),env);assert.equal(r.status,503);const result=await r.json();assert.equal(result.ok,false);assert.match(result.error,/Nothing was saved/);assert.match(result.retryAfter,/T00:00:00.000Z$/);
+ env.TODAY_KV.put=async(k,v)=>{stored=v;};r=await worker.fetch(req(101),env);assert.equal((await r.json()).ok,true);assert.equal(JSON.parse(stored).bio.steps,101);
+});
