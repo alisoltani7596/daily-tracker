@@ -983,7 +983,9 @@ function normalizeCalEvents(arr) {
     if (!title) continue;
     const s = calVanParts(e.start); if (!s) continue;
     const en = e.end ? calVanParts(e.end) : null;
-    const allDay = !!e.allDay;
+    // iOS Shortcuts may serialize the "Is All Day" boolean as a string/number
+    // ("0"/"1"/"true"), so coerce explicitly — `!!"0"` would be a false positive.
+    const allDay = e.allDay === true || e.allDay === 1 || e.allDay === "1" || (typeof e.allDay === "string" && e.allDay.toLowerCase() === "true");
     const ev = {
       id: (typeof e.id === "string" && e.id) ? "device:" + e.id.slice(0, 200) : "device:" + title + "|" + s.date + "|" + s.hm,
       title,
