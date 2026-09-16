@@ -1765,12 +1765,13 @@ const SIDE_HTML = `
   <a class="li" href="https://www.myfitnesspal.com" target="_blank"><div><div class="ln c-amber">MyFitnessPal</div><div class="ls">Food log · 160g protein</div></div><span class="la">↗</span></a>
 </div>`;
 
-for(let d=0;d<7;d++) document.getElementById('scol-'+d).innerHTML = SIDE_HTML;
+for(let d=0;d<7;d++){ const col=document.getElementById('scol-'+d); if(col) col.innerHTML = SIDE_HTML; }
 
 // ─── BUILD HABITS ─────────────────────────────────────────────────────────────
 function buildHabits(){
   for(let d=0;d<7;d++){
     const col  = document.getElementById('hcol-'+d);
+    if(!col) continue;
     const done = recHabits(currentDate);   // habits are the same list every day; done-state is the viewed date's
     col.innerHTML = '';
     const sec = document.createElement('div');
@@ -1791,7 +1792,7 @@ function buildHabits(){
       el.onclick = ()=>toggleHabit(el);
       el.innerHTML = `<div class="hbox"><svg class="htick" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
         <span class="hicon">${h.icon}</span>
-        <div style="flex:1"><div class="hlabel">${h.label}${h.private?'<span class="priv-badge">private</span>':''}</div>${h.sub?`<div class="hsub">${h.sub}</div>`:''}</div>
+        <div style="flex:1"><div class="hlabel">${escHtml(h.label)}${h.private?'<span class="priv-badge">private</span>':''}</div>${h.sub?`<div class="hsub">${h.sub}</div>`:''}</div>
         <span class="hstreak" data-streak-for="${h.id}" title="consecutive days"></span>
         <div class="habit-move-btns" onclick="event.stopPropagation()">
           <button class="hmove-btn" onclick="moveHabit('${h.id}',-1)" title="Move up">▲</button>
@@ -1921,13 +1922,13 @@ function updateProgress(){
 
   const deficit = 600 + kcal;
 
-  document.getElementById('prog-fill').style.width = pct+'%';
-  document.getElementById('prog-txt').textContent = doneTotal+' of '+total+' ('+pct+'%)';
-  document.getElementById('kc-burn').textContent = kcal;
-  document.getElementById('kc-net').textContent = '–'+deficit;
-  document.getElementById('hdr-kcal').textContent = kcal;
-  document.getElementById('hdr-done').textContent = doneTotal+'/'+total;
-  document.getElementById('hdr-pct').textContent = pct+'%';
+  if(document.getElementById('prog-fill')) document.getElementById('prog-fill').style.width = pct+'%';
+  if(document.getElementById('prog-txt')) document.getElementById('prog-txt').textContent = doneTotal+' of '+total+' ('+pct+'%)';
+  if(document.getElementById('kc-burn')) document.getElementById('kc-burn').textContent = kcal;
+  if(document.getElementById('kc-net')) document.getElementById('kc-net').textContent = '–'+deficit;
+  if(document.getElementById('hdr-kcal')) document.getElementById('hdr-kcal').textContent = kcal;
+  if(document.getElementById('hdr-done')) document.getElementById('hdr-done').textContent = doneTotal+'/'+total;
+  if(document.getElementById('hdr-pct')) document.getElementById('hdr-pct').textContent = pct+'%';
   if(typeof s1TrackerReadouts==='function') s1TrackerReadouts();
 }
 
@@ -2042,7 +2043,7 @@ function openModal(e){ if(e) e.stopPropagation();
       const row=document.createElement('div');
       row.className='modal-item';
       row.innerHTML=`<span style="font-size:16px;width:24px;text-align:center;">${h.icon}</span>
-        <div style="flex:1"><div class="mi-label">${h.label}${h.private?'<span class="priv-badge" style="margin-left:6px;">private</span>':''}</div>${h.sub?`<div class="mi-sub">${h.sub}</div>`:''}</div>
+        <div style="flex:1"><div class="mi-label">${escHtml(h.label)}${h.private?'<span class="priv-badge" style="margin-left:6px;">private</span>':''}</div>${h.sub?`<div class="mi-sub">${h.sub}</div>`:''}</div>
         <button class="tog ${on?'on':'off'}" data-id="${h.id}" onclick="toggleVis(this)"><div class="tog-knob"></div></button>`;
       body.appendChild(row);
     });
@@ -2097,10 +2098,10 @@ function moveHabit(id, dir){
   buildHabits(); updateProgress();
 }
 
-document.getElementById('modal').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
+document.getElementById('modal')?.addEventListener('click',function(e){ if(e.target===this) closeModal(); });
 
 // ─── CLOCK ────────────────────────────────────────────────────────────────────
-function tick(){ document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function tick(){ if(document.getElementById('clock')) document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 tick(); setInterval(tick,1000);
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -2120,6 +2121,7 @@ function savePlans(){ lsSet(PLANS_KEY, plansData); }
 function renderPlans(){
   ['daily','weekly','monthly','yearly'].forEach(type => {
     const container = document.getElementById('pitems-' + type);
+    if(!container) return;
     const items = plansData[type] || [];
     if(!items.length){
       container.innerHTML = '<div class="plan-empty">No items yet \u2014 press + to add</div>';
@@ -2261,8 +2263,8 @@ function switchPView(btn){
   });
 }
 
-document.getElementById('pmodal').addEventListener('click', function(e){ if(e.target===this) closePlanModal(); });
-document.getElementById('pf-title').addEventListener('keydown', function(e){ if(e.key==='Enter') savePlanItem(); });
+document.getElementById('pmodal')?.addEventListener('click', function(e){ if(e.target===this) closePlanModal(); });
+document.getElementById('pf-title')?.addEventListener('keydown', function(e){ if(e.key==='Enter') savePlanItem(); });
 
 renderPlans();
 
@@ -2353,7 +2355,7 @@ function setTab(name){
 }
 (function(){
   var start = 'today';
-  try{ var s = localStorage.getItem('active_tab_v1'); if(s==='today'||s==='tracker'||s==='coach') start = s; }catch(e){}
+  try{ var s = localStorage.getItem('active_tab_v1'); if(['today','tracker','coach','projects','settings'].includes(s)) start = s; }catch(e){}
   document.body.setAttribute('data-tab', start);
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===start); });
   // if restoring to the coach tab, render its content once all scripts have loaded
@@ -2979,7 +2981,7 @@ async function plannerConfirm(idx){
           var resp = await fetch(base + '/task-add', {
             method:'POST',
             headers:{'content-type':'application/json','x-edit-token':token},
-            body: JSON.stringify({ n: sub.n })
+            body: JSON.stringify({ n: sub.n, due: sub.date })
           });
           if(resp.status===403){ try{ localStorage.removeItem(TODAY_EDIT_TOKEN_KEY); }catch(e){} res.taskStatus='token-rejected'; }
           else if(resp.ok){ var jd = await resp.json().catch(function(){return {};}); res.taskStatus = jd && jd.dup ? 'dup' : 'added'; }
@@ -5910,5 +5912,9 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
   })();
 })();
 </script>
+
+<!-- Personal workspace; legacy Health and Coach retain their data stores. -->
+<link rel="stylesheet" href="workspace.css?v=61">
+<script type="module" src="workspace.js?v=61"></script>
 
 </body></html>

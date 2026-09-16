@@ -29,3 +29,16 @@ id = "eb6d2cc50def4921bb6d3916c51993ed"
 # Powers POST /tts (Deepgram Aura). No id/secret needed — the binding is enough.
 [ai]
 binding = "AI"
+
+# Serializes workspace edits and provider sync; private routes require EDIT_TOKEN.
+[[durable_objects.bindings]]
+name = "WORKSPACE"
+class_name = "Workspace"
+
+[[migrations]]
+tag = "workspace-v1"
+new_sqlite_classes = ["Workspace"]
+
+# Optional Google sync secrets (never commit values):
+# GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN
+# Optional variable: GOOGLE_CALENDAR_ID (defaults to primary).

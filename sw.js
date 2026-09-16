@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION whenever the shell changes to force a clean re-cache.
  */
 
-const CACHE_VERSION = 'daily-tracker-v58';
+const CACHE_VERSION = 'daily-tracker-v61';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const FONT_CACHE  = `${CACHE_VERSION}-fonts`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
@@ -18,6 +18,9 @@ const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const APP_SHELL = [
   './',
   './index.html',
+  './workspace.css?v=61',
+  './workspace.js?v=61',
+  './workspace-model.mjs?v=61',
   './style-1.css',
   './manifest.webmanifest',
   './icons/icon-192.png',
@@ -51,6 +54,8 @@ self.addEventListener('activate', (event) => {
 // ─── Fetch ───────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+  // Local previews must reflect source edits immediately.
+  if (['localhost','127.0.0.1'].includes(self.location.hostname)) return;
 
   // Only GET requests are cacheable. Everything else (e.g. the Coach POST to the
   // Cloudflare Worker) goes straight to the network.
@@ -101,6 +106,9 @@ async function cacheFirst(req, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(req);
   if (cached) return cached;
+  const shell = await caches.open(SHELL_CACHE);
+  const precached = await shell.match(req);
+  if (precached) return precached;
   const res = await fetch(req);
   // Cache successful (and opaque cross-origin font) responses for next time.
   if (res && (res.ok || res.type === 'opaque')) {

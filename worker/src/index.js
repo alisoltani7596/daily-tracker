@@ -1,3 +1,5 @@
+import { Workspace } from './workspace.js';
+export { Workspace };
 /* Daily Tracker — AI Coach Worker
  *
  * A Cloudflare Worker that proxies the tracker's coach chat to the Anthropic
@@ -147,6 +149,20 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
     }
 
+    // Workspace reads and writes both require authentication. A Durable Object
+    // serializes mutations, preventing the lost-update race of whole-object KV puts.
+    if (url.pathname === "/workspace") {
+      if (!allowOrigin) return json({ error: "Origin not allowed" }, 403, {});
+      if (!env.EDIT_TOKEN || !timingSafeEqual(request.headers.get("x-edit-token") || "", env.EDIT_TOKEN))
+        return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
+      if (!env.WORKSPACE) return json({ error: "Workspace service needs deployment" }, 503, corsHeaders(allowOrigin));
+      if (Number(request.headers.get("content-length") || 0) > 800000)
+        return json({ error: "Workspace too large" }, 413, corsHeaders(allowOrigin));
+      const object = env.WORKSPACE.get(env.WORKSPACE.idFromName("personal"));
+      const result = await object.fetch(request);
+      return new Response(result.body, {status: result.status, headers: {...Object.fromEntries(result.headers), ...corsHeaders(allowOrigin)}});
+    }
+
     // GET /today — serve the generated dashboard JSON PLUS the user's manual
     // overrides, both from KV, CORS-locked to the Pages origin. The frontend
     // merges them so manual edits survive the morning regeneration. The refresh
@@ -272,6 +288,15 @@ export default {
         return json({ error: "`n` (non-empty task name) is required" }, 400, corsHeaders(allowOrigin));
       }
       const hi = !!(payload && payload.hi);
+      if (env.WORKSPACE) {
+        const object = env.WORKSPACE.get(env.WORKSPACE.idFromName("personal"));
+        const result = await object.fetch(new Request("https://workspace/legacy-task-add", {
+          method: "POST", headers: {"content-type":"application/json"}, body: JSON.stringify(payload)
+        }));
+        const added = await result.json();
+        if (added.handled) return json(added, result.status, corsHeaders(allowOrigin));
+      }
+
 
       const [genStr, ovrStr] = await Promise.all([
         env.TODAY_KV.get("today"),
