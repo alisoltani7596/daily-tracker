@@ -1,3 +1,4 @@
+import { normalizeHealthExport, mergeHealthDay } from './health-import.js';
 import { Workspace } from './workspace.js';
 export { Workspace };
 /* Daily Tracker — AI Coach Worker
@@ -147,6 +148,35 @@ export default {
     // Preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
+    }
+
+    // Native iPhone exporter: authenticated even when no browser Origin exists.
+    if (request.method === "POST" && url.pathname === "/health-import") {
+      if (origin && !allowOrigin) return json({error:"Origin not allowed"},403,{});
+      if (!env.EDIT_TOKEN || !timingSafeEqual(request.headers.get("x-edit-token")||"",env.EDIT_TOKEN)) return json({error:"invalid edit token"},403,corsHeaders(allowOrigin));
+      if (!env.TODAY_KV) return json({error:"Health storage unavailable"},503,corsHeaders(allowOrigin));
+      let patches;
+      try {
+        const raw=await request.text();
+        if(raw.length>1000000)return json({error:"Export too large; disable workout routes and time-series metrics"},413,corsHeaders(allowOrigin));
+        patches=normalizeHealthExport(JSON.parse(raw));
+      } catch(error) {return json({error:error.message},400,corsHeaders(allowOrigin));}
+      const updates=[];
+      try {
+        for(const [date,patch] of Object.entries(patches)) {
+          const previous=await readWorkout(env,date);
+          const next=mergeHealthDay(previous,date,patch);
+          if(JSON.stringify(next)!==JSON.stringify(previous))updates.push([date,next]);
+        }
+      } catch(error) {return json({error:error.message},409,corsHeaders(allowOrigin));}
+      const saved=[];
+      try {
+        for(const [date,next] of updates) {
+          next.updated=new Date().toISOString();
+          await writeWorkout(env,date,next);saved.push(date);
+        }
+      } catch {return json({error:"Storage unavailable; retry the same export",saved},503,corsHeaders(allowOrigin));}
+      return json({ok:true,saved,unchanged:Object.keys(patches).length-saved.length,empty:Object.keys(patches).length===0},200,corsHeaders(allowOrigin));
     }
 
     // Workspace reads and writes both require authentication. A Durable Object
@@ -691,6 +721,10 @@ export default {
         for (const w of body.workouts) {
           if (!w || typeof w.type !== "string" || !w.type.trim() || w.type.length>80) return json({error:"Workout activity is required"},400,corsHeaders(allowOrigin));
           const entry={type:w.type.trim()};
+          // Keep imported identity through edits so the next sync updates this card.
+          if (typeof w.id === "string" && w.id.length <= 200) entry.id=w.id;
+          if (typeof w.start === "string" && w.start.length <= 80) entry.start=w.start;
+          if (w.importedFrom === "apple-health") entry.importedFrom=w.importedFrom;
           for (const k of ["minutes","calories","distanceKm"]) {
             if (w[k] === undefined || w[k] === null || w[k] === "") continue;
             const n=typeof w[k]==="number" ? w[k] : typeof w[k]==="string" && /^\d+(?:\.\d+)?$/.test(w[k].trim()) ? Number(w[k]) : NaN;
