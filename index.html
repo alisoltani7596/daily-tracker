@@ -5252,6 +5252,7 @@ if ('serviceWorker' in navigator) {
    Floating/drag is Today-on-desktop only (see the mobile override at the bottom). */
 #workout-section{display:none;}
 body[data-tab="tracker"] #workout-section{display:block;margin:0 0 26px;}
+.wk-recorded{margin:12px 24px;padding:20px!important;border:1px solid var(--line);border-radius:20px;background:var(--panel);}.wk-recorded-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.wk-recorded-summary{font-size:24px;font-weight:600;padding:16px 0;line-height:1.6}.wk-recorded-summary small{font-size:14px;color:var(--sub)}.wk-recorded summary{cursor:pointer;color:var(--sub)}.wk-recorded .wk-frow{padding:10px 0}.wk-recorded input{max-width:55%}
 .wk-h2{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);margin:0 0 12px;}
 #workout-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start;}
 /* uniform tiles → even rows; flex column + clip so the body (not the card) scrolls */
@@ -5433,7 +5434,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
   var pending={}, pushT=null;
   function queue(iso, delta){
     var log=cache[iso]||{date:iso};
-    ['tier','rpe','notes','stretch','footballLast20'].forEach(function(k){ if(k in delta) log[k]=delta[k]; });
+    ['tier','rpe','notes','stretch','footballLast20','workouts'].forEach(function(k){ if(k in delta) log[k]=delta[k]; });
     ['sets','feedback','habits','bio'].forEach(function(m){ if(m in delta){
       if(delta[m]===null){ log[m]={}; return; }
       var base2=(log[m]&&typeof log[m]==='object')?log[m]:{};
@@ -5442,7 +5443,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
     }});
     cache[iso]=log; persist();
     var p=pending[iso]||(pending[iso]={date:iso});
-    ['tier','rpe','notes','stretch','footballLast20'].forEach(function(k){ if(k in delta) p[k]=delta[k]; });
+    ['tier','rpe','notes','stretch','footballLast20','workouts'].forEach(function(k){ if(k in delta) p[k]=delta[k]; });
     ['sets','feedback','habits','bio'].forEach(function(m){ if(m in delta) p[m]=Object.assign({}, p[m]||{}, delta[m]); });
     clearTimeout(pushT); pushT=setTimeout(flush, 450);
   }
@@ -5683,7 +5684,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
   }
 
   /* ═══ CARD: Log ═══════════════════════════════════════════════════════════ */
-  var BIO_FIELDS=[['weightKg','Weight','kg',null],['steps','Steps','',['steps']],['activeKcal','Active kcal','',['active_kcal','activeKcal','active_calories']],['sleepScore','Sleep score · Apple Health','',['sleep_score','sleepScore']],['restingHr','Resting HR','',['resting_hr','restingHr']],['walkingMin','Walk','min',['walking_min','walkingMin']],['workoutCount','Workouts','count',['workout_count','workoutCount']]];
+  var BIO_FIELDS=[['weightKg','Weight','kg',null],['steps','Steps','',['steps']],['activeKcal','Active kcal','',['active_kcal','activeKcal','active_calories']],['sleepScore','Sleep score · Apple Health','',['sleep_score','sleepScore']],['restingHr','Resting HR','',['resting_hr','restingHr']],['walkingMin','Walk','min',['walking_min','walkingMin']]];
   var LTIERS=['best','must','missed','skipped'];
   function renderLog(el){
     var iso=view.date, log=logFor(iso), h=health(iso);
@@ -5699,6 +5700,14 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
     BIO_FIELDS.forEach(function(f){ var key=f[0], hv=(h&&f[3])?(function(){for(var i=0;i<f[3].length;i++)if(h[f[3][i]]!=null)return h[f[3][i]];return null;})():null;
       var v=(log.bio&&log.bio[key]!=null)?log.bio[key]:'';
       html+='<label class="wk-frow"><span>'+f[1]+(f[2]?' ('+f[2]+')':'')+'</span><input type="number" step="any" data-act="lbio" data-f="'+key+'" value="'+esc(v)+'" placeholder="'+(hv!=null?hv+' · Health':'—')+'"></label>'; });
+    var workouts=Array.isArray(log.workouts)?log.workouts:[];
+    html+='<div class="wk-sec" style="color:var(--accent)">Workouts <span style="float:right">'+workouts.length+' / 5</span></div>';
+    workouts.forEach(function(w,i){
+      html+='<div class="wk-recorded"><div class="wk-recorded-head"><strong>'+esc(w.type||'Workout')+'</strong><button class="wk-chip" data-act="wremove" data-i="'+i+'" aria-label="Remove workout '+(i+1)+'">Remove</button></div><div class="wk-recorded-summary">'+(w.minutes==null?'—':esc(w.minutes))+' <small>min</small> · '+(w.calories==null?'—':esc(w.calories))+' <small>kcal</small> · '+(w.distanceKm==null?'—':esc(w.distanceKm))+' <small>km</small></div><details><summary>Edit workout</summary>';
+      [['type','Activity','text'],['minutes','Minutes','number'],['calories','Calories (kcal)','number'],['distanceKm','Distance (km)','number']].forEach(function(f){html+='<label class="wk-frow"><span>'+f[1]+'</span><input aria-label="'+f[1]+' for workout '+(i+1)+'" type="'+f[2]+'" min="0" step="any" data-act="wedit" data-i="'+i+'" data-f="'+f[0]+'" value="'+esc(w[f[0]]==null?'':w[f[0]])+'"></label>';});
+      html+='</details></div>';
+    });
+    if(workouts.length<5) html+='<div class="wk-pad"><button class="wk-chip" data-act="wadd">+ Add workout</button></div>';
     html+='<div class="wk-sec">Notes</div><textarea class="wk-note" data-act="lnotes" rows="3" placeholder="How did it go?">'+esc(log.notes||'')+'</textarea>';
     html+='<div class="wk-foot">Connected health data fills available metrics. Enter a value to add or correct a reading.</div>';
     el.innerHTML=html;
@@ -5718,6 +5727,8 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
   function onAct(e){
     var t=e.target.closest('[data-act]'); if(!t) return;
     var act=t.getAttribute('data-act'), iso=view.date;
+    if(act==='wadd'){var ws=(logFor(iso).workouts||[]).slice();if(ws.length<5){ws.push({type:'Workout'});queue(iso,{workouts:ws});renderAll();}return;}
+    if(act==='wremove'){var ws=(logFor(iso).workouts||[]).slice();ws.splice(+t.getAttribute('data-i'),1);queue(iso,{workouts:ws});renderAll();return;}
     if(act==='demo'){expandDemo(t);return;}
     if(act==='pexpand'){view.planExpanded=!view.planExpanded;renderPlan(cards.plan.body);return;}
     if(act==='pweek'){view.planWeek=Math.max(1,Math.min(WEEKS.length,view.planWeek+Number(t.getAttribute('data-d'))));renderPlan(cards.plan.body);return;}
@@ -5741,6 +5752,7 @@ body:not([data-tab="today"]) .s2-grid{display:none!important;}
     if(act==='note'){ var ex2=t.getAttribute('data-ex'); var fb=Object.assign({},(logFor(iso).feedback&&logFor(iso).feedback[ex2])||{}); fb.note=t.value; var fd={}; fd[ex2]=fb; queue(iso,{feedback:fd}); return; }
     if(act==='lrpe'){ var val2=t.value.trim(); queue(iso,{rpe:val2===''?null:Number(val2)}); return; }
     if(act==='lfootball'){ var v3=t.value.trim(); queue(iso,{footballLast20:v3===''?null:Number(v3)}); return; }
+    if(act==='wedit'){var ws=(logFor(iso).workouts||[]).map(function(w){return Object.assign({},w);}), i=+t.getAttribute('data-i'), f=t.getAttribute('data-f');if(!ws[i])return;var v=t.value.trim();if(f==='type'){ws[i][f]=v||'Workout';}else if(v===''){delete ws[i][f];}else if(Number.isFinite(Number(v))&&Number(v)>=0){ws[i][f]=Number(v);}else{return;}queue(iso,{workouts:ws});renderAll();return;}
     if(act==='lnotes'){ queue(iso,{notes:t.value}); return; }
     if(act==='lbio'){ var key=t.getAttribute('data-f'), v4=t.value.trim(); var bd={}; bd[key]=(v4===''?null:Number(v4)); queue(iso,{bio:bd}); return; }
   }

@@ -229,3 +229,23 @@ test('Shortcuts text readings retain their values and empty values cannot become
  assert.deepEqual(JSON.parse(stored).bio,{restingHr:43,steps:1234,activeKcal:321,weightKg:93.8});
  const previous=stored;for(const value of ['',{},'abc','1,234']){assert.equal((await send({steps:value})).status,400);assert.equal(stored,previous);}
 });
+
+test('recorded workouts validate units, retain five entries and replace repeat uploads',async()=>{
+ const worker=(await import('../worker/src/index.js')).default;let stored=null;
+ const env={ALLOWED_ORIGINS:'https://example',EDIT_TOKEN:'test',TODAY_KV:{get:async()=>stored,put:async(k,v)=>{stored=v;}}};
+ const send=fields=>worker.fetch(new Request('https://example/workout-log',{method:'POST',headers:{origin:'https://example','x-edit-token':'test'},body:JSON.stringify({date:'2026-09-15',...fields})}),env);
+ const entry={type:'Cycling',minutes:'22',calories:'39',distanceKm:'0.34'};
+ for(let i=1;i<=5;i++)assert.equal((await send({workoutSlot:String(i),workoutEntry:entry})).status,200);
+ assert.equal(JSON.parse(stored).workouts.length,5);
+ assert.deepEqual(JSON.parse(stored).workouts[0],{type:'Cycling',minutes:22,calories:39,distanceKm:.34});
+ assert.equal((await send({workoutSlot:'1',workoutEntry:entry})).status,200);
+ assert.equal(JSON.parse(stored).workouts.length,5);
+ const before=stored;
+ assert.equal((await send({workouts:Array(6).fill(entry)})).status,400);
+ assert.equal((await send({workouts:[{...entry,minutes:-1}]})).status,400);
+ assert.equal(stored,before);
+ assert.equal((await send({bio:{sleepScore:'80',walkingMin:'22'}})).status,200);
+ assert.equal(JSON.parse(stored).workouts.length,5);
+ assert.equal((await send({workouts:[]})).status,200);
+ assert.deepEqual(JSON.parse(stored).workouts,[]);
+});

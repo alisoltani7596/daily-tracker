@@ -677,6 +677,30 @@ export default {
         if (body.rpe === null) log.rpe = null;
         else { const v = mealToNum(body.rpe); if (v == null || v < 0 || v > 10) return json({ error: "`rpe` must be a number 0–10" }, 400, corsHeaders(allowOrigin)); log.rpe = v; }
       }
+      if (body.workoutEntry !== undefined) {
+        const slot=Number(body.workoutSlot);
+        if (!Number.isInteger(slot) || slot<1 || slot>5) return json({error:"Workout slot must be 1–5"},400,corsHeaders(allowOrigin));
+        const entries=Array.isArray(log.workouts)?log.workouts.slice():[];
+        if (slot>entries.length+1) return json({error:"Add earlier workout slots first"},400,corsHeaders(allowOrigin));
+        entries[slot-1]=body.workoutEntry;
+        body.workouts=entries;
+      }
+      if (body.workouts !== undefined) {
+        if (!Array.isArray(body.workouts) || body.workouts.length > 5) return json({error:"Provide up to five workouts"},400,corsHeaders(allowOrigin));
+        const workouts=[];
+        for (const w of body.workouts) {
+          if (!w || typeof w.type !== "string" || !w.type.trim() || w.type.length>80) return json({error:"Workout activity is required"},400,corsHeaders(allowOrigin));
+          const entry={type:w.type.trim()};
+          for (const k of ["minutes","calories","distanceKm"]) {
+            if (w[k] === undefined || w[k] === null || w[k] === "") continue;
+            const n=typeof w[k]==="number" ? w[k] : typeof w[k]==="string" && /^\d+(?:\.\d+)?$/.test(w[k].trim()) ? Number(w[k]) : NaN;
+            if (!Number.isFinite(n) || n<0) return json({error:"Invalid workout "+k},400,corsHeaders(allowOrigin));
+            entry[k]=n;
+          }
+          workouts.push(entry);
+        }
+        log.workouts=workouts;
+      }
       if (typeof body.notes === "string") log.notes = body.notes.slice(0, 2000);
       if (body.stretch !== undefined) log.stretch = !!body.stretch;
 
@@ -741,13 +765,24 @@ export default {
       if (!env.EDIT_TOKEN) return json({ error: "editing not configured (missing EDIT_TOKEN secret)" }, 500, corsHeaders(allowOrigin));
       const token = request.headers.get("x-edit-token") || "";
       if (!timingSafeEqual(token, env.EDIT_TOKEN)) return json({ error: "invalid edit token" }, 403, corsHeaders(allowOrigin));
-      let body;
-      try { body = await request.json(); } catch { return json({ error: "invalid JSON body" }, 400, corsHeaders(allowOrigin)); }
-      if (!body || !Array.isArray(body.events)) return json({ error: "`events` array is required" }, 400, corsHeaders(allowOrigin));
-      const events = normalizeCalEvents(body.events);
+      // Shortcuts' "File" body type does not reliably send the JSON text verbatim — it
+      // may arrive as multipart/form-data with the JSON as a file part, or as a bare
+      // array. Accept all of those; when nothing parses, echo what arrived so the
+      // Shortcut's failure notification shows the real wire shape instead of a guess.
+      const parsed = await readCalPushBody(request);
+      if (parsed.error) return json(parsed, 400, corsHeaders(allowOrigin));
+      const body = parsed.body;
+      const list = Array.isArray(body) ? body : (body && Array.isArray(body.events) ? body.events : null);
+      if (!list) return json({ error: "`events` array is required", received: describeCalBody(body) }, 400, corsHeaders(allowOrigin));
+      const events = normalizeCalEvents(list);
       const payload = { events, generatedAt: new Date().toISOString(), count: events.length };
       await env.TODAY_KV.put("calendar:device", JSON.stringify(payload));
-      return json({ ok: true, count: events.length }, 200, corsHeaders(allowOrigin));
+      // `received` = raw items the Shortcut sent; when everything was dropped, echo the
+      // first raw item so a "Synced 0 events" run shows whether the filter found nothing
+      // or the normalizer rejected what it found.
+      const reply = { ok: true, count: events.length, received: list.length };
+      if (!events.length && list.length) reply.sample = JSON.stringify(list[0]).slice(0, 400);
+      return json(reply, 200, corsHeaders(allowOrigin));
     }
 
     // GET /calendar-device — the pushed device events. CORS-locked to the Iris origin
@@ -1003,6 +1038,41 @@ function calVanParts(iso) {
   return { date: `${p.year}-${p.month}-${p.day}`, hm: `${p.hour === "24" ? "00" : p.hour}:${p.minute}` };
 }
 // Coerce the Shortcut's raw events into the frontend event model (Vancouver-local).
+
+// Lenient body reader for /calendar-push. Tries, in order: the raw body as JSON,
+// a multipart/form-data upload (first part that parses as JSON), and finally a
+// plain-text body. On failure returns { error, contentType, bodyPreview } so the
+// caller can surface exactly what the Shortcut transmitted.
+async function readCalPushBody(request) {
+  const contentType = request.headers.get("content-type") || "";
+  const raw = await request.clone().text();
+  const tryJson = (t) => { try { const v = JSON.parse(String(t).replace(/^\uFEFF/, "")); return v && typeof v === "object" ? v : null; } catch { return null; } };
+  let body = tryJson(raw);
+  if (!body && /multipart\/form-data|application\/x-www-form-urlencoded/i.test(contentType)) {
+    try {
+      const fd = await request.formData();
+      for (const [, v] of fd) {
+        const text = typeof v === "string" ? v : await v.text();
+        body = tryJson(text);
+        if (body) break;
+      }
+    } catch {}
+  }
+  // Shortcuts "Form" bodies carry the JSON as a text field; JSON bodies may nest it
+  // under a dictionary-typed field. Unwrap `payload` whether it is a string or object.
+  if (body && !Array.isArray(body) && body.payload !== undefined && body.events === undefined) {
+    const inner = typeof body.payload === "string" ? tryJson(body.payload) : body.payload;
+    if (inner) body = inner;
+  }
+  if (body) return { body };
+  return { error: "invalid JSON body", contentType, bodyLength: raw.length, bodyPreview: raw.slice(0, 400) };
+}
+function describeCalBody(body) {
+  if (Array.isArray(body)) return "array(" + body.length + ")";
+  if (body && typeof body === "object") return "object keys=" + Object.keys(body).join(",") + " events=" + typeof body.events;
+  return typeof body;
+}
+
 function normalizeCalEvents(arr) {
   const out = [];
   for (const e of arr) {
@@ -1013,7 +1083,8 @@ function normalizeCalEvents(arr) {
     const en = e.end ? calVanParts(e.end) : null;
     // iOS Shortcuts may serialize the "Is All Day" boolean as a string/number
     // ("0"/"1"/"true"), so coerce explicitly — `!!"0"` would be a false positive.
-    const allDay = e.allDay === true || e.allDay === 1 || e.allDay === "1" || (typeof e.allDay === "string" && e.allDay.toLowerCase() === "true");
+    // Shortcuts renders "Is All Day" as Yes/No on macOS, true/false or 1/0 elsewhere.
+    const allDay = e.allDay === true || e.allDay === 1 || (typeof e.allDay === "string" && /^(1|true|yes)$/i.test(e.allDay.trim()));
     const ev = {
       id: (typeof e.id === "string" && e.id) ? "device:" + e.id.slice(0, 200) : "device:" + title + "|" + s.date + "|" + s.hm,
       title,
