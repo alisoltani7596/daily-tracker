@@ -66,10 +66,11 @@ If I say "weekly review," run this: wins, misses, pattern you're noticing across
 Direct, warm, zero fluff. Talk to me like a coach who respects me enough to be honest. Don't praise effort that didn't happen. Do acknowledge real wins briefly, then move forward.
 ## Boundaries
 - You're not a therapist or doctor. If something needs professional support (mental health, medical, legal), say so directly and don't try to coach through it.
-- Everything you know about me comes from the context provided with each message: the tracker state, past session summaries, open commitments, and this conversation. If you don't know something relevant, ask.
+- Everything you know about me comes from the context provided with each message: the tracker state, my health data, past session summaries, open commitments, and this conversation. If you don't know something relevant, ask.
 - If I try to turn a session into casual chat or research help, gently redirect: "Is this what you want to spend today's session on?"
 ## Live tracker data
-Each message includes a tracker_state block with my real habit/workout/kcal data for today. Use it. If my checklist is at 20% at 9pm, that's fair game to bring up.`;
+Each message includes a tracker_state block with my real habit/workout/kcal data for today. Use it. If my checklist is at 20% at 9pm, that's fair game to bring up.
+Each message also includes a health_data block from Apple Health / Garmin: today so far and yesterday — sleep, steps, active kcal, resting HR, weight, walking minutes, recorded workouts and the program session I logged. Use it the same way: a five-hour night, a missed session or 1,500 steps at 6pm is worth naming, and a real win in it deserves a brief acknowledgement. If it says nothing synced, don't guess the numbers — ask.`;
 
 // ─── Planner system prompt (four-phase task planning) ────────────────────────
 const PLANNER_MAX_TOKENS = 2048; // room for a full decomposition + schedule + plan block
@@ -79,6 +80,8 @@ You are a rigorous planning partner. You turn a vague intention into a concrete,
 
 ## Context you are given
 Each message includes a context block with the user's current 3-day schedule (day-groups with timed items) and their upcoming deadlines, injected from their live dashboard, plus today's date. Treat this as ground truth for what time is already spoken for and what external due dates exist. The user tells you their weekly capacity in hours — if they haven't, ask.
+
+The context also includes a health_data block from Apple Health / Garmin: today so far and yesterday — sleep, steps, recorded workouts and the training session they logged. Use it as a capacity signal for the next day or two: after a short night or a hard training day, put fewer and lighter blocks on the following day and say why in one line. It never overrides a deadline or the user's stated capacity, and don't lecture about it. If it says nothing synced, plan without it.
 
 ## Phase 1 — Interview the task
 Interview before you plan. Establish, a few questions at a time (never a wall of questions):
@@ -913,18 +916,18 @@ export default {
     }
 
     // POST /plan — planner chat. Mirrors the coach chat exactly (same model,
-    // prompt caching, CORS), differing only in the system prompt and a larger
-    // token budget for a full decomposition + schedule + <plan> block.
+    // prompt caching, CORS, health context), differing only in the system prompt
+    // and a larger token budget for a full decomposition + schedule + <plan> block.
     if (request.method === "POST" && url.pathname === "/plan") {
-      return handleChat(request, env, allowOrigin, PLANNER_SYSTEM_PROMPT, PLANNER_MAX_TOKENS);
+      return handleChat(request, env, allowOrigin, PLANNER_SYSTEM_PROMPT, PLANNER_MAX_TOKENS, true);
     }
 
     if (request.method !== "POST") {
       return json({ error: "Method not allowed" }, 405, corsHeaders(allowOrigin));
     }
 
-    // Default POST route: the coach chat. Inject the latest health sample so the
-    // coach can reference last night's sleep and yesterday's steps.
+    // Default POST route: the coach chat. Inject today's and yesterday's health so
+    // the coach can reference last night's sleep, steps and recorded workouts.
     return handleChat(request, env, allowOrigin, SYSTEM_PROMPT, MAX_TOKENS, true);
   },
 };
@@ -960,12 +963,11 @@ async function handleChat(request, env, allowOrigin, systemPrompt, maxTokens, in
   ];
   if (context) system.push({ type: "text", text: context });
 
-  // Append the latest Apple Health / Garmin sample (coach only), as a volatile
-  // block after the cache breakpoint — best-effort, never fails the request.
+  // Append today's + yesterday's Apple Health / Garmin data (coach + planner), as a
+  // volatile block after the cache breakpoint — best-effort, never fails the request.
   if (injectHealth && env.TODAY_KV) {
     try {
-      const block = formatHealthForContext(await latestHealth(env));
-      if (block) system.push({ type: "text", text: block });
+      system.push({ type: "text", text: await healthContext(env) });
     } catch { /* health context is optional */ }
   }
 
@@ -1496,36 +1498,94 @@ async function recentHealth(env, n) {
   }
 }
 
-// The single most recent health entry (for coach context), as { date, ...entry }.
-async function latestHealth(env) {
-  const map = await recentHealth(env, 1);
-  const dates = Object.keys(map);
-  if (!dates.length) return null;
-  return { date: dates[0], ...map[dates[0]] };
+// ─── Health context for the coach + planner ──────────────────────────────────
+// Health lives in two stores: health:<date> (the iOS Shortcut /health-push —
+// sleep, steps) and the workout:<date> DayLog (the Apple Health Auto Export via
+// /health-import, plus edits in the Tracker's Health log — steps, active kcal,
+// resting HR, weight, walking, recorded workouts). A chat turn sees both, merged
+// per field the way the Health log shows them: DayLog `bio` first, then the
+// health:<date> sample. Today and yesterday (Vancouver dates, like both stores)
+// are read by key, so a chat turn costs four KV reads and no KV list.
+const HEALTH_CONTEXT_FIELDS = [
+  // [label, DayLog bio field, health:<date> fallbacks, unit]
+  ["steps", "steps", ["steps"], ""],
+  ["active kcal", "activeKcal", ["active_kcal", "activeKcal", "active_calories"], ""],
+  ["resting HR", "restingHr", ["resting_hr", "restingHr"], " bpm"],
+  ["weight", "weightKg", [], " kg"],
+  ["walking", "walkingMin", ["walking_min", "walkingMin"], " min"],
+];
+const HEALTH_SESSION_TIERS = {
+  best: "done (BEST, the full session)", must: "done (MUST, the short floor version)",
+  missed: "missed", skipped: "skipped",
+};
+
+async function healthContext(env, now = new Date()) {
+  const today = calVanParts(now.toISOString()).date;
+  const y = new Date(today + "T12:00:00Z"); y.setUTCDate(y.getUTCDate() - 1);
+  const yesterday = y.toISOString().slice(0, 10);
+  const [hToday, hYesterday, wToday, wYesterday] = await Promise.all([
+    env.TODAY_KV.get("health:" + today), env.TODAY_KV.get("health:" + yesterday),
+    readWorkout(env, today), readWorkout(env, yesterday),
+  ]);
+  const days = [
+    ["today " + today + " (so far)", healthDayLines(safeParse(hToday), wToday)],
+    ["yesterday " + yesterday, healthDayLines(safeParse(hYesterday), wYesterday)],
+  ].filter(([, lines]) => lines.length);
+  // Say so explicitly when nothing synced, so the model doesn't guess numbers.
+  if (!days.length) return "health_data (Apple Health / Garmin): nothing synced for today or yesterday\n";
+  const out = ["health_data (Apple Health / Garmin, Vancouver dates):"];
+  for (const [label, lines] of days) out.push("  " + label + ":", ...lines.map((l) => "    " + l));
+  return out.join("\n") + "\n";
 }
 
-// Format the latest health entry as a compact context block for the coach.
-function formatHealthForContext(h) {
-  if (!h) return "";
-  const lines = ["health_data (Apple Health / Garmin, latest available):", "  date: " + h.date];
-  if (typeof h.sleep_hours === "number") {
-    let s = "  sleep: " + h.sleep_hours + "h";
-    if (h.bed_time && h.wake_time) s += " (" + h.bed_time + " → " + h.wake_time + ")";
-    lines.push(s);
-    if (typeof h.sleep_score === "number") lines.push("  sleep score: " + h.sleep_score + " (apple)");
-    else if (typeof h.sleep_score_computed === "number") lines.push("  sleep score: " + h.sleep_score_computed + " (iris)");
-    if (h.sleep_stages) {
-      const st = h.sleep_stages;
-      lines.push("  stages (min): deep " + (st.deep || 0) + ", core " + (st.core || 0) + ", rem " + (st.rem || 0) + ", awake " + (st.awake || 0));
-    }
-  } else if (h.bed_time && h.wake_time) {
-    lines.push("  sleep: " + h.bed_time + " → " + h.wake_time);
+// One day's health lines from its health:<date> sample `h` and DayLog `w`.
+function healthDayLines(h, w) {
+  h = (h && typeof h === "object") ? h : {};
+  const bio = (w && w.bio && typeof w.bio === "object") ? w.bio : {};
+  const pick = (field, keys) => {
+    if (typeof bio[field] === "number") return bio[field];
+    for (const k of keys) if (typeof h[k] === "number") return h[k];
+    return null;
+  };
+  // "HH:MM", or the time part of an older sample's ISO sleep_start/sleep_end.
+  const hm = (s) => { const m = typeof s === "string" && (s.match(/T(\d{2}:\d{2})/) || s.match(/^(\d{1,2}:\d{2})/)); return m ? m[1] : null; };
+  const lines = [];
+
+  // Sleep comes from the health:<date> sample only, as on the Today sleep ring.
+  const bed = hm(h.bed_time || h.sleep_start), wake = hm(h.wake_time || h.sleep_end);
+  const span = (bed && wake) ? bed + " → " + wake : "";
+  if (typeof h.sleep_hours === "number") lines.push("sleep: " + h.sleep_hours + "h" + (span ? " (" + span + ")" : ""));
+  else if (span) lines.push("sleep: " + span);
+  if (typeof h.sleep_score === "number") lines.push("sleep score: " + h.sleep_score + " (apple)");
+  else if (typeof h.sleep_score_computed === "number") lines.push("sleep score: " + h.sleep_score_computed + " (iris)");
+  if (h.sleep_stages && typeof h.sleep_stages === "object") {
+    const st = h.sleep_stages;
+    lines.push("sleep stages (min): deep " + (st.deep || 0) + ", core " + (st.core || 0) + ", rem " + (st.rem || 0) + ", awake " + (st.awake || 0));
   }
-  if (typeof h.steps === "number") lines.push("  steps: " + h.steps);
-  if (Array.isArray(h.workouts) && h.workouts.length) {
-    lines.push("  workouts: " + h.workouts.map((w) => w.type + " " + w.minutes + "m").join(", "));
+
+  for (const [label, field, keys, unit] of HEALTH_CONTEXT_FIELDS) {
+    const v = pick(field, keys);
+    if (v != null) lines.push(label + ": " + v + unit);
   }
-  return lines.join("\n") + "\n";
+
+  // Recorded workouts: the DayLog's (Apple Health import / Health log) when it has
+  // any, else the Shortcut sample's { type, minutes } list.
+  const workouts = (w && Array.isArray(w.workouts) && w.workouts.length) ? w.workouts
+    : (Array.isArray(h.workouts) ? h.workouts : []);
+  const described = workouts.filter((x) => x && typeof x.type === "string").map((x) => {
+    const parts = [];
+    if (typeof x.minutes === "number") parts.push(x.minutes + " min");
+    if (typeof x.calories === "number") parts.push(x.calories + " kcal");
+    if (typeof x.distanceKm === "number") parts.push(x.distanceKm + " km");
+    return x.type + (parts.length ? " " + parts.join(" · ") : "");
+  });
+  if (described.length) lines.push("workouts: " + described.join("; "));
+
+  // The 17-day program's logged session for the day, from the same DayLog.
+  const rpe = (w && typeof w.rpe === "number") ? " · RPE " + w.rpe : "";
+  if (w && Object.hasOwn(HEALTH_SESSION_TIERS, w.tier)) lines.push("program session: " + HEALTH_SESSION_TIERS[w.tier] + rpe);
+  else if (rpe) lines.push("program session RPE: " + w.rpe);
+  return lines;
 }
 
 // Validate the top-level shape of a Today payload before writing it to KV, so a

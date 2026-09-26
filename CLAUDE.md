@@ -60,7 +60,10 @@ Existing localStorage keys: `habit_vis_v3`, `habit_order_v1`, `habit_done_v3_<0-
 choice — device preference, localStorage only, never KV). Coach keys: `coach_chat_v1`,
 `coach_archive_v1`, `coach_commitments_v1`. The Today dashboard reads `today.json`
 (served with the site) into `window.__todayData`, which the coach injects as
-`today_agenda`.
+`today_agenda`. Health reaches the coach (`POST /`) and planner (`POST /plan`)
+server-side: the Worker appends a `health_data` block for today and yesterday, merged
+from `health:<date>` and the `workout:<date>` DayLog (`healthContext` in
+`worker/src/index.js`), so both chats see what the Health log shows.
 
 KV keys owned by **Claude Code** (app code), which the Cowork/Today pipeline must
 never read or write: `ui:layout:v1` — the style-2 canvas card layouts (per tab, per
